@@ -132,7 +132,7 @@ export const GanttChart = ({
           <button
             onClick={() => {
               const d = new Date(currentDate);
-              d.setDate(d.getDate() - 28); // 4 semaines précédentes
+              d.setDate(d.getDate() - 7); // 1 semaine précédente
               setCurrentDate(d);
             }}
             style={{
@@ -151,7 +151,7 @@ export const GanttChart = ({
           <button
             onClick={() => {
               const d = new Date(currentDate);
-              d.setDate(d.getDate() + 28); // 4 semaines suivantes
+              d.setDate(d.getDate() + 7); // 1 semaine suivante
               setCurrentDate(d);
             }}
             style={{
