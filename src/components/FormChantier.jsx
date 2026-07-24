@@ -11,7 +11,7 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, mode = "add" }) => 
   };
 
   const handleSubmit = () => {
-    if (!formData.nom || !formData.dateDebut || !formData.dateFin) {
+    if (!formData.nom || !formData.dateDebut) {
       alert("Veuillez remplir tous les champs obligatoires");
       return;
     }
@@ -63,33 +63,6 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, mode = "add" }) => 
           type="date"
           name="dateDebut"
           value={formData.dateDebut}
-          onChange={handleChange}
-          style={{
-            width: "100%",
-            padding: "8px 12px",
-            border: "1px solid #d1d5db",
-            borderRadius: 6,
-            fontSize: 13,
-            fontFamily: "inherit"
-          }}
-        />
-      </div>
-
-      {/* DATE FIN */}
-      <div style={{ marginBottom: "1.25rem" }}>
-        <label style={{
-          display: "block",
-          fontWeight: 600,
-          fontSize: 13,
-          color: "#1f2937",
-          marginBottom: 6
-        }}>
-          Date de fin prévue *
-        </label>
-        <input
-          type="date"
-          name="dateFin"
-          value={formData.dateFin}
           onChange={handleChange}
           style={{
             width: "100%",
