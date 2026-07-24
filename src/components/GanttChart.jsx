@@ -355,7 +355,7 @@ export const GanttChart = ({
                   >
                     {/* BARRES D'AFFECTATION */}
                     {affectsByOuvrier.map(aff => {
-                      const chantier = chantiersActifs.find(c => c.id === aff.chantierId);
+                      const chantier = chantiers.find(c => c.id === aff.chantierId);
                       const posInDay = getBarPositionInDay(aff, date, weekStart);
                       const tacheText = aff.tache || chantier?.nom;
                       const chantierId2Lettres = chantier?.nom.substring(0, 2).toUpperCase();
