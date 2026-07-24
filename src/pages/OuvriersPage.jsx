@@ -66,7 +66,7 @@ export const OuvriersPage = () => {
           justifyContent: "space-between",
           alignItems: "center"
         }}>
-          <span>👷 CDI ({cdi.length})</span>
+          <span>👷 Ouvriers ({cdi.length})</span>
           <button
             onClick={() => setShowAddModal(true)}
             style={{
@@ -88,22 +88,20 @@ export const OuvriersPage = () => {
           <thead>
             <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
               <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Nom</th>
-              <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Métier</th>
               <th style={{ padding: "8px", width: 60, fontWeight: 600, color: "#1f2937" }}>Action</th>
             </tr>
           </thead>
           <tbody>
             {cdi.length === 0 ? (
               <tr>
-                <td colSpan="3" style={{ padding: 8, textAlign: "center", color: "#9ca3af" }}>
-                  Aucun CDI
+                <td colSpan="2" style={{ padding: 8, textAlign: "center", color: "#9ca3af" }}>
+                  Aucun ouvrier
                 </td>
               </tr>
             ) : (
               cdi.map(ouvrier => (
                 <tr key={ouvrier.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
                   <td style={{ padding: 8, color: "#374151", fontWeight: 500 }}>{ouvrier.nom}</td>
-                  <td style={{ padding: 8, color: "#374151", fontSize: 11 }}>{ouvrier.metier}</td>
                   <td style={{ padding: 8, textAlign: "center" }}>
                     <button
                       onClick={() => setEditingOuvrier(ouvrier)}
@@ -166,22 +164,20 @@ export const OuvriersPage = () => {
           <thead>
             <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
               <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Nom</th>
-              <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Spécialité</th>
               <th style={{ padding: "8px", width: 60, fontWeight: 600, color: "#1f2937" }}>Action</th>
             </tr>
           </thead>
           <tbody>
             {st.length === 0 ? (
               <tr>
-                <td colSpan="3" style={{ padding: 8, textAlign: "center", color: "#9ca3af" }}>
-                  Aucun ST
+                <td colSpan="2" style={{ padding: 8, textAlign: "center", color: "#9ca3af" }}>
+                  Aucun sous-traitant
                 </td>
               </tr>
             ) : (
               st.map(ouvrier => (
                 <tr key={ouvrier.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
                   <td style={{ padding: 8, color: "#374151", fontWeight: 500 }}>{ouvrier.nom}</td>
-                  <td style={{ padding: 8, color: "#374151", fontSize: 11 }}>{ouvrier.metier}</td>
                   <td style={{ padding: 8, textAlign: "center" }}>
                     <button
                       onClick={() => setEditingOuvrier(ouvrier)}
@@ -226,7 +222,6 @@ export const OuvriersPage = () => {
             <thead>
               <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
                 <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Nom</th>
-                <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Métier</th>
                 <th style={{ padding: "8px", width: 60, fontWeight: 600, color: "#1f2937" }}>Action</th>
               </tr>
             </thead>
@@ -234,7 +229,6 @@ export const OuvriersPage = () => {
               {archived.map(ouvrier => (
                 <tr key={ouvrier.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
                   <td style={{ padding: 8, color: "#374151", fontWeight: 500 }}>{ouvrier.nom}</td>
-                  <td style={{ padding: 8, color: "#374151", fontSize: 11 }}>{ouvrier.metier}</td>
                   <td style={{ padding: 8, textAlign: "center" }}>
                     <button
                       onClick={() => setEditingOuvrier(ouvrier)}
