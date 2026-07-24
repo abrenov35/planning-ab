@@ -62,7 +62,7 @@ export const GanttPage = () => {
                 >
                   {ouvrier.nom.substring(0, 2).toUpperCase()}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{ fontWeight: 500, color: "#1f2937" }}>
                     {ouvrier.nom}
                   </div>
