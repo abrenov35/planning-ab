@@ -255,7 +255,7 @@ export const GanttChart = ({
         overflow: "hidden"
       }}>
         {/* HEADER AVEC DATES */}
-        <div style={{ display: "flex", borderBottom: "1px solid #e5e7eb" }}>
+        <div style={{ display: "flex", borderBottom: "1px solid #e5e7eb", height: "50px" }}>
           <div style={{
             width: 150,
             padding: "0.5rem 0.75rem",
@@ -263,7 +263,10 @@ export const GanttChart = ({
             borderRight: "1px solid #e5e7eb",
             fontWeight: 600,
             fontSize: 11,
-            color: "#1f2937"
+            color: "#1f2937",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
           }}>
             OUVRIER
           </div>
@@ -271,7 +274,8 @@ export const GanttChart = ({
             flex: 1,
             display: "grid",
             gridTemplateColumns: "repeat(20, 1fr)",
-            borderRight: "1px solid #e5e7eb"
+            borderRight: "1px solid #e5e7eb",
+            height: "50px"
           }}>
             {allDates.map((date, idx) => (
               <div
@@ -283,7 +287,10 @@ export const GanttChart = ({
                   textAlign: "center",
                   fontSize: 10,
                   fontWeight: 600,
-                  color: "#1f2937"
+                  color: "#1f2937",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
                 }}
               >
                 {formatShortDate(date)}
@@ -299,7 +306,7 @@ export const GanttChart = ({
           );
 
           return (
-            <div key={ouvrier.id} style={{ display: "flex", borderBottom: "1px solid #f3f4f6" }}>
+            <div key={ouvrier.id} style={{ display: "flex", borderBottom: "1px solid #f3f4f6", height: "80px" }}>
               {/* NOM OUVRIER */}
               <div style={{
                 width: 150,
@@ -308,7 +315,10 @@ export const GanttChart = ({
                 borderRight: "1px solid #e5e7eb",
                 fontSize: 11,
                 fontWeight: 500,
-                color: "#1f2937"
+                color: "#1f2937",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center"
               }}>
                 <div>{ouvrier.nom}</div>
                 <div style={{ fontSize: 9, color: "#9ca3af" }}>{ouvrier.metier}</div>
@@ -321,7 +331,8 @@ export const GanttChart = ({
                 gridTemplateColumns: "repeat(20, 1fr)",
                 background: "white",
                 borderRight: "1px solid #e5e7eb",
-                position: "relative"
+                position: "relative",
+                height: "80px"
               }}>
                 {allDates.map((date, dayIdx) => (
                   <div
@@ -329,7 +340,6 @@ export const GanttChart = ({
                     onClick={() => onAddAffectation(ouvrier.id, date)}
                     style={{
                       borderRight: (dayIdx + 1) % 5 === 0 && dayIdx < 19 ? "3px solid #1e3a8a" : dayIdx < 19 ? "1px solid #e5e7eb" : "none",
-                      minHeight: "80px",
                       position: "relative",
                       background: "white",
                       cursor: "pointer",
@@ -337,7 +347,8 @@ export const GanttChart = ({
                       padding: "2px 2px",
                       display: "flex",
                       alignItems: "flex-start",
-                      justifyContent: "flex-start"
+                      justifyContent: "flex-start",
+                      overflow: "hidden"
                     }}
                     onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"}
                     onMouseLeave={e => e.currentTarget.style.background = "white"}
