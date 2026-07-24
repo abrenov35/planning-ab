@@ -287,12 +287,12 @@ export const GanttChart = ({
         flex: 1
       }}>
         {/* HEADER AVEC DATES */}
-        <div style={{ display: "flex", borderBottom: "1px solid #e5e7eb", height: "40px" }}>
+        <div style={{ display: "flex", borderBottom: "1px solid #d1d5db", height: "40px" }}>
           <div style={{
             width: 150,
             padding: "0.5rem 0.75rem",
             background: "#e5e7eb",
-            borderRight: "1px solid #d1d5db",
+            borderRight: "1px solid #9ca3af",
             fontWeight: 600,
             fontSize: 10,
             color: "#1f2937",
@@ -305,7 +305,7 @@ export const GanttChart = ({
           <div style={{
             display: "grid",
             gridTemplateColumns: "repeat(20, 1fr)",
-            borderRight: "1px solid #e5e7eb",
+            borderRight: "1px solid #9ca3af",
             height: "40px",
             flex: 1,
             background: "#e5e7eb"
@@ -342,13 +342,13 @@ export const GanttChart = ({
           const rowBackground = idx % 2 === 0 ? "white" : "#f9fafb";
 
           return (
-            <div key={ouvrier.id} style={{ display: "flex", borderBottom: "1px solid #e5e7eb", height: "45px", background: rowBackground }}>
+            <div key={ouvrier.id} style={{ display: "flex", borderBottom: "1px solid #d1d5db", height: "45px", background: rowBackground }}>
               {/* NOM OUVRIER */}
               <div style={{
                 width: 150,
                 padding: "0.5rem 0.75rem",
                 background: rowBackground,
-                borderRight: "1px solid #e5e7eb",
+                borderRight: "1px solid #9ca3af",
                 fontSize: 10,
                 fontWeight: 500,
                 color: "#1f2937",
@@ -365,7 +365,7 @@ export const GanttChart = ({
                 display: "grid",
                 gridTemplateColumns: "repeat(20, 1fr)",
                 background: rowBackground,
-                borderRight: "1px solid #e5e7eb",
+                borderRight: "1px solid #9ca3af",
                 position: "relative",
                 height: "45px",
                 flex: 1
@@ -375,7 +375,7 @@ export const GanttChart = ({
                     key={dayIdx}
                     onClick={() => onAddAffectation(ouvrier.id, date)}
                     style={{
-                      borderRight: (dayIdx + 1) % 5 === 0 && dayIdx < 19 ? "3px solid #1e3a8a" : dayIdx < 19 ? "1px solid #e5e7eb" : "none",
+                      borderRight: (dayIdx + 1) % 5 === 0 && dayIdx < 19 ? "3px solid #1e3a8a" : dayIdx < 19 ? "1px solid #d1d5db" : "none",
                       position: "relative",
                       background: "transparent",
                       cursor: "pointer",
