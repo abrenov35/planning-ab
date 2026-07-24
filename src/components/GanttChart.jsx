@@ -8,7 +8,7 @@ export const GanttChart = ({
   onAddAffectation 
 }) => {
   const [viewMode, setViewMode] = useState("semaine"); // semaine ou mois
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 0, 1)); // 01/01/2025
+  const [currentDate, setCurrentDate] = useState(new Date()); // Aujourd'hui par défaut
 
   // Couleurs par chantier
   const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
