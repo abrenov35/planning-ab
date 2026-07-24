@@ -197,7 +197,14 @@ export const GanttChart = ({
   const ouvrierActifs = ouvriers.filter(o => o.statut === "Actif");
 
   return (
-    <div style={{ padding: "1rem", flex: 1, overflowY: "auto" }}>
+    <div style={{ 
+      padding: "1rem", 
+      flex: 1, 
+      overflowY: "auto",
+      overflowX: "auto",
+      display: "flex",
+      flexDirection: "column"
+    }}>
       {/* CONTRÔLES */}
       <div style={{ 
         display: "flex", 
@@ -272,7 +279,10 @@ export const GanttChart = ({
         background: "white",
         borderRadius: 6,
         border: "1px solid #e5e7eb",
-        overflow: "hidden"
+        overflow: "hidden",
+        minWidth: 0,
+        display: "flex",
+        flexDirection: "column"
       }}>
         {/* HEADER AVEC DATES */}
         <div style={{ display: "flex", borderBottom: "1px solid #e5e7eb", height: "40px" }}>
@@ -293,9 +303,10 @@ export const GanttChart = ({
           <div style={{
             flex: 1,
             display: "grid",
-            gridTemplateColumns: "repeat(20, 1fr)",
+            gridTemplateColumns: "repeat(20, minmax(60px, 1fr))",
             borderRight: "1px solid #e5e7eb",
-            height: "40px"
+            height: "40px",
+            minWidth: 0
           }}>
             {allDates.map((date, idx) => (
               <div
@@ -348,11 +359,12 @@ export const GanttChart = ({
               <div style={{
                 flex: 1,
                 display: "grid",
-                gridTemplateColumns: "repeat(20, 1fr)",
+                gridTemplateColumns: "repeat(20, minmax(60px, 1fr))",
                 background: "white",
                 borderRight: "1px solid #e5e7eb",
                 position: "relative",
-                height: "45px"
+                height: "45px",
+                minWidth: 0
               }}>
                 {allDates.map((date, dayIdx) => (
                   <div
