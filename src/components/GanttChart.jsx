@@ -64,7 +64,13 @@ export const GanttChart = ({
     const affStart = parseDate(aff.dateDebut);
     const affEnd = parseDate(aff.dateFin);
     
-    return affStart <= weekEnd && affEnd >= weekStart;
+    if (!affStart || !affEnd) return false;
+    
+    // Ajouter 1 jour à la fin pour inclure le dernier jour complètement
+    const affEndPlus = new Date(affEnd);
+    affEndPlus.setDate(affEndPlus.getDate() + 1);
+    
+    return affStart <= weekEnd && affEndPlus >= weekStart;
   };
 
   // Calculer la position et la largeur de la barre
@@ -72,12 +78,23 @@ export const GanttChart = ({
     const affStart = parseDate(aff.dateDebut);
     const affEnd = parseDate(aff.dateFin);
     
-    const displayStart = affStart < weekStart ? weekStart : affStart;
-    const displayEnd = affEnd > weekEnd ? weekEnd : affEnd;
+    if (!affStart || !affEnd) return { left: 0, width: 0 };
+    
+    // Créer une copie pour ne pas modifier les dates originales
+    const displayStart = new Date(affStart);
+    const displayEnd = new Date(affEnd);
+    displayEnd.setDate(displayEnd.getDate() + 1); // +1 pour inclure le dernier jour
+    
+    // Cliper aux limites de la semaine
+    const clippedStart = displayStart < weekStart ? weekStart : displayStart;
+    const clippedEnd = displayEnd > weekEnd ? weekEnd : displayEnd;
+    
+    // Calculer l'offset et la durée en jours
+    const startOffset = Math.floor((clippedStart - weekStart) / (1000 * 60 * 60 * 24));
+    const endOffset = Math.floor((clippedEnd - weekStart) / (1000 * 60 * 60 * 24));
+    const duration = Math.max(1, endOffset - startOffset); // Au minimum 1 jour
     
     const totalDays = 7;
-    const startOffset = Math.max(0, (displayStart - weekStart) / (1000 * 60 * 60 * 24));
-    const duration = (displayEnd - displayStart) / (1000 * 60 * 60 * 24);
     
     return {
       left: (startOffset / totalDays) * 100,
@@ -87,7 +104,7 @@ export const GanttChart = ({
 
   const weekStart = weekDates[0];
   const weekEnd = new Date(weekDates[6]);
-  weekEnd.setHours(23, 59, 59);
+  weekEnd.setHours(23, 59, 59, 999);
 
   const ouvrierActifs = ouvriers.filter(o => o.statut === "Actif");
 
@@ -256,11 +273,12 @@ export const GanttChart = ({
                     onClick={() => onAddAffectation(ouvrier.id, date)}
                     style={{
                       borderRight: dayIdx < 6 ? "1px solid #e5e7eb" : "none",
-                      minHeight: "60px",
+                      minHeight: "80px",
                       position: "relative",
                       background: dayIdx >= 5 ? "#f9fafb" : "white",
                       cursor: "pointer",
-                      transition: "background 0.2s"
+                      transition: "background 0.2s",
+                      padding: "4px 2px"
                     }}
                     onMouseEnter={e => e.currentTarget.style.background = dayIdx >= 5 ? "#f3f4f6" : "#f9fafb"}
                     onMouseLeave={e => e.currentTarget.style.background = dayIdx >= 5 ? "#f9fafb" : "white"}
@@ -281,23 +299,24 @@ export const GanttChart = ({
                             position: "absolute",
                             left: `${pos.left}%`,
                             width: `${Math.max(pos.width, 10)}%`,
-                            top: "2px",
-                            height: "18px",
+                            top: "8px",
+                            height: "24px",
                             background: colorMap[chantier?.id] || "#6b7280",
-                            borderRadius: 2,
-                            border: "1px solid rgba(0,0,0,0.2)",
+                            borderRadius: 3,
+                            border: "1px solid rgba(0,0,0,0.3)",
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontSize: 8,
+                            fontSize: 9,
                             color: "white",
                             fontWeight: 600,
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
-                            padding: "0 2px",
-                            transition: "all 0.2s"
+                            padding: "0 4px",
+                            transition: "all 0.2s",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.2)"
                           }}
                           title={chantier?.nom}
                           onMouseEnter={e => e.currentTarget.style.opacity = "0.8"}
