@@ -255,14 +255,14 @@ export const GanttChart = ({
         overflow: "hidden"
       }}>
         {/* HEADER AVEC DATES */}
-        <div style={{ display: "flex", borderBottom: "1px solid #e5e7eb", height: "50px" }}>
+        <div style={{ display: "flex", borderBottom: "1px solid #e5e7eb", height: "40px" }}>
           <div style={{
             width: 150,
             padding: "0.5rem 0.75rem",
             background: "#f9fafb",
             borderRight: "1px solid #e5e7eb",
             fontWeight: 600,
-            fontSize: 11,
+            fontSize: 10,
             color: "#1f2937",
             display: "flex",
             alignItems: "center",
@@ -275,7 +275,7 @@ export const GanttChart = ({
             display: "grid",
             gridTemplateColumns: "repeat(20, 1fr)",
             borderRight: "1px solid #e5e7eb",
-            height: "50px"
+            height: "40px"
           }}>
             {allDates.map((date, idx) => (
               <div
@@ -285,7 +285,7 @@ export const GanttChart = ({
                   background: "#f9fafb",
                   borderRight: (idx + 1) % 5 === 0 && idx < 19 ? "3px solid #1e3a8a" : idx < 19 ? "1px solid #e5e7eb" : "none",
                   textAlign: "center",
-                  fontSize: 10,
+                  fontSize: 9,
                   fontWeight: 600,
                   color: "#1f2937",
                   display: "flex",
@@ -306,14 +306,14 @@ export const GanttChart = ({
           );
 
           return (
-            <div key={ouvrier.id} style={{ display: "flex", borderBottom: "1px solid #f3f4f6", height: "80px" }}>
+            <div key={ouvrier.id} style={{ display: "flex", borderBottom: "1px solid #f3f4f6", height: "45px" }}>
               {/* NOM OUVRIER */}
               <div style={{
                 width: 150,
                 padding: "0.5rem 0.75rem",
                 background: "white",
                 borderRight: "1px solid #e5e7eb",
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: 500,
                 color: "#1f2937",
                 display: "flex",
@@ -321,7 +321,7 @@ export const GanttChart = ({
                 justifyContent: "center"
               }}>
                 <div>{ouvrier.nom}</div>
-                <div style={{ fontSize: 9, color: "#9ca3af" }}>{ouvrier.metier}</div>
+                <div style={{ fontSize: 8, color: "#9ca3af" }}>{ouvrier.metier}</div>
               </div>
 
               {/* TIMELINE */}
@@ -332,7 +332,7 @@ export const GanttChart = ({
                 background: "white",
                 borderRight: "1px solid #e5e7eb",
                 position: "relative",
-                height: "80px"
+                height: "45px"
               }}>
                 {allDates.map((date, dayIdx) => (
                   <div
@@ -344,7 +344,7 @@ export const GanttChart = ({
                       background: "white",
                       cursor: "pointer",
                       transition: "background 0.2s",
-                      padding: "2px 2px",
+                      padding: "1px 1px",
                       display: "flex",
                       alignItems: "flex-start",
                       justifyContent: "flex-start",
@@ -365,9 +365,9 @@ export const GanttChart = ({
                       
                       // Calculer le rang (position verticale) pour ce jour
                       const rank = getAffectationRankOnDay(aff, date, affectsByOuvrier);
-                      const barHeight = 24;
+                      const barHeight = 18;
                       const gap = 2;
-                      const topOffset = rank * (barHeight + gap) + 2;
+                      const topOffset = rank * (barHeight + gap) + 1;
                       
                       return (
                         <div
@@ -384,7 +384,7 @@ export const GanttChart = ({
                             display: "flex",
                             flexDirection: "column",
                             alignItems: "center",
-                            gap: "2px",
+                            gap: "1px",
                             cursor: "pointer",
                             transition: "all 0.2s"
                           }}
@@ -395,7 +395,7 @@ export const GanttChart = ({
                           <div
                             style={{
                               width: "100%",
-                              height: "24px",
+                              height: "18px",
                               background: colorMap[chantier?.id] || "#6b7280",
                               borderRadius: 2,
                               border: "1px solid rgba(0,0,0,0.2)",
@@ -405,7 +405,7 @@ export const GanttChart = ({
                               justifyContent: "center",
                               color: "white",
                               fontWeight: 700,
-                              fontSize: 10
+                              fontSize: 9
                             }}
                           >
                             {chantierId2Lettres}
@@ -413,7 +413,7 @@ export const GanttChart = ({
                           {/* LABEL COMPLET SOUS LE CUBE */}
                           <div
                             style={{
-                              fontSize: 8,
+                              fontSize: 7,
                               fontWeight: 600,
                               color: "#374151",
                               textAlign: "center",
@@ -422,7 +422,7 @@ export const GanttChart = ({
                               whiteSpace: "nowrap",
                               maxWidth: "100%",
                               width: "100%",
-                              lineHeight: 1.2,
+                              lineHeight: 1,
                               padding: "0 2px"
                             }}
                           >
