@@ -11,18 +11,18 @@ export const FormAffectation = ({
 }) => {
   const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
   
-  // Convertir JJ/MM/AAAA en AAAA-MM-JJ
-  const convertToInputFormat = (dateStr) => {
-    if (!dateStr) return "";
-    const [d, m, y] = dateStr.split("/");
-    return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-  };
-
   // Convertir AAAA-MM-JJ en JJ/MM/AAAA
   const convertToSheetFormat = (dateStr) => {
     if (!dateStr) return "";
     const [y, m, d] = dateStr.split("-");
     return `${d}/${m}/${y}`;
+  };
+
+  // Convertir JJ/MM/AAAA en AAAA-MM-JJ
+  const convertToInputFormat = (dateStr) => {
+    if (!dateStr) return "";
+    const [d, m, y] = dateStr.split("/");
+    return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
   };
   
   const [formData, setFormData] = useState({
@@ -31,6 +31,9 @@ export const FormAffectation = ({
     dateFin: convertToInputFormat(affectation?.dateFin) || "",
     tache: affectation?.tache || ""
   });
+
+  // Champ pour supprimer une case/jour spécifique
+  const [dateSuppression, setDateSuppression] = useState("");
 
   // Charger l'historique des tâches depuis localStorage
   const [tacheHistory, setTacheHistory] = useState([]);
@@ -48,6 +51,70 @@ export const FormAffectation = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Mode édition avec suppression d'une case
+    if (mode === "edit" && dateSuppression) {
+      const dateSupprStr = dateSuppression; // AAAA-MM-JJ
+      const affDebut = affectation.dateDebut; // JJ/MM/AAAA
+      const affFin = affectation.dateFin; // JJ/MM/AAAA
+      
+      // Convertir les dates pour comparer
+      const [y, m, d] = dateSupprStr.split("-");
+      const dateSupprSheet = `${d}/${m}/${y}`; // JJ/MM/AAAA
+      
+      // Vérifier si la date est dans la plage
+      const parseDate = (dateStr) => {
+        const [d, m, y] = dateStr.split("/");
+        return new Date(y, m - 1, d);
+      };
+      
+      const supprDate = parseDate(dateSupprSheet);
+      const debut = parseDate(affDebut);
+      const fin = parseDate(affFin);
+      
+      // Si la date est avant le début ou après la fin, erreur
+      if (supprDate < debut || supprDate > fin) {
+        alert("La date sélectionnée n'est pas dans la plage de cette affectation");
+        return;
+      }
+      
+      // Si c'est le seul jour, supprimer complètement
+      if (debut.getTime() === fin.getTime() && debut.getTime() === supprDate.getTime()) {
+        const message = `Attention vous allez supprimer l'affectation du ${affDebut} au ${affFin}\n\nConfirmer oui ou non ?`;
+        if (window.confirm(message)) {
+          onDelete && onDelete();
+        }
+        return;
+      }
+      
+      // Si c'est le premier jour, avancer le début
+      if (debut.getTime() === supprDate.getTime()) {
+        const newDebut = new Date(debut);
+        newDebut.setDate(newDebut.getDate() + 1);
+        const d = String(newDebut.getDate()).padStart(2, "0");
+        const m = String(newDebut.getMonth() + 1).padStart(2, "0");
+        const y = newDebut.getFullYear();
+        setFormData({ ...formData, dateDebut: `${y}-${m}-${d}` });
+        alert("Date début modifiée. Cliquez sur Enregistrer pour confirmer.");
+        return;
+      }
+      
+      // Si c'est le dernier jour, reculer la fin
+      if (fin.getTime() === supprDate.getTime()) {
+        const newFin = new Date(fin);
+        newFin.setDate(newFin.getDate() - 1);
+        const d = String(newFin.getDate()).padStart(2, "0");
+        const m = String(newFin.getMonth() + 1).padStart(2, "0");
+        const y = newFin.getFullYear();
+        setFormData({ ...formData, dateFin: `${y}-${m}-${d}` });
+        alert("Date fin modifiée. Cliquez sur Enregistrer pour confirmer.");
+        return;
+      }
+      
+      // Si c'est au milieu, c'est trop complexe
+      alert("Vous pouvez supprimer les cases du début ou de la fin uniquement.\nPour supprimer une date du milieu, créez deux affectations séparées.");
+      return;
+    }
     
     // En mode édition, si dates vides = suppression
     if (mode === "edit" && (!formData.dateDebut || !formData.dateFin)) {
@@ -199,6 +266,33 @@ export const FormAffectation = ({
           }}
         />
       </div>
+
+      {/* SUPPRIMER UNE CASE SPÉCIFIQUE (mode edit) */}
+      {mode === "edit" && (
+        <div>
+          <label style={{ fontSize: 11, fontWeight: 600, color: "#1f2937", display: "block", marginBottom: 4 }}>
+            Supprimer une case spécifique (optionnel)
+          </label>
+          <input
+            type="date"
+            value={dateSuppression}
+            onChange={(e) => setDateSuppression(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "8px",
+              borderRadius: 4,
+              border: "1px solid #d1d5db",
+              fontSize: 12,
+              fontFamily: "inherit",
+              boxSizing: "border-box",
+              cursor: "pointer"
+            }}
+          />
+          <div style={{ fontSize: 9, color: "#9ca3af", marginTop: 4 }}>
+            Sélectionner une date pour la supprimer de cette affectation
+          </div>
+        </div>
+      )}
 
       {/* HISTORIQUE DES TÂCHES */}
       {tacheHistory.length > 0 && (
