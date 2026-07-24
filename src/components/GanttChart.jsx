@@ -20,11 +20,11 @@ export const GanttChart = ({
     5: "#8b5cf6", // Violet
   };
 
-  // Générer exactement 15 jours : lundi à vendredi SEULEMENT, 3 semaines
-  const getThreeWeeksDates = (startDate) => {
+  // Générer 4 semaines : lundi courant à vendredi semaine 4 (20 jours)
+  const getFourWeeksDates = (startDate) => {
     const d = new Date(startDate);
     
-    // Trouver le lundi
+    // Trouver le lundi COURANT (pas la semaine passée)
     const dayOfWeek = d.getDay();
     const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     
@@ -34,8 +34,8 @@ export const GanttChart = ({
     
     const dates = [];
     
-    // Générer 3 semaines × 5 jours (lun-ven SEULEMENT, pas sam-dim)
-    for (let week = 0; week < 3; week++) {
+    // Générer 4 semaines × 5 jours (lun-ven SEULEMENT, pas sam-dim)
+    for (let week = 0; week < 4; week++) {
       for (let day = 0; day < 5; day++) { // 0=lun, 1=mar, 2=mer, 3=jeu, 4=ven
         const date = new Date(firstMonday);
         date.setDate(firstMonday.getDate() + week * 7 + day);
@@ -46,7 +46,7 @@ export const GanttChart = ({
     return dates;
   };
 
-  const allDates = getThreeWeeksDates(currentDate);
+  const allDates = getFourWeeksDates(currentDate);
 
   // Convertir date string en Date object (gère ISO et JJ/MM/AAAA)
   const parseDate = (dateStr) => {
@@ -104,7 +104,7 @@ export const GanttChart = ({
     const endOffset = Math.floor((clippedEnd - weekStart) / (1000 * 60 * 60 * 24));
     const duration = Math.max(1, endOffset - startOffset); // Au minimum 1 jour
     
-    const totalDays = 15; // 3 semaines x 5 jours
+    const totalDays = 20; // 4 semaines x 5 jours
     
     return {
       left: (startOffset / totalDays) * 100,
@@ -132,7 +132,7 @@ export const GanttChart = ({
           <button
             onClick={() => {
               const d = new Date(currentDate);
-              d.setDate(d.getDate() - 21); // 3 semaines précédentes
+              d.setDate(d.getDate() - 28); // 4 semaines précédentes
               setCurrentDate(d);
             }}
             style={{
@@ -146,12 +146,12 @@ export const GanttChart = ({
               fontWeight: 600
             }}
           >
-            ← 3 Sem Prec
+            ← 4 Sem Prec
           </button>
           <button
             onClick={() => {
               const d = new Date(currentDate);
-              d.setDate(d.getDate() + 21); // 3 semaines suivantes
+              d.setDate(d.getDate() + 28); // 4 semaines suivantes
               setCurrentDate(d);
             }}
             style={{
@@ -165,7 +165,7 @@ export const GanttChart = ({
               fontWeight: 600
             }}
           >
-            3 Sem Suiv →
+            4 Sem Suiv →
           </button>
           <button
             onClick={() => setCurrentDate(new Date())}
@@ -185,7 +185,7 @@ export const GanttChart = ({
         </div>
 
         <div style={{ fontSize: 12, fontWeight: 600, color: "#1f2937" }}>
-          Semaine du {allDates[0].toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} au {allDates[4].toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+          Semaine du {allDates[0].toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} au {allDates[19].toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
         </div>
       </div>
 
@@ -212,7 +212,7 @@ export const GanttChart = ({
           <div style={{
             flex: 1,
             display: "grid",
-            gridTemplateColumns: "repeat(15, 1fr)",
+            gridTemplateColumns: "repeat(20, 1fr)",
             borderRight: "1px solid #e5e7eb"
           }}>
             {allDates.map((date, idx) => (
@@ -221,7 +221,7 @@ export const GanttChart = ({
                 style={{
                   padding: "0.5rem 0.75rem",
                   background: "#f9fafb",
-                  borderRight: (idx + 1) % 5 === 0 && idx < 14 ? "3px solid #1e3a8a" : idx < 14 ? "1px solid #e5e7eb" : "none",
+                  borderRight: (idx + 1) % 5 === 0 && idx < 19 ? "3px solid #1e3a8a" : idx < 19 ? "1px solid #e5e7eb" : "none",
                   textAlign: "center",
                   fontSize: 10,
                   fontWeight: 600,
@@ -260,7 +260,7 @@ export const GanttChart = ({
               <div style={{
                 flex: 1,
                 display: "grid",
-                gridTemplateColumns: "repeat(15, 1fr)",
+                gridTemplateColumns: "repeat(20, 1fr)",
                 background: "white",
                 borderRight: "1px solid #e5e7eb",
                 position: "relative"
@@ -270,7 +270,7 @@ export const GanttChart = ({
                     key={dayIdx}
                     onClick={() => onAddAffectation(ouvrier.id, date)}
                     style={{
-                      borderRight: (dayIdx + 1) % 5 === 0 && dayIdx < 14 ? "3px solid #1e3a8a" : dayIdx < 14 ? "1px solid #e5e7eb" : "none",
+                      borderRight: (dayIdx + 1) % 5 === 0 && dayIdx < 19 ? "3px solid #1e3a8a" : dayIdx < 19 ? "1px solid #e5e7eb" : "none",
                       minHeight: "50px",
                       position: "relative",
                       background: "white",
