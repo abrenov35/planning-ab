@@ -382,11 +382,12 @@ export const GanttChart = ({
                             width: `${posInDay.width}%`,
                             top: `${topOffset}px`,
                             display: "flex",
-                            flexDirection: "column",
+                            flexDirection: "row",
                             alignItems: "center",
-                            gap: "1px",
+                            gap: "2px",
                             cursor: "pointer",
-                            transition: "all 0.2s"
+                            transition: "all 0.2s",
+                            padding: "0 2px"
                           }}
                           onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
                           onMouseLeave={e => e.currentTarget.style.opacity = "1"}
@@ -394,8 +395,9 @@ export const GanttChart = ({
                           {/* CUBE AVEC 2 LETTRES DU CHANTIER */}
                           <div
                             style={{
-                              width: "100%",
+                              width: "32px",
                               height: "18px",
+                              minWidth: "32px",
                               background: colorMap[chantier?.id] || "#6b7280",
                               borderRadius: 2,
                               border: "1px solid rgba(0,0,0,0.2)",
@@ -405,25 +407,23 @@ export const GanttChart = ({
                               justifyContent: "center",
                               color: "white",
                               fontWeight: 700,
-                              fontSize: 9
+                              fontSize: 9,
+                              flexShrink: 0
                             }}
                           >
                             {chantierId2Lettres}
                           </div>
-                          {/* LABEL COMPLET SOUS LE CUBE */}
+                          {/* LABEL COMPLET À CÔTÉ DU CUBE */}
                           <div
                             style={{
                               fontSize: 7,
                               fontWeight: 600,
                               color: "#374151",
-                              textAlign: "center",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
-                              maxWidth: "100%",
-                              width: "100%",
                               lineHeight: 1,
-                              padding: "0 2px"
+                              flex: 1
                             }}
                           >
                             {tacheText}
