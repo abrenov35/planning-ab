@@ -110,6 +110,27 @@ export const GanttChart = ({
 
   return (
     <div style={{ padding: "1rem", flex: 1, overflowY: "auto" }}>
+      {/* DEBUG - Affichage du nombre d'affectations */}
+      <div style={{
+        background: "#fee2e2",
+        border: "1px solid #fca5a5",
+        color: "#991b1b",
+        padding: "8px",
+        borderRadius: 4,
+        marginBottom: "1rem",
+        fontSize: 11
+      }}>
+        🔍 DEBUG: {affectations.length} affectations chargées
+        {affectations.length > 0 && (
+          <div style={{ marginTop: 4, maxHeight: "100px", overflowY: "auto", fontSize: 10 }}>
+            {affectations.map(a => (
+              <div key={a.id}>
+                ID{a.id}: Kevin={a.ouvrierID}, Chantier={a.chantierId}, {a.dateDebut} → {a.dateFin}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
       {/* CONTRÔLES */}
       <div style={{ 
         display: "flex", 
