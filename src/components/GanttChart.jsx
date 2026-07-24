@@ -312,7 +312,7 @@ export const GanttChart = ({
                       const chantier = chantiersActifs.find(c => c.id === aff.chantierId);
                       const pos = getBarPosition(aff, weekStart, weekEnd);
                       const tacheText = aff.tache || chantier?.nom;
-                      const tacheAbrege = tacheText.substring(0, 2).toUpperCase();
+                      const chantierId2Lettres = chantier?.nom.substring(0, 2).toUpperCase();
                       
                       // Calculer le rang (position verticale) pour ce jour
                       const rank = getAffectationRankOnDay(aff, date, affectsByOuvrier);
@@ -342,7 +342,7 @@ export const GanttChart = ({
                           onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
                           onMouseLeave={e => e.currentTarget.style.opacity = "1"}
                         >
-                          {/* CUBE AVEC 2 LETTRES */}
+                          {/* CUBE AVEC 2 LETTRES DU CHANTIER */}
                           <div
                             style={{
                               width: "100%",
@@ -359,7 +359,7 @@ export const GanttChart = ({
                               fontSize: 10
                             }}
                           >
-                            {tacheAbrege}
+                            {chantierId2Lettres}
                           </div>
                           {/* LABEL COMPLET SOUS LE CUBE */}
                           <div
