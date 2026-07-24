@@ -5,10 +5,12 @@ export const GanttChart = ({
   chantiers, 
   affectations, 
   onAffectationClick,
-  onAddAffectation 
+  onAddAffectation,
+  onDeleteAffectation
 }) => {
   const [viewMode, setViewMode] = useState("semaine"); // semaine ou mois
   const [currentDate, setCurrentDate] = useState(new Date()); // Aujourd'hui par défaut
+  const [hoveredAffectationId, setHoveredAffectationId] = useState(null);
 
   // Couleurs par chantier
   const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
@@ -409,6 +411,8 @@ export const GanttChart = ({
                             e.stopPropagation();
                             onAffectationClick(aff);
                           }}
+                          onMouseEnter={() => setHoveredAffectationId(aff.id)}
+                          onMouseLeave={() => setHoveredAffectationId(null)}
                           style={{
                             position: "absolute",
                             left: `${posInDay.left}%`,
@@ -420,10 +424,10 @@ export const GanttChart = ({
                             gap: "1px",
                             cursor: "pointer",
                             transition: "all 0.2s",
-                            padding: "0 2px"
+                            padding: "0 2px",
+                            borderRadius: 3,
+                            border: hoveredAffectationId === aff.id ? "2px solid rgba(0,0,0,0.3)" : "none"
                           }}
-                          onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
-                          onMouseLeave={e => e.currentTarget.style.opacity = "1"}
                         >
                           {/* CUBE AVEC 2 LETTRES DU CHANTIER */}
                           <div
@@ -463,6 +467,44 @@ export const GanttChart = ({
                           >
                             {tacheText}
                           </div>
+
+                          {/* BOUTON SUPPRESSION AU SURVOL */}
+                          {hoveredAffectationId === aff.id && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onDeleteAffectation) {
+                                  onDeleteAffectation(aff.id);
+                                }
+                              }}
+                              style={{
+                                position: "absolute",
+                                top: "-8px",
+                                right: "-8px",
+                                width: "18px",
+                                height: "18px",
+                                borderRadius: "50%",
+                                background: "#ef4444",
+                                color: "white",
+                                border: "none",
+                                cursor: "pointer",
+                                fontSize: "12px",
+                                fontWeight: "bold",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                padding: 0,
+                                lineHeight: 1,
+                                transition: "all 0.2s",
+                                boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.background = "#dc2626"}
+                              onMouseLeave={e => e.currentTarget.style.background = "#ef4444"}
+                              title="Supprimer cette affectation"
+                            >
+                              ✕
+                            </button>
+                          )}
                         </div>
                       );
                     })}

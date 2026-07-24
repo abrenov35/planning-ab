@@ -71,6 +71,13 @@ export const GanttPage = () => {
     }
   };
 
+  const handleDeleteAffectationDirect = async (affectationId) => {
+    const result = await deleteAffectation(affectationId);
+    if (!result.success) {
+      alert("Erreur: " + (result.error || "Impossible de supprimer l'affectation"));
+    }
+  };
+
   if (loading) return <div style={{ padding: "1rem" }}>Chargement...</div>;
 
   return (
@@ -81,6 +88,7 @@ export const GanttPage = () => {
         affectations={affectations}
         onAddAffectation={handleAddAffectation}
         onAffectationClick={handleAffectationClick}
+        onDeleteAffectation={handleDeleteAffectationDirect}
       />
 
       {/* MODAL AFFECTATION */}
