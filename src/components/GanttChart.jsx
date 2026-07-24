@@ -20,14 +20,11 @@ export const GanttChart = ({
     5: "#8b5cf6", // Violet
   };
 
-  // Générer exactement 15 jours : lundi à vendredi, 3 semaines
+  // Générer exactement 15 jours : lundi à vendredi SEULEMENT, 3 semaines
   const getThreeWeeksDates = (startDate) => {
     const d = new Date(startDate);
     
     // Trouver le lundi
-    // Si dimanche (0) → lundi précédent (jour - 6)
-    // Si lundi (1) → aujourd'hui (jour - 0)
-    // Si samedi (6) → lundi précédent (jour - 5)
     const dayOfWeek = d.getDay();
     const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     
@@ -37,11 +34,13 @@ export const GanttChart = ({
     
     const dates = [];
     
-    // Générer exactement 15 jours : 3 semaines × 5 jours (lun-ven)
-    for (let i = 0; i < 15; i++) {
-      const date = new Date(firstMonday);
-      date.setDate(firstMonday.getDate() + i);
-      dates.push(date);
+    // Générer 3 semaines × 5 jours (lun-ven SEULEMENT, pas sam-dim)
+    for (let week = 0; week < 3; week++) {
+      for (let day = 0; day < 5; day++) { // 0=lun, 1=mar, 2=mer, 3=jeu, 4=ven
+        const date = new Date(firstMonday);
+        date.setDate(firstMonday.getDate() + week * 7 + day);
+        dates.push(date);
+      }
     }
     
     return dates;
