@@ -43,40 +43,6 @@ export const Sidebar = ({ currentPage, setCurrentPage }) => {
           </button>
         ))}
       </div>
-
-      {/* BOUTONS NAVIGATION SEMAINES */}
-      {currentPage === "gantt" && (
-        <div style={{ display: "flex", gap: "6px", marginLeft: "auto" }}>
-          <button
-            style={{
-              padding: "4px 8px",
-              background: "rgba(255,255,255,0.2)",
-              color: "white",
-              border: "1px solid rgba(255,255,255,0.3)",
-              borderRadius: 3,
-              fontSize: 11,
-              cursor: "pointer",
-              fontWeight: 500
-            }}
-          >
-            ← Prec
-          </button>
-          <button
-            style={{
-              padding: "4px 8px",
-              background: "rgba(255,255,255,0.2)",
-              color: "white",
-              border: "1px solid rgba(255,255,255,0.3)",
-              borderRadius: 3,
-              fontSize: 11,
-              cursor: "pointer",
-              fontWeight: 500
-            }}
-          >
-            Suiv →
-          </button>
-        </div>
-      )}
     </div>
   );
 };
