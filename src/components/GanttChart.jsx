@@ -342,177 +342,185 @@ export const GanttChart = ({
           const rowBackground = idx % 2 === 0 ? "white" : "#f9fafb";
 
           return (
-            <div key={ouvrier.id} style={{ display: "flex", borderBottom: "1px solid #d1d5db", height: "45px", background: rowBackground }}>
-              {/* NOM OUVRIER */}
-              <div style={{
-                width: 150,
-                padding: "0.5rem 0.75rem",
-                background: rowBackground,
-                borderRight: "1px solid #9ca3af",
-                fontSize: 10,
-                fontWeight: 500,
-                color: "#1f2937",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center"
-              }}>
-                <div>{ouvrier.nom}</div>
-                <div style={{ fontSize: 8, color: "#9ca3af" }}>{ouvrier.metier}</div>
-              </div>
+            <div key={ouvrier.id}>
+              <div style={{ display: "flex", height: "45px", background: rowBackground }}>
+                {/* NOM OUVRIER */}
+                <div style={{
+                  width: 150,
+                  padding: "0.5rem 0.75rem",
+                  background: rowBackground,
+                  borderRight: "1px solid #9ca3af",
+                  fontSize: 10,
+                  fontWeight: 500,
+                  color: "#1f2937",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center"
+                }}>
+                  <div>{ouvrier.nom}</div>
+                  <div style={{ fontSize: 8, color: "#9ca3af" }}>{ouvrier.metier}</div>
+                </div>
 
-              {/* TIMELINE */}
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(20, 1fr)",
-                background: rowBackground,
-                borderRight: "1px solid #9ca3af",
-                position: "relative",
-                height: "45px",
-                flex: 1
-              }}>
-                {allDates.map((date, dayIdx) => (
-                  <div
-                    key={dayIdx}
-                    onClick={() => onAddAffectation(ouvrier.id, date)}
-                    style={{
-                      borderRight: (dayIdx + 1) % 5 === 0 && dayIdx < 19 ? "3px solid #1e3a8a" : dayIdx < 19 ? "1px solid #d1d5db" : "none",
-                      position: "relative",
-                      background: "transparent",
-                      cursor: "pointer",
-                      transition: "background 0.2s",
-                      padding: "1px 1px",
-                      display: "flex",
-                      alignItems: "flex-start",
-                      justifyContent: "flex-start",
-                      overflow: "hidden"
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = "#e5e7eb"}
-                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                  >
-                    {/* BARRES D'AFFECTATION */}
-                    {affectsByOuvrier.map(aff => {
-                      const chantier = chantiers.find(c => c.id === aff.chantierId);
-                      const posInDay = getBarPositionInDay(aff, date, weekStart);
-                      const tacheText = aff.tache || chantier?.nom;
-                      const chantierId2Lettres = getChantierId2Lettres(chantier);
-                      const chantierColor = getChantierColor(chantier?.id);
-                      
-                      // Ne pas afficher si l'affectation ne chevauchent pas ce jour
-                      if (!posInDay.isVisible) return null;
-                      
-                      // Calculer le rang (position verticale) pour ce jour
-                      const rank = getAffectationRankOnDay(aff, date, affectsByOuvrier);
-                      const barHeight = 18;
-                      const gap = 2;
-                      const topOffset = rank * (barHeight + gap) + 1;
-                      
-                      return (
-                        <div
-                          key={aff.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onAffectationClick(aff);
-                          }}
-                          onMouseEnter={() => setHoveredAffectationId(aff.id)}
-                          onMouseLeave={() => setHoveredAffectationId(null)}
-                          style={{
-                            position: "absolute",
-                            left: `${posInDay.left}%`,
-                            width: `${posInDay.width}%`,
-                            top: `${topOffset}px`,
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            gap: "1px",
-                            cursor: "pointer",
-                            transition: "all 0.2s",
-                            padding: "0 2px",
-                            borderRadius: 3,
-                            border: hoveredAffectationId === aff.id ? "2px solid rgba(0,0,0,0.3)" : "none"
-                          }}
-                        >
-                          {/* CUBE AVEC 2 LETTRES DU CHANTIER */}
+                {/* TIMELINE */}
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(20, 1fr)",
+                  background: rowBackground,
+                  borderRight: "1px solid #9ca3af",
+                  position: "relative",
+                  height: "45px",
+                  flex: 1
+                }}>
+                  {allDates.map((date, dayIdx) => (
+                    <div
+                      key={dayIdx}
+                      onClick={() => onAddAffectation(ouvrier.id, date)}
+                      style={{
+                        borderRight: (dayIdx + 1) % 5 === 0 && dayIdx < 19 ? "3px solid #1e3a8a" : dayIdx < 19 ? "1px solid #d1d5db" : "none",
+                        position: "relative",
+                        background: "transparent",
+                        cursor: "pointer",
+                        transition: "background 0.2s",
+                        padding: "1px 1px",
+                        display: "flex",
+                        alignItems: "flex-start",
+                        justifyContent: "flex-start",
+                        overflow: "hidden"
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = "#e5e7eb"}
+                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                    >
+                      {/* BARRES D'AFFECTATION */}
+                      {affectsByOuvrier.map(aff => {
+                        const chantier = chantiers.find(c => c.id === aff.chantierId);
+                        const posInDay = getBarPositionInDay(aff, date, weekStart);
+                        const tacheText = aff.tache || chantier?.nom;
+                        const chantierId2Lettres = getChantierId2Lettres(chantier);
+                        const chantierColor = getChantierColor(chantier?.id);
+                        
+                        // Ne pas afficher si l'affectation ne chevauchent pas ce jour
+                        if (!posInDay.isVisible) return null;
+                        
+                        // Calculer le rang (position verticale) pour ce jour
+                        const rank = getAffectationRankOnDay(aff, date, affectsByOuvrier);
+                        const barHeight = 18;
+                        const gap = 2;
+                        const topOffset = rank * (barHeight + gap) + 1;
+                        
+                        return (
                           <div
+                            key={aff.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onAffectationClick(aff);
+                            }}
+                            onMouseEnter={() => setHoveredAffectationId(aff.id)}
+                            onMouseLeave={() => setHoveredAffectationId(null)}
                             style={{
-                              width: "100%",
-                              height: "18px",
-                              background: chantierColor,
-                              borderRadius: 2,
-                              border: "1px solid rgba(0,0,0,0.2)",
-                              boxSizing: "border-box",
+                              position: "absolute",
+                              left: `${posInDay.left}%`,
+                              width: `${posInDay.width}%`,
+                              top: `${topOffset}px`,
                               display: "flex",
+                              flexDirection: "column",
                               alignItems: "center",
-                              justifyContent: "center",
-                              color: "white",
-                              fontWeight: 700,
-                              fontSize: 9,
-                              flexShrink: 0
+                              gap: "1px",
+                              cursor: "pointer",
+                              transition: "all 0.2s",
+                              padding: "0 2px",
+                              borderRadius: 3,
+                              border: hoveredAffectationId === aff.id ? "2px solid rgba(0,0,0,0.3)" : "none"
                             }}
                           >
-                            {chantierId2Lettres}
-                          </div>
-                          {/* LABEL COMPLET SOUS LE CUBE */}
-                          <div
-                            style={{
-                              fontSize: 7,
-                              fontWeight: 600,
-                              color: "#374151",
-                              textAlign: "center",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                              maxWidth: "100%",
-                              width: "100%",
-                              lineHeight: 1,
-                              padding: "0 2px"
-                            }}
-                          >
-                            {tacheText}
-                          </div>
-
-                          {/* BOUTON SUPPRESSION AU SURVOL */}
-                          {hoveredAffectationId === aff.id && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (onDeleteAffectationDay) {
-                                  onDeleteAffectationDay(aff.id, date);
-                                }
-                              }}
+                            {/* CUBE AVEC 2 LETTRES DU CHANTIER */}
+                            <div
                               style={{
-                                position: "absolute",
-                                top: "-8px",
-                                right: "-8px",
-                                width: "18px",
+                                width: "100%",
                                 height: "18px",
-                                borderRadius: "50%",
-                                background: "#ef4444",
-                                color: "white",
-                                border: "none",
-                                cursor: "pointer",
-                                fontSize: "12px",
-                                fontWeight: "bold",
+                                background: chantierColor,
+                                borderRadius: 2,
+                                border: "1px solid rgba(0,0,0,0.2)",
+                                boxSizing: "border-box",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                padding: 0,
-                                lineHeight: 1,
-                                transition: "all 0.2s",
-                                boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+                                color: "white",
+                                fontWeight: 700,
+                                fontSize: 9,
+                                flexShrink: 0
                               }}
-                              onMouseEnter={e => e.currentTarget.style.background = "#dc2626"}
-                              onMouseLeave={e => e.currentTarget.style.background = "#ef4444"}
-                              title="Supprimer ce jour uniquement"
                             >
-                              ✕
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
+                              {chantierId2Lettres}
+                            </div>
+                            {/* LABEL COMPLET SOUS LE CUBE */}
+                            <div
+                              style={{
+                                fontSize: 7,
+                                fontWeight: 600,
+                                color: "#374151",
+                                textAlign: "center",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                maxWidth: "100%",
+                                width: "100%",
+                                lineHeight: 1,
+                                padding: "0 2px"
+                              }}
+                            >
+                              {tacheText}
+                            </div>
+
+                            {/* BOUTON SUPPRESSION AU SURVOL */}
+                            {hoveredAffectationId === aff.id && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (onDeleteAffectationDay) {
+                                    onDeleteAffectationDay(aff.id, date);
+                                  }
+                                }}
+                                style={{
+                                  position: "absolute",
+                                  top: "-8px",
+                                  right: "-8px",
+                                  width: "18px",
+                                  height: "18px",
+                                  borderRadius: "50%",
+                                  background: "#ef4444",
+                                  color: "white",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  fontSize: "12px",
+                                  fontWeight: "bold",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  padding: 0,
+                                  lineHeight: 1,
+                                  transition: "all 0.2s",
+                                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = "#dc2626"}
+                                onMouseLeave={e => e.currentTarget.style.background = "#ef4444"}
+                                title="Supprimer ce jour uniquement"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
               </div>
+              {/* FILET GRIS SUR TOUTE LA LONGUEUR */}
+              <div style={{
+                height: "1px",
+                background: "#d1d5db",
+                width: "100%"
+              }} />
             </div>
           );
         })}
