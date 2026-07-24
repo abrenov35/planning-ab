@@ -100,17 +100,10 @@ export const ChantierPage = () => {
         </div>
 
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-          <thead>
-            <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
-              <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Nom</th>
-              <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Dates</th>
-              <th style={{ padding: "8px", width: 60, fontWeight: 600, color: "#1f2937" }}>Action</th>
-            </tr>
-          </thead>
           <tbody>
             {actifs.length === 0 ? (
               <tr>
-                <td colSpan="3" style={{ padding: 8, textAlign: "center", color: "#9ca3af" }}>
+                <td style={{ padding: 8, textAlign: "center", color: "#9ca3af" }}>
                   Aucun chantier
                 </td>
               </tr>
@@ -164,13 +157,6 @@ export const ChantierPage = () => {
           </div>
 
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-            <thead>
-              <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
-                <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Nom</th>
-                <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Durée</th>
-                <th style={{ padding: "8px", width: 60, fontWeight: 600, color: "#1f2937" }}>Action</th>
-              </tr>
-            </thead>
             <tbody>
               {archived.map(chantier => (
                 <tr key={chantier.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
