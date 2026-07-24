@@ -374,7 +374,10 @@ export const GanttChart = ({
                   {allDates.map((date, dayIdx) => (
                     <div
                       key={dayIdx}
-                      onClick={() => onAddAffectation(ouvrier.id, date)}
+                      onClick={() => {
+                        console.log("🟢 CELLULE CLIQUÉE - Ajout affectation");
+                        onAddAffectation(ouvrier.id, date);
+                      }}
                       style={{
                         borderRight: (dayIdx + 1) % 5 === 0 && dayIdx < 19 ? "3px solid #1e3a8a" : dayIdx < 19 ? "1px solid #d1d5db" : "none",
                         position: "relative",
@@ -475,13 +478,19 @@ export const GanttChart = ({
                             {hoveredAffectationId === aff.id && (
                               <button
                                 onClick={(e) => {
+                                  console.log("🔴 BOUTON X CLIQUÉ!");
                                   e.preventDefault();
                                   e.stopPropagation();
+                                  console.log("🔴 stopPropagation() exécuté");
                                   if (onDeleteAffectationDay) {
+                                    console.log("🔴 Appel onDeleteAffectationDay:", aff.id, date);
                                     onDeleteAffectationDay(aff.id, date);
+                                  } else {
+                                    console.log("🔴 ⚠️ onDeleteAffectationDay est NULL!");
                                   }
                                 }}
                                 onMouseDown={(e) => {
+                                  console.log("🔴 MOUSE DOWN sur X");
                                   e.preventDefault();
                                   e.stopPropagation();
                                 }}
