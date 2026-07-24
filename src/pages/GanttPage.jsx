@@ -108,8 +108,17 @@ export const GanttPage = () => {
     const dayToDeleteNorm = new Date(dayToDelete);
     dayToDeleteNorm.setHours(0, 0, 0, 0);
 
+    console.log("=== DEBUG ===");
+    console.log("dateDebut:", aff.dateDebut, "→", dateDebut, "time:", dateDebut?.getTime());
+    console.log("dateFin:", aff.dateFin, "→", dateFin, "time:", dateFin?.getTime());
+    console.log("dayToDelete:", dayToDelete, "→", dayToDeleteNorm, "time:", dayToDeleteNorm.getTime());
+    console.log("");
+    console.log("dateDebut === dayToDelete?", dateDebut?.getTime(), "===", dayToDeleteNorm.getTime(), "?", dateDebut?.getTime() === dayToDeleteNorm.getTime());
+    console.log("dateFin === dayToDelete?", dateFin?.getTime(), "===", dayToDeleteNorm.getTime(), "?", dateFin?.getTime() === dayToDeleteNorm.getTime());
+
     // Si c'est le seul jour → Supprimer complètement
     if (dateDebut?.getTime() === dateFin?.getTime() && dateDebut?.getTime() === dayToDeleteNorm.getTime()) {
+      console.log("✓ Suppression complète");
       const result = await deleteAffectation(affectationId);
       if (!result.success) {
         alert("Erreur: " + (result.error || "Impossible de supprimer l'affectation"));
@@ -119,6 +128,7 @@ export const GanttPage = () => {
 
     // Si c'est le premier jour → Avancer la date de début
     if (dateDebut?.getTime() === dayToDeleteNorm.getTime()) {
+      console.log("✓ Suppression premier jour");
       const newStart = new Date(dayToDeleteNorm);
       newStart.setDate(newStart.getDate() + 1);
       const newStartStr = dateToString(newStart);
@@ -139,6 +149,7 @@ export const GanttPage = () => {
 
     // Si c'est le dernier jour → Reculer la date de fin
     if (dateFin?.getTime() === dayToDeleteNorm.getTime()) {
+      console.log("✓ Suppression dernier jour");
       const newEnd = new Date(dayToDeleteNorm);
       newEnd.setDate(newEnd.getDate() - 1);
       const newEndStr = dateToString(newEnd);
@@ -157,7 +168,8 @@ export const GanttPage = () => {
       return;
     }
 
-    // Si c'est au milieu → Scinder en deux affectations
+    // Si c'est au milieu → Message erreur
+    console.log("✗ Jour au milieu");
     alert("Impossible de supprimer un jour au milieu de l'affectation. Vous devez créer deux affectations séparées.");
   };
 
