@@ -303,7 +303,7 @@ export const GanttChart = ({
                             width: `${Math.max(pos.width, 10)}%`,
                             top: "50%",
                             transform: "translateY(-50%)",
-                            height: "18px",
+                            height: "24px",
                             background: colorMap[chantier?.id] || "#6b7280",
                             borderRadius: 2,
                             border: "1px solid rgba(0,0,0,0.2)",
@@ -311,13 +311,13 @@ export const GanttChart = ({
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontSize: 8,
+                            fontSize: 9,
                             color: "white",
                             fontWeight: 600,
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
-                            padding: "0 2px",
+                            padding: "0 3px",
                             transition: "all 0.2s"
                           }}
                           title={chantier?.nom}
