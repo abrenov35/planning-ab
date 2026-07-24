@@ -319,11 +319,11 @@ export const GanttChart = ({
                             padding: "0 3px",
                             transition: "all 0.2s"
                           }}
-                          title={chantier?.nom}
+                          title={`${aff.tache} (${chantier?.nom})`}
                           onMouseEnter={e => e.currentTarget.style.opacity = "0.8"}
                           onMouseLeave={e => e.currentTarget.style.opacity = "1"}
                         >
-                          {chantier?.nom.substring(0, 3)}
+                          {aff.tache || chantier?.nom.substring(0, 3)}
                         </div>
                       );
                     })}
