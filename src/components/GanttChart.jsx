@@ -112,6 +112,41 @@ export const GanttChart = ({
     };
   };
 
+  // Calculer position/largeur relative à UN JOUR (pour affichage dans une cell)
+  const getBarPositionInDay = (aff, dayDate, weekStart) => {
+    const affStart = parseDate(aff.dateDebut);
+    const affEnd = parseDate(aff.dateFin);
+    
+    if (!affStart || !affEnd) return { left: 0, width: 0, isVisible: false };
+    
+    const dayStart = new Date(dayDate);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayDate);
+    dayEnd.setHours(23, 59, 59, 999);
+    
+    const affEndPlus = new Date(affEnd);
+    affEndPlus.setDate(affEndPlus.getDate() + 1);
+    
+    // Vérifier si l'affectation chevauchent ce jour
+    if (!(affStart <= dayEnd && affEndPlus >= dayStart)) {
+      return { left: 0, width: 0, isVisible: false };
+    }
+    
+    // Cliper aux limites du jour
+    const clippedStart = affStart > dayStart ? affStart : dayStart;
+    const clippedEnd = affEndPlus < dayEnd ? affEndPlus : dayEnd;
+    
+    // Calculer position en pourcentage du jour (0-100%)
+    const startOffset = Math.floor((clippedStart - dayStart) / (1000 * 60 * 60 * 24) * 100);
+    const endOffset = Math.floor((clippedEnd - dayStart) / (1000 * 60 * 60 * 24) * 100);
+    
+    return {
+      left: startOffset,
+      width: Math.max(100, endOffset - startOffset),
+      isVisible: true
+    };
+  };
+
   // Calculer la position verticale (rang) d'une affectation pour un jour donné
   const getAffectationRankOnDay = (aff, dayDate, affectationsForOuvrier) => {
     const dayStart = new Date(dayDate);
@@ -310,9 +345,12 @@ export const GanttChart = ({
                     {/* BARRES D'AFFECTATION */}
                     {affectsByOuvrier.map(aff => {
                       const chantier = chantiersActifs.find(c => c.id === aff.chantierId);
-                      const pos = getBarPosition(aff, weekStart, weekEnd);
+                      const posInDay = getBarPositionInDay(aff, date, weekStart);
                       const tacheText = aff.tache || chantier?.nom;
                       const chantierId2Lettres = chantier?.nom.substring(0, 2).toUpperCase();
+                      
+                      // Ne pas afficher si l'affectation ne chevauchent pas ce jour
+                      if (!posInDay.isVisible) return null;
                       
                       // Calculer le rang (position verticale) pour ce jour
                       const rank = getAffectationRankOnDay(aff, date, affectsByOuvrier);
@@ -329,8 +367,8 @@ export const GanttChart = ({
                           }}
                           style={{
                             position: "absolute",
-                            left: `${pos.left}%`,
-                            width: `${Math.max(pos.width, 10)}%`,
+                            left: `${posInDay.left}%`,
+                            width: `${posInDay.width}%`,
                             top: `${topOffset}px`,
                             display: "flex",
                             flexDirection: "column",
