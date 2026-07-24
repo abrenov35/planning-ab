@@ -343,7 +343,7 @@ export const GanttChart = ({
               <div style={{
                 width: 150,
                 padding: "0.5rem 0.75rem",
-                background: "white",
+                background: "#f3f4f6",
                 borderRight: "1px solid #e5e7eb",
                 fontSize: 10,
                 fontWeight: 500,
