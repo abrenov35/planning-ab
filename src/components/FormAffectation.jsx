@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 export const FormAffectation = ({ 
   affectation, 
@@ -31,11 +31,32 @@ export const FormAffectation = ({
     tache: affectation?.tache || ""
   });
 
+  // Charger l'historique des tâches depuis localStorage
+  const [tacheHistory, setTacheHistory] = useState([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("tacheHistory");
+    if (saved) {
+      try {
+        setTacheHistory(JSON.parse(saved));
+      } catch (e) {
+        console.error("Erreur chargement historique", e);
+      }
+    }
+  }, []);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.chantierId || !formData.dateDebut || !formData.dateFin) {
       alert("Veuillez remplir tous les champs");
       return;
+    }
+    
+    // Sauvegarder la tâche dans l'historique
+    if (formData.tache.trim()) {
+      const updated = [formData.tache, ...tacheHistory.filter(t => t !== formData.tache)].slice(0, 10);
+      setTacheHistory(updated);
+      localStorage.setItem("tacheHistory", JSON.stringify(updated));
     }
     
     // Convertir les dates au format JJ/MM/AAAA
@@ -46,6 +67,10 @@ export const FormAffectation = ({
     };
     
     onSubmit(data);
+  };
+
+  const handleTacheSelect = (tache) => {
+    setFormData({ ...formData, tache });
   };
 
   return (
@@ -159,6 +184,52 @@ export const FormAffectation = ({
           }}
         />
       </div>
+
+      {/* HISTORIQUE DES TÂCHES */}
+      {tacheHistory.length > 0 && (
+        <div style={{
+          background: "#f9fafb",
+          padding: "8px",
+          borderRadius: 4,
+          border: "1px solid #e5e7eb"
+        }}>
+          <div style={{ fontSize: 10, fontWeight: 600, color: "#6b7280", marginBottom: 6 }}>
+            Tâches récentes :
+          </div>
+          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+            {tacheHistory.map((tache, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleTacheSelect(tache)}
+                style={{
+                  padding: "4px 10px",
+                  background: formData.tache === tache ? "#1e3a8a" : "white",
+                  color: formData.tache === tache ? "white" : "#374151",
+                  border: formData.tache === tache ? "1px solid #1e3a8a" : "1px solid #d1d5db",
+                  borderRadius: 3,
+                  fontSize: 10,
+                  cursor: "pointer",
+                  fontWeight: 500,
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={e => {
+                  if (formData.tache !== tache) {
+                    e.currentTarget.style.background = "#f3f4f6";
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (formData.tache !== tache) {
+                    e.currentTarget.style.background = "white";
+                  }
+                }}
+              >
+                {tache}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* BOUTONS */}
       <div style={{ display: "flex", gap: "8px", marginTop: "0.5rem" }}>
