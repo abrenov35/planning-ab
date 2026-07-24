@@ -31,13 +31,13 @@ function App() {
 
   return (
     <AppProvider>
-      <div style={{ display: "flex", height: "100vh" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-          <Header
-            title={pages[currentPage].title}
-            subtitle={pages[currentPage].subtitle}
-          />
+        <Header
+          title={pages[currentPage].title}
+          subtitle={pages[currentPage].subtitle}
+        />
+        <div style={{ flex: 1, overflowY: "auto", background: "#f9fafb" }}>
           <CurrentPage />
         </div>
       </div>

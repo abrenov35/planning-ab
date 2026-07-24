@@ -2,42 +2,45 @@ import React from "react";
 
 export const Sidebar = ({ currentPage, setCurrentPage }) => {
   const pages = [
-    { id: "gantt", label: "📅 Vue Gantt", title: "Vue Gantt Unifiée" },
-    { id: "ouvriers", label: "👷 Ouvriers & Équipes", title: "Ouvriers & Équipes" },
-    { id: "chantiers", label: "🏗️ Chantiers", title: "Gestion des Chantiers" }
+    { id: "gantt", label: "📅 Vue Gantt" },
+    { id: "ouvriers", label: "👷 Ouvriers" },
+    { id: "chantiers", label: "🏗️ Chantiers" }
   ];
 
   return (
     <div style={{
-      width: 200,
       background: "#1e3a8a",
       color: "white",
       display: "flex",
-      flexDirection: "column",
-      height: "100vh"
+      alignItems: "center",
+      padding: "0.75rem 1.5rem",
+      borderBottom: "1px solid rgba(255,255,255,0.1)",
+      gap: "0.5rem"
     }}>
-      <div style={{ padding: "1.5rem 1.25rem", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-        <div style={{ fontSize: 14, fontWeight: 600 }}>AB PLANNING</div>
-        <div style={{ fontSize: 11, opacity: 0.7, marginTop: 4 }}>Gestion des chantiers</div>
+      <div style={{ fontSize: 14, fontWeight: 700, marginRight: "2rem" }}>
+        AB PLANNING
       </div>
 
-      <div style={{ padding: "1rem 0", flex: 1 }}>
+      <div style={{ display: "flex", gap: "0.5rem", flex: 1 }}>
         {pages.map(page => (
-          <div
+          <button
             key={page.id}
             onClick={() => setCurrentPage(page.id)}
             style={{
-              padding: "12px 1.25rem",
+              padding: "6px 16px",
               cursor: "pointer",
               fontSize: 13,
+              fontWeight: currentPage === page.id ? 600 : 400,
+              border: "none",
+              background: currentPage === page.id ? "rgba(255,255,255,0.2)" : "transparent",
+              color: "white",
+              borderRadius: "4px",
               transition: "all 0.2s",
-              borderLeft: currentPage === page.id ? "3px solid #f59e0b" : "3px solid transparent",
-              background: currentPage === page.id ? "rgba(255,255,255,0.15)" : "transparent",
-              fontWeight: currentPage === page.id ? 600 : 400
+              borderBottom: currentPage === page.id ? "2px solid #f59e0b" : "2px solid transparent"
             }}
           >
             {page.label}
-          </div>
+          </button>
         ))}
       </div>
     </div>

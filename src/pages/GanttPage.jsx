@@ -22,68 +22,66 @@ export const GanttPage = () => {
   if (loading) return <div style={{ padding: "2rem" }}>Chargement...</div>;
 
   return (
-    <div style={{ padding: "1.5rem", flex: 1, overflowY: "auto" }}>
-      <div style={{ marginBottom: "1rem" }}>
+    <div style={{ padding: "1rem", flex: 1, overflowY: "auto" }}>
+      <div style={{ marginBottom: "0.75rem", display: "flex", gap: "8px", flexWrap: "wrap" }}>
         <button style={{
-          padding: "8px 12px",
+          padding: "6px 10px",
           border: "1px solid #d1d5db",
           background: "white",
-          borderRadius: 6,
-          fontSize: 12,
-          cursor: "pointer",
-          marginRight: 8
+          borderRadius: 4,
+          fontSize: 11,
+          cursor: "pointer"
         }}>
-          ← Semaine précédente
+          ← Prec
         </button>
         <button style={{
-          padding: "8px 12px",
+          padding: "6px 10px",
           border: "1px solid #d1d5db",
           background: "white",
-          borderRadius: 6,
-          fontSize: 12,
-          cursor: "pointer",
-          marginRight: 8
+          borderRadius: 4,
+          fontSize: 11,
+          cursor: "pointer"
         }}>
-          Semaine suivante →
+          Suiv →
         </button>
         <button
           onClick={() => setShowModalOuvrier(true)}
           style={{
-            padding: "8px 12px",
+            padding: "6px 10px",
             background: "#1e3a8a",
             color: "white",
             border: "none",
-            borderRadius: 6,
-            fontSize: 12,
+            borderRadius: 4,
+            fontSize: 11,
             cursor: "pointer",
             fontWeight: 600
           }}
         >
-          + Ajouter ouvrier
+          + Ouvrier
         </button>
       </div>
 
       {/* SECTION OUVRIERS */}
       <div style={{
         background: "white",
-        borderRadius: 8,
+        borderRadius: 6,
         border: "1px solid #e5e7eb",
-        marginBottom: "1.5rem",
+        marginBottom: "0.75rem",
         overflow: "hidden"
       }}>
         <div style={{
           background: "#1e3a8a",
           color: "white",
-          padding: "1rem",
+          padding: "0.5rem 0.75rem",
           fontWeight: 600,
-          fontSize: 13
+          fontSize: 12
         }}>
-          OUVRIERS & ÉQUIPES (CDI)
+          OUVRIERS ACTIFS ({ouvrierActifs.length})
         </div>
 
-        <div style={{ padding: "1rem" }}>
+        <div style={{ padding: "0.5rem 0.75rem" }}>
           {ouvrierActifs.length === 0 ? (
-            <div style={{ color: "#9ca3af", fontSize: 13 }}>Aucun ouvrier actif</div>
+            <div style={{ color: "#9ca3af", fontSize: 12 }}>Aucun ouvrier</div>
           ) : (
             ouvrierActifs.map(ouvrier => (
               <div
@@ -91,15 +89,16 @@ export const GanttPage = () => {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 12,
-                  padding: "12px 0",
-                  borderBottom: "1px solid #e5e7eb"
+                  gap: 8,
+                  padding: "6px 0",
+                  borderBottom: "1px solid #f3f4f6",
+                  fontSize: 12
                 }}
               >
                 <div
                   style={{
-                    width: 32,
-                    height: 32,
+                    width: 28,
+                    height: 28,
                     borderRadius: "50%",
                     background: "#3b82f6",
                     display: "flex",
@@ -107,17 +106,17 @@ export const GanttPage = () => {
                     justifyContent: "center",
                     color: "white",
                     fontWeight: 600,
-                    fontSize: 11,
+                    fontSize: 10,
                     flexShrink: 0
                   }}
                 >
                   {ouvrier.nom.substring(0, 2).toUpperCase()}
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 500, color: "#1f2937", fontSize: 13 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 500, color: "#1f2937" }}>
                     {ouvrier.nom}
                   </div>
-                  <div style={{ fontSize: 11, color: "#9ca3af" }}>
+                  <div style={{ fontSize: 10, color: "#9ca3af" }}>
                     {ouvrier.metier}
                   </div>
                 </div>
@@ -130,23 +129,23 @@ export const GanttPage = () => {
       {/* SECTION CHANTIERS */}
       <div style={{
         background: "white",
-        borderRadius: 8,
+        borderRadius: 6,
         border: "1px solid #e5e7eb",
         overflow: "hidden"
       }}>
         <div style={{
           background: "#1e3a8a",
           color: "white",
-          padding: "1rem",
+          padding: "0.5rem 0.75rem",
           fontWeight: 600,
-          fontSize: 13
+          fontSize: 12
         }}>
-          CHANTIERS ACTIFS
+          CHANTIERS ACTIFS ({chantiersActifs.length})
         </div>
 
-        <div style={{ padding: "1rem" }}>
+        <div style={{ padding: "0.5rem 0.75rem" }}>
           {chantiersActifs.length === 0 ? (
-            <div style={{ color: "#9ca3af", fontSize: 13 }}>Aucun chantier actif</div>
+            <div style={{ color: "#9ca3af", fontSize: 12 }}>Aucun chantier</div>
           ) : (
             chantiersActifs.map(chantier => (
               <div
@@ -155,28 +154,31 @@ export const GanttPage = () => {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  padding: "12px 0",
-                  borderBottom: "1px solid #e5e7eb"
+                  padding: "6px 0",
+                  borderBottom: "1px solid #f3f4f6",
+                  fontSize: 11
                 }}
               >
-                <div>
-                  <div style={{ fontWeight: 600, color: "#1f2937", fontSize: 13 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, color: "#1f2937" }}>
                     {chantier.nom}
                   </div>
-                  <div style={{ fontSize: 11, color: "#9ca3af" }}>
+                  <div style={{ fontSize: 10, color: "#9ca3af" }}>
                     {chantier.dateDebut} → {chantier.dateFin}
                   </div>
                 </div>
                 <span style={{
                   display: "inline-block",
-                  padding: "4px 8px",
+                  padding: "2px 6px",
                   background: "#dcfce7",
                   color: "#166534",
-                  borderRadius: 4,
-                  fontSize: 11,
-                  fontWeight: 600
+                  borderRadius: 3,
+                  fontSize: 10,
+                  fontWeight: 600,
+                  whiteSpace: "nowrap",
+                  marginLeft: "8px"
                 }}>
-                  ACTIF
+                  ✓
                 </span>
               </div>
             ))
