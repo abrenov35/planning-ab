@@ -122,6 +122,7 @@ export const GanttPage = () => {
     if (dateDebutStr === dateFinStr && dateDebutStr === dayToDeleteStr) {
       console.log("✓ Suppression complète (seul jour)");
       const result = await deleteAffectation(affectationId);
+      console.log("Résultat suppression:", result);
       if (!result.success) {
         alert("Erreur: " + (result.error || "Impossible de supprimer l'affectation"));
       }
@@ -143,6 +144,7 @@ export const GanttPage = () => {
         aff.tache,
         "Actif"
       );
+      console.log("Résultat update (premier jour):", result);
       if (!result.success) {
         alert("Erreur: " + (result.error || "Impossible de mettre à jour l'affectation"));
       }
@@ -164,6 +166,7 @@ export const GanttPage = () => {
         aff.tache,
         "Actif"
       );
+      console.log("Résultat update (dernier jour):", result);
       if (!result.success) {
         alert("Erreur: " + (result.error || "Impossible de mettre à jour l'affectation"));
       }
@@ -194,6 +197,7 @@ export const GanttPage = () => {
       dateBeforeStr,
       aff.tache
     );
+    console.log("Résultat création aff 1:", result1);
 
     if (!result1.success) {
       alert("Erreur création affectation 1: " + result1.error);
@@ -208,6 +212,7 @@ export const GanttPage = () => {
       dateFinStr,
       aff.tache
     );
+    console.log("Résultat création aff 2:", result2);
 
     if (!result2.success) {
       alert("Erreur création affectation 2: " + result2.error);
@@ -216,10 +221,15 @@ export const GanttPage = () => {
       return;
     }
 
-    // Supprimer l'affectation originale
+    // MAINTENANT SUPPRIMER L'AFFECTATION ORIGINALE
+    console.log("🗑️ Suppression de l'affectation originale:", affectationId);
     const result3 = await deleteAffectation(affectationId);
+    console.log("Résultat suppression originale:", result3);
+    
     if (!result3.success) {
-      alert("Erreur suppression originale: " + result3.error);
+      alert("⚠️ Erreur suppression affectation originale: " + result3.error);
+    } else {
+      console.log("✅ SUCCÈS: Affectation découpage automatique complète!");
     }
   };
 
