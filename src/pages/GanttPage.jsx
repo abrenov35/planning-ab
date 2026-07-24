@@ -78,6 +78,77 @@ export const GanttPage = () => {
     }
   };
 
+  const handleDeleteAffectationDay = async (affectationId, dayToDelete) => {
+    // Trouver l'affectation
+    const aff = affectations.find(a => a.id === affectationId);
+    if (!aff) return;
+
+    // Convertir les dates
+    const parseDate = (dateStr) => {
+      if (!dateStr) return null;
+      if (typeof dateStr === 'string' && dateStr.includes('/')) {
+        const [day, month, year] = dateStr.split('/');
+        return new Date(year, month - 1, day);
+      }
+      const d = new Date(dateStr);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    };
+
+    const dateDebut = parseDate(aff.dateDebut);
+    const dateFin = parseDate(aff.dateFin);
+    const dayToDeleteNorm = new Date(dayToDelete);
+    dayToDeleteNorm.setHours(0, 0, 0, 0);
+
+    // Si c'est le seul jour → Supprimer complètement
+    if (dateDebut.getTime() === dateFin.getTime() && dateDebut.getTime() === dayToDeleteNorm.getTime()) {
+      const result = await deleteAffectation(affectationId);
+      if (!result.success) {
+        alert("Erreur: " + (result.error || "Impossible de supprimer l'affectation"));
+      }
+      return;
+    }
+
+    // Si c'est le premier jour → Avancer la date de début
+    if (dateDebut.getTime() === dayToDeleteNorm.getTime()) {
+      const newStart = new Date(dayToDeleteNorm);
+      newStart.setDate(newStart.getDate() + 1);
+      const newStartStr = `${String(newStart.getDate()).padStart(2, '0')}/${String(newStart.getMonth() + 1).padStart(2, '0')}/${newStart.getFullYear()}`;
+      const result = await updateAffectation(
+        affectationId,
+        newStartStr,
+        aff.dateFin,
+        aff.tache,
+        "Actif"
+      );
+      if (!result.success) {
+        alert("Erreur: " + (result.error || "Impossible de mettre à jour l'affectation"));
+      }
+      return;
+    }
+
+    // Si c'est le dernier jour → Reculer la date de fin
+    if (dateFin.getTime() === dayToDeleteNorm.getTime()) {
+      const newEnd = new Date(dayToDeleteNorm);
+      newEnd.setDate(newEnd.getDate() - 1);
+      const newEndStr = `${String(newEnd.getDate()).padStart(2, '0')}/${String(newEnd.getMonth() + 1).padStart(2, '0')}/${newEnd.getFullYear()}`;
+      const result = await updateAffectation(
+        affectationId,
+        aff.dateDebut,
+        newEndStr,
+        aff.tache,
+        "Actif"
+      );
+      if (!result.success) {
+        alert("Erreur: " + (result.error || "Impossible de mettre à jour l'affectation"));
+      }
+      return;
+    }
+
+    // Si c'est au milieu → Scinder en deux affectations
+    alert("Impossible de supprimer un jour au milieu de l'affectation. Vous devez créer deux affectations séparées.");
+  };
+
   if (loading) return <div style={{ padding: "1rem" }}>Chargement...</div>;
 
   return (
@@ -89,6 +160,7 @@ export const GanttPage = () => {
         onAddAffectation={handleAddAffectation}
         onAffectationClick={handleAffectationClick}
         onDeleteAffectation={handleDeleteAffectationDirect}
+        onDeleteAffectationDay={handleDeleteAffectationDay}
       />
 
       {/* MODAL AFFECTATION */}

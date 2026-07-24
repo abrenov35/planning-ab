@@ -6,7 +6,8 @@ export const GanttChart = ({
   affectations, 
   onAffectationClick,
   onAddAffectation,
-  onDeleteAffectation
+  onDeleteAffectation,
+  onDeleteAffectationDay
 }) => {
   const [viewMode, setViewMode] = useState("semaine"); // semaine ou mois
   const [currentDate, setCurrentDate] = useState(new Date()); // Aujourd'hui par défaut
@@ -470,8 +471,8 @@ export const GanttChart = ({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (onDeleteAffectation) {
-                                  onDeleteAffectation(aff.id);
+                                if (onDeleteAffectationDay) {
+                                  onDeleteAffectationDay(aff.id, date);
                                 }
                               }}
                               style={{
@@ -497,7 +498,7 @@ export const GanttChart = ({
                               }}
                               onMouseEnter={e => e.currentTarget.style.background = "#dc2626"}
                               onMouseLeave={e => e.currentTarget.style.background = "#ef4444"}
-                              title="Supprimer cette affectation"
+                              title="Supprimer ce jour uniquement"
                             >
                               ✕
                             </button>
