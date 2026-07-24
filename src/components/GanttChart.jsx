@@ -374,7 +374,11 @@ export const GanttChart = ({
                   {allDates.map((date, dayIdx) => (
                     <div
                       key={dayIdx}
-                      onClick={() => {
+                      onClick={(e) => {
+                        // ❌ IGNORER si c'est un clic sur le bouton X (ou ses enfants)
+                        if (e.target.closest('button')) {
+                          return;
+                        }
                         console.log("🟢 CELLULE CLIQUÉE - Ajout affectation");
                         onAddAffectation(ouvrier.id, date);
                       }}
