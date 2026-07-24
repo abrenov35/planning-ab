@@ -288,6 +288,8 @@ export const GanttChart = ({
                     {affectsByOuvrier.map(aff => {
                       const chantier = chantiersActifs.find(c => c.id === aff.chantierId);
                       const pos = getBarPosition(aff, weekStart, weekEnd);
+                      const tacheText = aff.tache || chantier?.nom;
+                      const tacheAbrege = tacheText.substring(0, 2).toUpperCase();
                       
                       return (
                         <div
@@ -311,7 +313,7 @@ export const GanttChart = ({
                           onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
                           onMouseLeave={e => e.currentTarget.style.opacity = "1"}
                         >
-                          {/* CUBE / BARRE */}
+                          {/* CUBE AVEC 2 LETTRES */}
                           <div
                             style={{
                               width: "100%",
@@ -319,10 +321,18 @@ export const GanttChart = ({
                               background: colorMap[chantier?.id] || "#6b7280",
                               borderRadius: 2,
                               border: "1px solid rgba(0,0,0,0.2)",
-                              boxSizing: "border-box"
+                              boxSizing: "border-box",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "white",
+                              fontWeight: 700,
+                              fontSize: 10
                             }}
-                          />
-                          {/* LABEL SOUS LE CUBE */}
+                          >
+                            {tacheAbrege}
+                          </div>
+                          {/* LABEL COMPLET SOUS LE CUBE */}
                           <div
                             style={{
                               fontSize: 8,
@@ -338,7 +348,7 @@ export const GanttChart = ({
                               padding: "0 2px"
                             }}
                           >
-                            {aff.tache || chantier?.nom.substring(0, 3)}
+                            {tacheText}
                           </div>
                         </div>
                       );
