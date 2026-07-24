@@ -178,7 +178,7 @@ export const GanttChart = ({
         </div>
 
         <div style={{ fontSize: 12, fontWeight: 600, color: "#1f2937" }}>
-          3 semaines du {allDates[0].toLocaleDateString("fr-FR", { day: "numeric", month: "long" })} au {allDates[allDates.length - 1].toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
+          Semaine du {allDates[0].toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} au {allDates[4].toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
         </div>
       </div>
 
@@ -214,7 +214,7 @@ export const GanttChart = ({
                 style={{
                   padding: "0.5rem 0.75rem",
                   background: "#f9fafb",
-                  borderRight: idx < 14 ? "1px solid #e5e7eb" : "none",
+                  borderRight: (idx + 1) % 5 === 0 && idx < 14 ? "3px solid #1e3a8a" : idx < 14 ? "1px solid #e5e7eb" : "none",
                   textAlign: "center",
                   fontSize: 10,
                   fontWeight: 600,
@@ -263,7 +263,7 @@ export const GanttChart = ({
                     key={dayIdx}
                     onClick={() => onAddAffectation(ouvrier.id, date)}
                     style={{
-                      borderRight: dayIdx < 14 ? "1px solid #e5e7eb" : "none",
+                      borderRight: (dayIdx + 1) % 5 === 0 && dayIdx < 14 ? "3px solid #1e3a8a" : dayIdx < 14 ? "1px solid #e5e7eb" : "none",
                       minHeight: "50px",
                       position: "relative",
                       background: "white",
