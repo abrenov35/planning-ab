@@ -93,8 +93,11 @@ export const OuvriersPage = () => {
                 </td>
               </tr>
             ) : (
-              cdi.map(ouvrier => (
-                <tr key={ouvrier.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+              cdi.map((ouvrier, idx) => (
+                <tr key={ouvrier.id} style={{ 
+                  borderBottom: "1px solid #d1d5db",
+                  background: idx % 2 === 0 ? "white" : "#f9fafb"
+                }}>
                   <td style={{ padding: 8, color: "#374151", fontWeight: 500 }}>{ouvrier.nom}</td>
                   <td style={{ padding: 8, textAlign: "center" }}>
                     <button
@@ -163,8 +166,11 @@ export const OuvriersPage = () => {
                 </td>
               </tr>
             ) : (
-              st.map(ouvrier => (
-                <tr key={ouvrier.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+              st.map((ouvrier, idx) => (
+                <tr key={ouvrier.id} style={{ 
+                  borderBottom: "1px solid #d1d5db",
+                  background: idx % 2 === 0 ? "white" : "#f9fafb"
+                }}>
                   <td style={{ padding: 8, color: "#374151", fontWeight: 500 }}>{ouvrier.nom}</td>
                   <td style={{ padding: 8, textAlign: "center" }}>
                     <button
@@ -208,8 +214,11 @@ export const OuvriersPage = () => {
 
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
             <tbody>
-              {archived.map(ouvrier => (
-                <tr key={ouvrier.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+              {archived.map((ouvrier, idx) => (
+                <tr key={ouvrier.id} style={{ 
+                  borderBottom: "1px solid #d1d5db",
+                  background: idx % 2 === 0 ? "white" : "#f9fafb"
+                }}>
                   <td style={{ padding: 8, color: "#374151", fontWeight: 500 }}>{ouvrier.nom}</td>
                   <td style={{ padding: 8, textAlign: "center" }}>
                     <button

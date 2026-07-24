@@ -108,8 +108,11 @@ export const ChantierPage = () => {
                 </td>
               </tr>
             ) : (
-              actifs.map(chantier => (
-                <tr key={chantier.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+              actifs.map((chantier, idx) => (
+                <tr key={chantier.id} style={{ 
+                  borderBottom: "1px solid #d1d5db",
+                  background: idx % 2 === 0 ? "white" : "#f9fafb"
+                }}>
                   <td style={{ padding: 8, color: "#374151", fontWeight: 500, fontSize: 11 }}>
                     {chantier.nom}
                   </td>
@@ -158,8 +161,11 @@ export const ChantierPage = () => {
 
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
             <tbody>
-              {archived.map(chantier => (
-                <tr key={chantier.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+              {archived.map((chantier, idx) => (
+                <tr key={chantier.id} style={{ 
+                  borderBottom: "1px solid #d1d5db",
+                  background: idx % 2 === 0 ? "white" : "#f9fafb"
+                }}>
                   <td style={{ padding: 8, color: "#374151", fontWeight: 500, fontSize: 11 }}>
                     {chantier.nom}
                   </td>
