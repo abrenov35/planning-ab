@@ -65,7 +65,7 @@ export const GanttChart = ({
 
   // Formater date courte
   const formatShortDate = (date) => {
-    const days = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+    const days = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
     const d = String(date.getDate()).padStart(2, "0");
     return `${days[date.getDay()]} ${d}`;
   };
