@@ -198,34 +198,114 @@ export const FormAffectation = ({
           </div>
           <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
             {tacheHistory.map((tache, idx) => (
-              <button
+              <div
                 key={idx}
-                type="button"
-                onClick={() => handleTacheSelect(tache)}
                 style={{
-                  padding: "4px 10px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
                   background: formData.tache === tache ? "#1e3a8a" : "white",
-                  color: formData.tache === tache ? "white" : "#374151",
                   border: formData.tache === tache ? "1px solid #1e3a8a" : "1px solid #d1d5db",
                   borderRadius: 3,
-                  fontSize: 10,
-                  cursor: "pointer",
-                  fontWeight: 500,
+                  padding: "4px 8px",
                   transition: "all 0.2s"
                 }}
-                onMouseEnter={e => {
-                  if (formData.tache !== tache) {
-                    e.currentTarget.style.background = "#f3f4f6";
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (formData.tache !== tache) {
-                    e.currentTarget.style.background = "white";
-                  }
-                }}
               >
-                {tache}
-              </button>
+                {/* BOUTON SÉLECTIONNER */}
+                <button
+                  type="button"
+                  onClick={() => handleTacheSelect(tache)}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: formData.tache === tache ? "white" : "#374151",
+                    fontSize: 10,
+                    cursor: "pointer",
+                    fontWeight: 500,
+                    padding: 0,
+                    transition: "all 0.2s"
+                  }}
+                  onMouseEnter={e => {
+                    if (formData.tache !== tache) {
+                      e.currentTarget.style.opacity = "0.7";
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    if (formData.tache !== tache) {
+                      e.currentTarget.style.opacity = "1";
+                    }
+                  }}
+                >
+                  {tache}
+                </button>
+
+                {/* BOUTON MODIFIER */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newTache = prompt("Modifier la tâche :", tache);
+                    if (newTache && newTache.trim()) {
+                      const updated = tacheHistory.map((t, i) => i === idx ? newTache : t);
+                      setTacheHistory(updated);
+                      localStorage.setItem("tacheHistory", JSON.stringify(updated));
+                      setFormData({ ...formData, tache: newTache });
+                    }
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: formData.tache === tache ? "white" : "#6b7280",
+                    fontSize: 11,
+                    cursor: "pointer",
+                    padding: 0,
+                    width: "16px",
+                    height: "16px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "all 0.2s"
+                  }}
+                  title="Modifier la tâche"
+                  onMouseEnter={e => e.currentTarget.style.opacity = "0.7"}
+                  onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+                >
+                  ✎
+                </button>
+
+                {/* BOUTON SUPPRIMER */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm(`Supprimer la tâche "${tache}" ?`)) {
+                      const updated = tacheHistory.filter((_, i) => i !== idx);
+                      setTacheHistory(updated);
+                      localStorage.setItem("tacheHistory", JSON.stringify(updated));
+                      if (formData.tache === tache) {
+                        setFormData({ ...formData, tache: "" });
+                      }
+                    }
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: formData.tache === tache ? "white" : "#dc2626",
+                    fontSize: 11,
+                    cursor: "pointer",
+                    padding: 0,
+                    width: "16px",
+                    height: "16px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "all 0.2s"
+                  }}
+                  title="Supprimer la tâche"
+                  onMouseEnter={e => e.currentTarget.style.opacity = "0.7"}
+                  onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+                >
+                  ✕
+                </button>
+              </div>
             ))}
           </div>
         </div>
