@@ -44,84 +44,84 @@ export const ChantierPage = () => {
   const archived = chantiers.filter(c => c.statut === "Archivé");
 
   return (
-    <div style={{ padding: "1.5rem", flex: 1, overflowY: "auto" }}>
-      <div style={{ marginBottom: "1rem" }}>
-        <button
-          onClick={() => setShowAddModal(true)}
-          style={{
-            padding: "8px 12px",
-            background: "#1e3a8a",
-            color: "white",
-            border: "none",
-            borderRadius: 6,
-            fontSize: 12,
-            cursor: "pointer",
-            fontWeight: 600
-          }}
-        >
-          + Nouveau chantier
-        </button>
-      </div>
-
+    <div style={{ padding: "1rem", flex: 1, overflowY: "auto" }}>
       {/* TABLE ACTIFS */}
       <div style={{
         background: "white",
-        borderRadius: 8,
+        borderRadius: 6,
         border: "1px solid #e5e7eb",
-        marginBottom: "1.5rem",
+        marginBottom: "0.75rem",
         overflow: "hidden"
       }}>
         <div style={{
           background: "#1e3a8a",
           color: "white",
-          padding: "1rem",
+          padding: "0.5rem 0.75rem",
           fontWeight: 600,
-          fontSize: 13
+          fontSize: 12,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center"
         }}>
-          CHANTIERS ACTIFS
+          <span>CHANTIERS ACTIFS ({actifs.length})</span>
+          <button
+            onClick={() => setShowAddModal(true)}
+            style={{
+              padding: "4px 8px",
+              background: "#10b981",
+              color: "white",
+              border: "none",
+              borderRadius: 3,
+              fontSize: 11,
+              cursor: "pointer",
+              fontWeight: 600
+            }}
+          >
+            + Chantier
+          </button>
         </div>
 
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead>
             <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
-              <th style={{ padding: 12, textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Nom</th>
-              <th style={{ padding: 12, textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Dates</th>
-              <th style={{ padding: 12, textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Avanc.</th>
-              <th style={{ padding: 12, textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Équipe</th>
-              <th style={{ padding: 12, width: 80, fontWeight: 600, color: "#1f2937" }}>Action</th>
+              <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Nom</th>
+              <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Dates</th>
+              <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Avanc.</th>
+              <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Équipe</th>
+              <th style={{ padding: "8px", width: 60, fontWeight: 600, color: "#1f2937" }}>Action</th>
             </tr>
           </thead>
           <tbody>
             {actifs.length === 0 ? (
               <tr>
-                <td colSpan="5" style={{ padding: 12, textAlign: "center", color: "#9ca3af" }}>
-                  Aucun chantier actif
+                <td colSpan="5" style={{ padding: 8, textAlign: "center", color: "#9ca3af" }}>
+                  Aucun chantier
                 </td>
               </tr>
             ) : (
               actifs.map(chantier => (
                 <tr key={chantier.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                  <td style={{ padding: 12, color: "#374151", fontWeight: 500 }}>
+                  <td style={{ padding: 8, color: "#374151", fontWeight: 500, fontSize: 11 }}>
                     {chantier.nom}
                   </td>
-                  <td style={{ padding: 12, color: "#374151", fontSize: 12 }}>
+                  <td style={{ padding: 8, color: "#374151", fontSize: 10 }}>
                     {chantier.dateDebut} → {chantier.dateFin}
                   </td>
-                  <td style={{ padding: 12, color: "#10b981", fontWeight: 600 }}>50%</td>
-                  <td style={{ padding: 12, color: "#374151", fontSize: 12 }}>Kevin, Jimmy...</td>
-                  <td style={{ padding: 12, textAlign: "center" }}>
+                  <td style={{ padding: 8, color: "#10b981", fontWeight: 600 }}>50%</td>
+                  <td style={{ padding: 8, color: "#374151", fontSize: 10 }}>Kevin...</td>
+                  <td style={{ padding: 8, textAlign: "center" }}>
                     <button
                       onClick={() => setEditingChantier(chantier)}
                       style={{
-                        padding: "4px 8px",
+                        padding: "2px 6px",
                         border: "1px solid #d1d5db",
                         background: "white",
-                        borderRadius: 4,
-                        fontSize: 11,
+                        borderRadius: 3,
+                        fontSize: 10,
                         cursor: "pointer"
                       }}
                     >
-                      Éditer
+                      ✏️
                     </button>
                   </td>
                 </tr>
@@ -135,64 +135,64 @@ export const ChantierPage = () => {
       {archived.length > 0 && (
         <div style={{
           background: "white",
-          borderRadius: 8,
+          borderRadius: 6,
           border: "1px solid #e5e7eb",
           overflow: "hidden"
         }}>
           <div style={{
             background: "#1e3a8a",
             color: "white",
-            padding: "1rem",
+            padding: "0.5rem 0.75rem",
             fontWeight: 600,
-            fontSize: 13
+            fontSize: 12
           }}>
-            CHANTIERS ARCHIVÉS
+            ARCHIVÉS ({archived.length})
           </div>
 
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
             <thead>
               <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
-                <th style={{ padding: 12, textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Nom</th>
-                <th style={{ padding: 12, textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Durée</th>
-                <th style={{ padding: 12, textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Statut</th>
-                <th style={{ padding: 12, width: 80, fontWeight: 600, color: "#1f2937" }}>Action</th>
+                <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Nom</th>
+                <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Durée</th>
+                <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Statut</th>
+                <th style={{ padding: "8px", width: 60, fontWeight: 600, color: "#1f2937" }}>Action</th>
               </tr>
             </thead>
             <tbody>
               {archived.map(chantier => (
                 <tr key={chantier.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                  <td style={{ padding: 12, color: "#374151", fontWeight: 500 }}>
+                  <td style={{ padding: 8, color: "#374151", fontWeight: 500, fontSize: 11 }}>
                     {chantier.nom}
                   </td>
-                  <td style={{ padding: 12, color: "#374151", fontSize: 12 }}>
+                  <td style={{ padding: 8, color: "#374151", fontSize: 10 }}>
                     {chantier.dateDebut} → {chantier.dateFin}
                   </td>
-                  <td style={{ padding: 12 }}>
+                  <td style={{ padding: 8 }}>
                     <span style={{
                       display: "inline-block",
-                      padding: "4px 8px",
+                      padding: "2px 6px",
                       background: "#f3f4f6",
                       color: "#6b7280",
-                      borderRadius: 4,
-                      fontSize: 11,
+                      borderRadius: 3,
+                      fontSize: 10,
                       fontWeight: 600
                     }}>
-                      Archivé
+                      Arch
                     </span>
                   </td>
-                  <td style={{ padding: 12, textAlign: "center" }}>
+                  <td style={{ padding: 8, textAlign: "center" }}>
                     <button
                       onClick={() => setEditingChantier(chantier)}
                       style={{
-                        padding: "4px 8px",
+                        padding: "2px 6px",
                         border: "1px solid #d1d5db",
                         background: "white",
-                        borderRadius: 4,
-                        fontSize: 11,
+                        borderRadius: 3,
+                        fontSize: 10,
                         cursor: "pointer"
                       }}
                     >
-                      Réactiver
+                      ↻
                     </button>
                   </td>
                 </tr>
