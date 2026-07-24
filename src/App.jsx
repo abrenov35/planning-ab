@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { AppProvider } from "./context/AppContext";
 import { Sidebar } from "./components/Sidebar";
-import { Header } from "./components/Header";
 import { GanttPage } from "./pages/GanttPage";
 import { OuvriersPage } from "./pages/OuvriersPage";
 import { ChantierPage } from "./pages/ChantierPage";
@@ -33,10 +32,6 @@ function App() {
     <AppProvider>
       <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-        <Header
-          title={pages[currentPage].title}
-          subtitle={pages[currentPage].subtitle}
-        />
         <div style={{ flex: 1, overflowY: "auto", background: "#f9fafb" }}>
           <CurrentPage />
         </div>
