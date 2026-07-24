@@ -291,8 +291,8 @@ export const GanttChart = ({
           <div style={{
             width: 150,
             padding: "0.5rem 0.75rem",
-            background: "#f9fafb",
-            borderRight: "1px solid #e5e7eb",
+            background: "#e5e7eb",
+            borderRight: "1px solid #d1d5db",
             fontWeight: 600,
             fontSize: 10,
             color: "#1f2937",
@@ -307,15 +307,16 @@ export const GanttChart = ({
             gridTemplateColumns: "repeat(20, 1fr)",
             borderRight: "1px solid #e5e7eb",
             height: "40px",
-            flex: 1
+            flex: 1,
+            background: "#e5e7eb"
           }}>
             {allDates.map((date, idx) => (
               <div
                 key={idx}
                 style={{
                   padding: "0.5rem 0.75rem",
-                  background: "#f9fafb",
-                  borderRight: (idx + 1) % 5 === 0 && idx < 19 ? "3px solid #1e3a8a" : idx < 19 ? "1px solid #e5e7eb" : "none",
+                  background: "transparent",
+                  borderRight: (idx + 1) % 5 === 0 && idx < 19 ? "3px solid #1e3a8a" : idx < 19 ? "1px solid #d1d5db" : "none",
                   textAlign: "center",
                   fontSize: 9,
                   fontWeight: 600,
