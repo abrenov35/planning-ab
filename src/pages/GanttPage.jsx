@@ -79,11 +79,10 @@ export const GanttPage = () => {
   };
 
   const handleDeleteAffectationDay = async (affectationId, dayToDelete) => {
-    // Trouver l'affectation
     const aff = affectations.find(a => a.id === affectationId);
     if (!aff) return;
 
-    // Fonction pour normaliser les dates
+    // Fonction pour parser et normaliser les dates
     const parseDate = (dateStr) => {
       if (!dateStr) return null;
       let d;
@@ -91,7 +90,7 @@ export const GanttPage = () => {
         const [day, month, year] = dateStr.split('/');
         d = new Date(year, month - 1, day);
       } else if (typeof dateStr === 'string' && dateStr.includes('-')) {
-        d = new Date(dateStr); // Format ISO
+        d = new Date(dateStr);
       } else {
         d = new Date(dateStr);
       }
@@ -99,34 +98,18 @@ export const GanttPage = () => {
       return d;
     };
 
-    const dateDebut = parseDate(aff.dateDebut);
-    const dateFin = parseDate(aff.dateFin);
-    const dayToDeleteNorm = new Date(dayToDelete);
-    dayToDeleteNorm.setHours(0, 0, 0, 0);
-
-    console.log("===== DEBUG SUPPRESSION JOUR =====");
-    console.log("Affectation ID:", affectationId);
-    console.log("Données brutes:", "dateDebut=", aff.dateDebut, "dateFin=", aff.dateFin);
-    console.log("dayToDelete brut:", dayToDelete);
-    console.log("");
-    console.log("Après parsing:");
-    console.log("dateDebut:", dateDebut, "time:", dateDebut?.getTime());
-    console.log("dateFin:", dateFin, "time:", dateFin?.getTime());
-    console.log("dayToDeleteNorm:", dayToDeleteNorm, "time:", dayToDeleteNorm.getTime());
-    console.log("");
-    console.log("Comparaisons:");
-    console.log("dateDebut === dayToDelete?", dateDebut?.getTime() === dayToDeleteNorm.getTime());
-    console.log("dateFin === dayToDelete?", dateFin?.getTime() === dayToDeleteNorm.getTime());
-    console.log("dateDebut === dateFin?", dateDebut?.getTime() === dateFin?.getTime());
-
     // Fonction pour convertir date en string JJ/MM/AAAA
     const dateToString = (date) => {
       return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
     };
 
+    const dateDebut = parseDate(aff.dateDebut);
+    const dateFin = parseDate(aff.dateFin);
+    const dayToDeleteNorm = new Date(dayToDelete);
+    dayToDeleteNorm.setHours(0, 0, 0, 0);
+
     // Si c'est le seul jour → Supprimer complètement
     if (dateDebut?.getTime() === dateFin?.getTime() && dateDebut?.getTime() === dayToDeleteNorm.getTime()) {
-      console.log("✓ CAS: Seul jour → Suppression complète");
       const result = await deleteAffectation(affectationId);
       if (!result.success) {
         alert("Erreur: " + (result.error || "Impossible de supprimer l'affectation"));
@@ -136,15 +119,15 @@ export const GanttPage = () => {
 
     // Si c'est le premier jour → Avancer la date de début
     if (dateDebut?.getTime() === dayToDeleteNorm.getTime()) {
-      console.log("✓ CAS: Premier jour → Avancer dateDebut");
       const newStart = new Date(dayToDeleteNorm);
       newStart.setDate(newStart.getDate() + 1);
       const newStartStr = dateToString(newStart);
-      console.log("Nouveau début:", newStartStr);
+      const dateFinStr = dateToString(dateFin);
+      
       const result = await updateAffectation(
         affectationId,
         newStartStr,
-        aff.dateFin,
+        dateFinStr,
         aff.tache,
         "Actif"
       );
@@ -156,14 +139,14 @@ export const GanttPage = () => {
 
     // Si c'est le dernier jour → Reculer la date de fin
     if (dateFin?.getTime() === dayToDeleteNorm.getTime()) {
-      console.log("✓ CAS: Dernier jour → Reculer dateFin");
       const newEnd = new Date(dayToDeleteNorm);
       newEnd.setDate(newEnd.getDate() - 1);
       const newEndStr = dateToString(newEnd);
-      console.log("Nouvelle fin:", newEndStr);
+      const dateDebutStr = dateToString(dateDebut);
+      
       const result = await updateAffectation(
         affectationId,
-        aff.dateDebut,
+        dateDebutStr,
         newEndStr,
         aff.tache,
         "Actif"
@@ -175,7 +158,6 @@ export const GanttPage = () => {
     }
 
     // Si c'est au milieu → Scinder en deux affectations
-    console.log("✗ CAS: Jour au milieu → Message erreur");
     alert("Impossible de supprimer un jour au milieu de l'affectation. Vous devez créer deux affectations séparées.");
   };
 
