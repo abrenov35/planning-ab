@@ -266,7 +266,10 @@ export const GanttChart = ({
                       background: dayIdx >= 5 ? "#f9fafb" : "white",
                       cursor: "pointer",
                       transition: "background 0.2s",
-                      padding: "2px 2px"
+                      padding: "2px 2px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "flex-start"
                     }}
                     onMouseEnter={e => e.currentTarget.style.background = dayIdx >= 5 ? "#f3f4f6" : "#f9fafb"}
                     onMouseLeave={e => e.currentTarget.style.background = dayIdx >= 5 ? "#f9fafb" : "white"}
@@ -287,7 +290,8 @@ export const GanttChart = ({
                             position: "absolute",
                             left: `${pos.left}%`,
                             width: `${Math.max(pos.width, 10)}%`,
-                            top: "4px",
+                            top: "50%",
+                            transform: "translateY(-50%)",
                             height: "18px",
                             background: colorMap[chantier?.id] || "#6b7280",
                             borderRadius: 2,
