@@ -471,53 +471,43 @@ export const GanttChart = ({
                               {tacheText}
                             </div>
 
-                            {/* BOUTON SUPPRESSION AU SURVOL - SEULEMENT SUR LES JOURS EXTRÊMES */}
-                            {hoveredAffectationId === aff.id && (() => {
-                              // Convertir la date courante en JJ/MM/AAAA pour comparaison
-                              const dateStr = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
-                              const isFirstDay = dateStr === aff.dateDebut;
-                              const isLastDay = dateStr === aff.dateFin;
-                              
-                              // N'afficher le X que si c'est le premier ou dernier jour
-                              if (!isFirstDay && !isLastDay) return null;
-                              
-                              return (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (onDeleteAffectationDay) {
-                                      onDeleteAffectationDay(aff.id, date);
-                                    }
-                                  }}
-                                  style={{
-                                    position: "absolute",
-                                    top: "-8px",
-                                    right: "-8px",
-                                    width: "18px",
-                                    height: "18px",
-                                    borderRadius: "50%",
-                                    background: "#ef4444",
-                                    color: "white",
-                                    border: "none",
-                                    cursor: "pointer",
-                                    fontSize: "12px",
-                                    fontWeight: "bold",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    padding: 0,
-                                    lineHeight: 1,
-                                    transition: "all 0.2s",
-                                    boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                                  }}
-                                  onMouseEnter={e => e.currentTarget.style.background = "#dc2626"}
-                                  onMouseLeave={e => e.currentTarget.style.background = "#ef4444"}
-                                  title={isFirstDay ? "Décaler le début" : "Raccourcir la fin"}
-                                >
-                                  ✕
-                                </button>
-                              );
-                            })()}
+                            {/* BOUTON SUPPRESSION AU SURVOL - SUR TOUS LES JOURS */}
+                            {hoveredAffectationId === aff.id && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (onDeleteAffectationDay) {
+                                    onDeleteAffectationDay(aff.id, date);
+                                  }
+                                }}
+                                style={{
+                                  position: "absolute",
+                                  top: "-8px",
+                                  right: "-8px",
+                                  width: "18px",
+                                  height: "18px",
+                                  borderRadius: "50%",
+                                  background: "#ef4444",
+                                  color: "white",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  fontSize: "12px",
+                                  fontWeight: "bold",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  padding: 0,
+                                  lineHeight: 1,
+                                  transition: "all 0.2s",
+                                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = "#dc2626"}
+                                onMouseLeave={e => e.currentTarget.style.background = "#ef4444"}
+                                title="Supprimer ce jour"
+                              >
+                                ✕
+                              </button>
+                            )}
                           </div>
                         );
                       })}
