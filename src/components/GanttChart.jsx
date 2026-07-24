@@ -241,6 +241,17 @@ export const GanttChart = ({
           const affectsByOuvrier = affectations.filter(
             a => a.ouvrierID === ouvrier.id && isAffectationInWeek(a, weekStart, weekEnd)
           );
+          
+          // DEBUG
+          if (ouvrier.id === 1) {
+            console.log("DEBUG Gantt Kevin:", {
+              totalAffectations: affectations.length,
+              allAffectationsForKevin: affectations.filter(a => a.ouvrierID === ouvrier.id),
+              affectationsInWeek: affectsByOuvrier,
+              weekStart: weekStart.toLocaleDateString(),
+              weekEnd: weekEnd.toLocaleDateString()
+            });
+          }
 
           return (
             <div key={ouvrier.id} style={{ display: "flex", borderBottom: "1px solid #f3f4f6" }}>
