@@ -333,18 +333,21 @@ export const GanttChart = ({
         </div>
 
         {/* ROWS - OUVRIERS */}
-        {ouvrierActifs.map(ouvrier => {
+        {ouvrierActifs.map((ouvrier, idx) => {
           const affectsByOuvrier = affectations.filter(
             a => a.ouvrierID === ouvrier.id && isAffectationInWeek(a, weekStart, weekEnd)
           );
+          
+          // Alternance de couleurs: pair=blanc, impair=gris clair
+          const rowBackground = idx % 2 === 0 ? "white" : "#f9fafb";
 
           return (
-            <div key={ouvrier.id} style={{ display: "flex", borderBottom: "1px solid #f3f4f6", height: "45px" }}>
+            <div key={ouvrier.id} style={{ display: "flex", borderBottom: "1px solid #e5e7eb", height: "45px", background: rowBackground }}>
               {/* NOM OUVRIER */}
               <div style={{
                 width: 150,
                 padding: "0.5rem 0.75rem",
-                background: "#f3f4f6",
+                background: rowBackground,
                 borderRight: "1px solid #e5e7eb",
                 fontSize: 10,
                 fontWeight: 500,
@@ -361,7 +364,7 @@ export const GanttChart = ({
               <div style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(20, 1fr)",
-                background: "white",
+                background: rowBackground,
                 borderRight: "1px solid #e5e7eb",
                 position: "relative",
                 height: "45px",
@@ -374,7 +377,7 @@ export const GanttChart = ({
                     style={{
                       borderRight: (dayIdx + 1) % 5 === 0 && dayIdx < 19 ? "3px solid #1e3a8a" : dayIdx < 19 ? "1px solid #e5e7eb" : "none",
                       position: "relative",
-                      background: "white",
+                      background: "transparent",
                       cursor: "pointer",
                       transition: "background 0.2s",
                       padding: "1px 1px",
@@ -383,8 +386,8 @@ export const GanttChart = ({
                       justifyContent: "flex-start",
                       overflow: "hidden"
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"}
-                    onMouseLeave={e => e.currentTarget.style.background = "white"}
+                    onMouseEnter={e => e.currentTarget.style.background = "#e5e7eb"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                   >
                     {/* BARRES D'AFFECTATION */}
                     {affectsByOuvrier.map(aff => {
