@@ -32,8 +32,22 @@ function App() {
     <AppProvider>
       <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-        <div style={{ flex: 1, overflowY: "auto", background: "#f9fafb" }}>
-          <CurrentPage />
+        <div style={{ 
+          flex: 1, 
+          overflowY: "auto", 
+          background: "#f9fafb",
+          display: "flex",
+          justifyContent: "center",
+          padding: "0 1rem"
+        }}>
+          <div style={{
+            width: "100%",
+            maxWidth: "1200px",
+            display: "flex",
+            flexDirection: "column"
+          }}>
+            <CurrentPage />
+          </div>
         </div>
       </div>
     </AppProvider>
