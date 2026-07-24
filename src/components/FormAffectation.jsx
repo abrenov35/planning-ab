@@ -201,48 +201,49 @@ export const FormAffectation = ({
         </select>
       </div>
 
-      {/* DATE DÉBUT - CALENDRIER */}
-      <div>
-        <label style={{ fontSize: 11, fontWeight: 600, color: "#1f2937", display: "block", marginBottom: 4 }}>
-          Date début *
-        </label>
-        <input
-          type="date"
-          value={formData.dateDebut}
-          onChange={(e) => setFormData({ ...formData, dateDebut: e.target.value })}
-          style={{
-            width: "100%",
-            padding: "8px",
-            borderRadius: 4,
-            border: "1px solid #d1d5db",
-            fontSize: 12,
-            fontFamily: "inherit",
-            boxSizing: "border-box",
-            cursor: "pointer"
-          }}
-        />
-      </div>
+      {/* DATES DÉBUT ET FIN - MÊME LIGNE */}
+      <div style={{ display: "flex", gap: "12px" }}>
+        <div style={{ flex: 1 }}>
+          <label style={{ fontSize: 11, fontWeight: 600, color: "#1f2937", display: "block", marginBottom: 4 }}>
+            Date début *
+          </label>
+          <input
+            type="date"
+            value={formData.dateDebut}
+            onChange={(e) => setFormData({ ...formData, dateDebut: e.target.value })}
+            style={{
+              width: "100%",
+              padding: "8px",
+              borderRadius: 4,
+              border: "1px solid #d1d5db",
+              fontSize: 12,
+              fontFamily: "inherit",
+              boxSizing: "border-box",
+              cursor: "pointer"
+            }}
+          />
+        </div>
 
-      {/* DATE FIN - CALENDRIER */}
-      <div>
-        <label style={{ fontSize: 11, fontWeight: 600, color: "#1f2937", display: "block", marginBottom: 4 }}>
-          Date fin *
-        </label>
-        <input
-          type="date"
-          value={formData.dateFin}
-          onChange={(e) => setFormData({ ...formData, dateFin: e.target.value })}
-          style={{
-            width: "100%",
-            padding: "8px",
-            borderRadius: 4,
-            border: "1px solid #d1d5db",
-            fontSize: 12,
-            fontFamily: "inherit",
-            boxSizing: "border-box",
-            cursor: "pointer"
-          }}
-        />
+        <div style={{ flex: 1 }}>
+          <label style={{ fontSize: 11, fontWeight: 600, color: "#1f2937", display: "block", marginBottom: 4 }}>
+            Date fin *
+          </label>
+          <input
+            type="date"
+            value={formData.dateFin}
+            onChange={(e) => setFormData({ ...formData, dateFin: e.target.value })}
+            style={{
+              width: "100%",
+              padding: "8px",
+              borderRadius: 4,
+              border: "1px solid #d1d5db",
+              fontSize: 12,
+              fontFamily: "inherit",
+              boxSizing: "border-box",
+              cursor: "pointer"
+            }}
+          />
+        </div>
       </div>
 
       {/* TÂCHE */}
