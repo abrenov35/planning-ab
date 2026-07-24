@@ -104,9 +104,20 @@ export const GanttPage = () => {
     const dayToDeleteNorm = new Date(dayToDelete);
     dayToDeleteNorm.setHours(0, 0, 0, 0);
 
+    console.log("===== DEBUG SUPPRESSION JOUR =====");
     console.log("Affectation ID:", affectationId);
-    console.log("dateDebut:", dateDebut, "dateFin:", dateFin);
-    console.log("dayToDelete:", dayToDeleteNorm);
+    console.log("Données brutes:", "dateDebut=", aff.dateDebut, "dateFin=", aff.dateFin);
+    console.log("dayToDelete brut:", dayToDelete);
+    console.log("");
+    console.log("Après parsing:");
+    console.log("dateDebut:", dateDebut, "time:", dateDebut?.getTime());
+    console.log("dateFin:", dateFin, "time:", dateFin?.getTime());
+    console.log("dayToDeleteNorm:", dayToDeleteNorm, "time:", dayToDeleteNorm.getTime());
+    console.log("");
+    console.log("Comparaisons:");
+    console.log("dateDebut === dayToDelete?", dateDebut?.getTime() === dayToDeleteNorm.getTime());
+    console.log("dateFin === dayToDelete?", dateFin?.getTime() === dayToDeleteNorm.getTime());
+    console.log("dateDebut === dateFin?", dateDebut?.getTime() === dateFin?.getTime());
 
     // Fonction pour convertir date en string JJ/MM/AAAA
     const dateToString = (date) => {
@@ -114,8 +125,8 @@ export const GanttPage = () => {
     };
 
     // Si c'est le seul jour → Supprimer complètement
-    if (dateDebut.getTime() === dateFin.getTime() && dateDebut.getTime() === dayToDeleteNorm.getTime()) {
-      console.log("Suppression complète (seul jour)");
+    if (dateDebut?.getTime() === dateFin?.getTime() && dateDebut?.getTime() === dayToDeleteNorm.getTime()) {
+      console.log("✓ CAS: Seul jour → Suppression complète");
       const result = await deleteAffectation(affectationId);
       if (!result.success) {
         alert("Erreur: " + (result.error || "Impossible de supprimer l'affectation"));
@@ -124,8 +135,8 @@ export const GanttPage = () => {
     }
 
     // Si c'est le premier jour → Avancer la date de début
-    if (dateDebut.getTime() === dayToDeleteNorm.getTime()) {
-      console.log("Suppression du premier jour");
+    if (dateDebut?.getTime() === dayToDeleteNorm.getTime()) {
+      console.log("✓ CAS: Premier jour → Avancer dateDebut");
       const newStart = new Date(dayToDeleteNorm);
       newStart.setDate(newStart.getDate() + 1);
       const newStartStr = dateToString(newStart);
@@ -144,8 +155,8 @@ export const GanttPage = () => {
     }
 
     // Si c'est le dernier jour → Reculer la date de fin
-    if (dateFin.getTime() === dayToDeleteNorm.getTime()) {
-      console.log("Suppression du dernier jour");
+    if (dateFin?.getTime() === dayToDeleteNorm.getTime()) {
+      console.log("✓ CAS: Dernier jour → Reculer dateFin");
       const newEnd = new Date(dayToDeleteNorm);
       newEnd.setDate(newEnd.getDate() - 1);
       const newEndStr = dateToString(newEnd);
@@ -164,7 +175,7 @@ export const GanttPage = () => {
     }
 
     // Si c'est au milieu → Scinder en deux affectations
-    console.log("Jour au milieu - impossible à supprimer");
+    console.log("✗ CAS: Jour au milieu → Message erreur");
     alert("Impossible de supprimer un jour au milieu de l'affectation. Vous devez créer deux affectations séparées.");
   };
 
