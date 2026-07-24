@@ -112,6 +112,29 @@ export const GanttChart = ({
     };
   };
 
+  // Calculer la position verticale (rang) d'une affectation pour un jour donné
+  const getAffectationRankOnDay = (aff, dayDate, affectationsForOuvrier) => {
+    const dayStart = new Date(dayDate);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayDate);
+    dayEnd.setHours(23, 59, 59, 999);
+    
+    // Trouver toutes les affectations qui chevauchent ce jour
+    const overlappingAff = affectationsForOuvrier
+      .filter(a => {
+        const aStart = parseDate(a.dateDebut);
+        const aEnd = parseDate(a.dateFin);
+        if (!aStart || !aEnd) return false;
+        const aEndPlus = new Date(aEnd);
+        aEndPlus.setDate(aEndPlus.getDate() + 1);
+        return aStart <= dayEnd && aEndPlus >= dayStart;
+      })
+      .sort((a, b) => a.id - b.id); // Tri stable par ID
+    
+    // Retourner l'index de l'affectation actuelle
+    return overlappingAff.findIndex(a => a.id === aff.id);
+  };
+
   const weekStart = allDates[0];
   const weekEnd = new Date(allDates[allDates.length - 1]);
   weekEnd.setHours(23, 59, 59, 999);
@@ -271,14 +294,14 @@ export const GanttChart = ({
                     onClick={() => onAddAffectation(ouvrier.id, date)}
                     style={{
                       borderRight: (dayIdx + 1) % 5 === 0 && dayIdx < 19 ? "3px solid #1e3a8a" : dayIdx < 19 ? "1px solid #e5e7eb" : "none",
-                      minHeight: "50px",
+                      minHeight: "80px",
                       position: "relative",
                       background: "white",
                       cursor: "pointer",
                       transition: "background 0.2s",
                       padding: "2px 2px",
                       display: "flex",
-                      alignItems: "center",
+                      alignItems: "flex-start",
                       justifyContent: "flex-start"
                     }}
                     onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"}
@@ -291,6 +314,12 @@ export const GanttChart = ({
                       const tacheText = aff.tache || chantier?.nom;
                       const tacheAbrege = tacheText.substring(0, 2).toUpperCase();
                       
+                      // Calculer le rang (position verticale) pour ce jour
+                      const rank = getAffectationRankOnDay(aff, date, affectsByOuvrier);
+                      const barHeight = 24;
+                      const gap = 2;
+                      const topOffset = rank * (barHeight + gap) + 2;
+                      
                       return (
                         <div
                           key={aff.id}
@@ -302,7 +331,7 @@ export const GanttChart = ({
                             position: "absolute",
                             left: `${pos.left}%`,
                             width: `${Math.max(pos.width, 10)}%`,
-                            top: "2px",
+                            top: `${topOffset}px`,
                             display: "flex",
                             flexDirection: "column",
                             alignItems: "center",
