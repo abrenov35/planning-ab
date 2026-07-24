@@ -1,150 +1,93 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { AppContext } from "../context/AppContext";
+import { GanttChart } from "../components/GanttChart";
+import { Modal } from "../components/Modal";
+import { FormAffectation } from "../components/FormAffectation";
 
 export const GanttPage = () => {
-  const { ouvriers, chantiers, loading } = useContext(AppContext);
+  const { ouvriers, chantiers, affectations, addAffectation, updateAffectation, deleteAffectation, loading } = useContext(AppContext);
+  const [showAffectationModal, setShowAffectationModal] = useState(false);
+  const [selectedOuvrier, setSelectedOuvrier] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [editingAffectation, setEditingAffectation] = useState(null);
 
-  const ouvrierActifs = ouvriers.filter(o => o.statut === "Actif");
-  const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
-
-  // Fonction pour formater les dates
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "";
-    const date = new Date(dateStr);
-    const days = ["jan", "fév", "mar", "avr", "mai", "jun", "jul", "aoû", "sep", "oct", "nov", "déc"];
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = days[date.getMonth()];
-    return `${day} ${month}`;
+  const handleAddAffectation = (ouvrierID, date) => {
+    setSelectedOuvrier(ouvriers.find(o => o.id === ouvrierID));
+    setSelectedDate(date);
+    setEditingAffectation(null);
+    setShowAffectationModal(true);
   };
 
-  if (loading) return <div style={{ padding: "2rem" }}>Chargement...</div>;
+  const handleAffectationClick = (affectation) => {
+    setSelectedOuvrier(ouvriers.find(o => o.id === affectation.ouvrierID));
+    setEditingAffectation(affectation);
+    setShowAffectationModal(true);
+  };
+
+  const handleSubmitAffectation = async (formData) => {
+    if (editingAffectation) {
+      // Modification
+      const result = await updateAffectation(
+        editingAffectation.id,
+        formData.dateDebut,
+        formData.dateFin,
+        formData.tache,
+        "Actif"
+      );
+      if (result.success) {
+        setShowAffectationModal(false);
+        setEditingAffectation(null);
+      } else {
+        alert("Erreur: " + (result.error || "Impossible de modifier l'affectation"));
+      }
+    } else {
+      // Création
+      const result = await addAffectation(
+        selectedOuvrier.id,
+        formData.chantierId,
+        formData.dateDebut,
+        formData.dateFin,
+        formData.tache
+      );
+      if (result.success) {
+        setShowAffectationModal(false);
+        setSelectedOuvrier(null);
+        setSelectedDate(null);
+      } else {
+        alert("Erreur: " + (result.error || "Impossible d'ajouter l'affectation"));
+      }
+    }
+  };
+
+  if (loading) return <div style={{ padding: "1rem" }}>Chargement...</div>;
 
   return (
-    <div style={{ padding: "1rem", flex: 1, overflowY: "auto" }}>
-      {/* SECTION OUVRIERS */}
-      <div style={{
-        background: "white",
-        borderRadius: 6,
-        border: "1px solid #e5e7eb",
-        marginBottom: "0.75rem",
-        overflow: "hidden"
-      }}>
-        <div style={{
-          background: "#1e3a8a",
-          color: "white",
-          padding: "0.5rem 0.75rem",
-          fontWeight: 600,
-          fontSize: 12
-        }}>
-          OUVRIERS ACTIFS ({ouvrierActifs.length})
-        </div>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", flex: 1 }}>
+      <GanttChart
+        ouvriers={ouvriers}
+        chantiers={chantiers}
+        affectations={affectations}
+        onAddAffectation={handleAddAffectation}
+        onAffectationClick={handleAffectationClick}
+      />
 
-        <div style={{ padding: "0.5rem 0.75rem" }}>
-          {ouvrierActifs.length === 0 ? (
-            <div style={{ color: "#9ca3af", fontSize: 12 }}>Aucun ouvrier</div>
-          ) : (
-            ouvrierActifs.map(ouvrier => (
-              <div
-                key={ouvrier.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "6px 0",
-                  borderBottom: "1px solid #f3f4f6",
-                  fontSize: 12
-                }}
-              >
-                <div
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: "50%",
-                    background: "#3b82f6",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "white",
-                    fontWeight: 600,
-                    fontSize: 10,
-                    flexShrink: 0
-                  }}
-                >
-                  {ouvrier.nom.substring(0, 2).toUpperCase()}
-                </div>
-                <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ fontWeight: 500, color: "#1f2937" }}>
-                    {ouvrier.nom}
-                  </div>
-                  <div style={{ fontSize: 10, color: "#9ca3af" }}>
-                    {ouvrier.metier}
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* SECTION CHANTIERS */}
-      <div style={{
-        background: "white",
-        borderRadius: 6,
-        border: "1px solid #e5e7eb",
-        overflow: "hidden"
-      }}>
-        <div style={{
-          background: "#1e3a8a",
-          color: "white",
-          padding: "0.5rem 0.75rem",
-          fontWeight: 600,
-          fontSize: 12
-        }}>
-          CHANTIERS ACTIFS ({chantiersActifs.length})
-        </div>
-
-        <div style={{ padding: "0.5rem 0.75rem" }}>
-          {chantiersActifs.length === 0 ? (
-            <div style={{ color: "#9ca3af", fontSize: 12 }}>Aucun chantier</div>
-          ) : (
-            chantiersActifs.map(chantier => (
-              <div
-                key={chantier.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "6px 0",
-                  borderBottom: "1px solid #f3f4f6",
-                  fontSize: 11
-                }}
-              >
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontWeight: 600, color: "#1f2937", display: "flex", alignItems: "center", gap: 8 }}>
-                    <span>{chantier.nom}</span>
-                    <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 400 }}>
-                      {formatDate(chantier.dateDebut)} → {formatDate(chantier.dateFin)}
-                    </span>
-                  </div>
-                </div>
-                <span style={{
-                  display: "inline-block",
-                  padding: "2px 6px",
-                  background: "#dcfce7",
-                  color: "#166534",
-                  borderRadius: 3,
-                  fontSize: 10,
-                  fontWeight: 600,
-                  whiteSpace: "nowrap",
-                  marginLeft: "8px"
-                }}>
-                  ✓
-                </span>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+      {/* MODAL AFFECTATION */}
+      <Modal
+        isOpen={showAffectationModal}
+        title={editingAffectation ? "Modifier affectation" : "Ajouter affectation"}
+        onClose={() => setShowAffectationModal(false)}
+      >
+        {selectedOuvrier && (
+          <FormAffectation
+            affectation={editingAffectation}
+            ouvrier={selectedOuvrier}
+            chantiers={chantiers}
+            onSubmit={handleSubmitAffectation}
+            onCancel={() => setShowAffectationModal(false)}
+            mode={editingAffectation ? "edit" : "add"}
+          />
+        )}
+      </Modal>
     </div>
   );
 };

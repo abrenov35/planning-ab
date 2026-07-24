@@ -65,6 +65,31 @@ export const AppProvider = ({ children }) => {
     return result;
   };
 
+  // AFFECTATIONS
+  const addAffectation = async (ouvrierID, chantierId, dateDebut, dateFin, tache) => {
+    const result = await api.createAffectation(ouvrierID, chantierId, dateDebut, dateFin, tache);
+    if (result.success) {
+      await loadData();
+    }
+    return result;
+  };
+
+  const updateAffectation = async (id, dateDebut, dateFin, tache, statut) => {
+    const result = await api.updateAffectation(id, dateDebut, dateFin, tache, statut);
+    if (result.success) {
+      await loadData();
+    }
+    return result;
+  };
+
+  const deleteAffectation = async (id) => {
+    const result = await api.deleteAffectation(id);
+    if (result.success) {
+      await loadData();
+    }
+    return result;
+  };
+
   // Utilitaires
   const getOuvrierById = (id) => ouvriers.find(o => o.id === parseInt(id));
   const getChantierId = (id) => chantiers.find(c => c.id === parseInt(id));
@@ -81,6 +106,9 @@ export const AppProvider = ({ children }) => {
     updateOuvrier,
     addChantier,
     updateChantier,
+    addAffectation,
+    updateAffectation,
+    deleteAffectation,
     getOuvrierById,
     getChantierId,
     getAffectationsByOuvrier,

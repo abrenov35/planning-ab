@@ -108,3 +108,51 @@ export const updateChantier = async (id, nom, dateDebut, dateFin, description, s
     return { error: err.message };
   }
 };
+
+// AFFECTATIONS
+export const createAffectation = async (ouvrierID, chantierId, dateDebut, dateFin, tache) => {
+  try {
+    const params = new URLSearchParams({
+      action: "createAffectation",
+      ouvrierID,
+      chantierId,
+      dateDebut,
+      dateFin,
+      tache: tache || ""
+    });
+    const response = await fetch(`${API_URL}?${params}`);
+    return await response.json();
+  } catch (err) {
+    return { error: err.message };
+  }
+};
+
+export const updateAffectation = async (id, dateDebut, dateFin, tache, statut) => {
+  try {
+    const params = new URLSearchParams({
+      action: "updateAffectation",
+      id,
+      dateDebut: dateDebut || "",
+      dateFin: dateFin || "",
+      tache: tache || "",
+      statut: statut || ""
+    });
+    const response = await fetch(`${API_URL}?${params}`);
+    return await response.json();
+  } catch (err) {
+    return { error: err.message };
+  }
+};
+
+export const deleteAffectation = async (id) => {
+  try {
+    const params = new URLSearchParams({
+      action: "deleteAffectation",
+      id
+    });
+    const response = await fetch(`${API_URL}?${params}`);
+    return await response.json();
+  } catch (err) {
+    return { error: err.message };
+  }
+};
