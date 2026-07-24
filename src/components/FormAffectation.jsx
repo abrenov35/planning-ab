@@ -10,10 +10,24 @@ export const FormAffectation = ({
 }) => {
   const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
   
+  // Convertir JJ/MM/AAAA en AAAA-MM-JJ
+  const convertToInputFormat = (dateStr) => {
+    if (!dateStr) return "";
+    const [d, m, y] = dateStr.split("/");
+    return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  };
+
+  // Convertir AAAA-MM-JJ en JJ/MM/AAAA
+  const convertToSheetFormat = (dateStr) => {
+    if (!dateStr) return "";
+    const [y, m, d] = dateStr.split("-");
+    return `${d}/${m}/${y}`;
+  };
+  
   const [formData, setFormData] = useState({
     chantierId: affectation?.chantierId || "",
-    dateDebut: affectation?.dateDebut || "",
-    dateFin: affectation?.dateFin || "",
+    dateDebut: convertToInputFormat(affectation?.dateDebut) || "",
+    dateFin: convertToInputFormat(affectation?.dateFin) || "",
     tache: affectation?.tache || ""
   });
 
@@ -23,7 +37,15 @@ export const FormAffectation = ({
       alert("Veuillez remplir tous les champs");
       return;
     }
-    onSubmit(formData);
+    
+    // Convertir les dates au format JJ/MM/AAAA
+    const data = {
+      ...formData,
+      dateDebut: convertToSheetFormat(formData.dateDebut),
+      dateFin: convertToSheetFormat(formData.dateFin)
+    };
+    
+    onSubmit(data);
   };
 
   return (
@@ -59,7 +81,8 @@ export const FormAffectation = ({
             borderRadius: 4,
             border: "1px solid #d1d5db",
             fontSize: 12,
-            fontFamily: "inherit"
+            fontFamily: "inherit",
+            boxSizing: "border-box"
           }}
         >
           <option value="">-- Sélectionner --</option>
@@ -71,14 +94,13 @@ export const FormAffectation = ({
         </select>
       </div>
 
-      {/* DATE DÉBUT */}
+      {/* DATE DÉBUT - CALENDRIER */}
       <div>
         <label style={{ fontSize: 11, fontWeight: 600, color: "#1f2937", display: "block", marginBottom: 4 }}>
-          Date début (JJ/MM/AAAA) *
+          Date début *
         </label>
         <input
-          type="text"
-          placeholder="01/01/2025"
+          type="date"
           value={formData.dateDebut}
           onChange={(e) => setFormData({ ...formData, dateDebut: e.target.value })}
           style={{
@@ -88,19 +110,19 @@ export const FormAffectation = ({
             border: "1px solid #d1d5db",
             fontSize: 12,
             fontFamily: "inherit",
-            boxSizing: "border-box"
+            boxSizing: "border-box",
+            cursor: "pointer"
           }}
         />
       </div>
 
-      {/* DATE FIN */}
+      {/* DATE FIN - CALENDRIER */}
       <div>
         <label style={{ fontSize: 11, fontWeight: 600, color: "#1f2937", display: "block", marginBottom: 4 }}>
-          Date fin (JJ/MM/AAAA) *
+          Date fin *
         </label>
         <input
-          type="text"
-          placeholder="31/01/2025"
+          type="date"
           value={formData.dateFin}
           onChange={(e) => setFormData({ ...formData, dateFin: e.target.value })}
           style={{
@@ -110,7 +132,8 @@ export const FormAffectation = ({
             border: "1px solid #d1d5db",
             fontSize: 12,
             fontFamily: "inherit",
-            boxSizing: "border-box"
+            boxSizing: "border-box",
+            cursor: "pointer"
           }}
         />
       </div>
