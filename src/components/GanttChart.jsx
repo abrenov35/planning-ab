@@ -59,13 +59,6 @@ export const GanttChart = ({
     return `${days[date.getDay()]} ${d}`;
   };
 
-  // Calculer la charge par ouvrier
-  const getOuvrierCharge = (ouvrierID) => {
-    const affectsByOuvrier = affectations.filter(a => a.ouvrierID === ouvrierID);
-    // Simplifié : compter le nombre d'affectations
-    return Math.min(Math.round((affectsByOuvrier.length / 3) * 100), 100);
-  };
-
   // Vérifier si une affectation chevauche la semaine
   const isAffectationInWeek = (aff, weekStart, weekEnd) => {
     const affStart = parseDate(aff.dateDebut);
@@ -229,22 +222,10 @@ export const GanttChart = ({
               </div>
             ))}
           </div>
-          <div style={{
-            width: 70,
-            padding: "0.5rem 0.75rem",
-            background: "#f9fafb",
-            textAlign: "center",
-            fontWeight: 600,
-            fontSize: 11,
-            color: "#1f2937"
-          }}>
-            CHARGE
-          </div>
         </div>
 
         {/* ROWS - OUVRIERS */}
         {ouvrierActifs.map(ouvrier => {
-          const charge = getOuvrierCharge(ouvrier.id);
           const affectsByOuvrier = affectations.filter(
             a => a.ouvrierID === ouvrier.id && isAffectationInWeek(a, weekStart, weekEnd)
           );
@@ -335,23 +316,6 @@ export const GanttChart = ({
                     })}
                   </div>
                 ))}
-              </div>
-
-              {/* CHARGE */}
-              <div style={{
-                width: 70,
-                padding: "0.75rem",
-                textAlign: "center",
-                borderLeft: "1px solid #e5e7eb",
-                background: "white"
-              }}>
-                <div style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: charge > 80 ? "#ef4444" : charge > 50 ? "#f59e0b" : "#10b981"
-                }}>
-                  {charge}%
-                </div>
               </div>
             </div>
           );
