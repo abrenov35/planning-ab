@@ -11,7 +11,7 @@ export const FormOuvrier = ({ ouvrier, onSubmit, onCancel, mode = "add" }) => {
   };
 
   const handleSubmit = () => {
-    if (!formData.nom || !formData.type || !formData.metier) {
+    if (!formData.nom || !formData.metier) {
       alert("Veuillez remplir tous les champs obligatoires");
       return;
     }
@@ -46,37 +46,6 @@ export const FormOuvrier = ({ ouvrier, onSubmit, onCancel, mode = "add" }) => {
             fontFamily: "inherit"
           }}
         />
-      </div>
-
-      {/* TYPE */}
-      <div style={{ marginBottom: "1.25rem" }}>
-        <label style={{
-          display: "block",
-          fontWeight: 600,
-          fontSize: 13,
-          color: "#1f2937",
-          marginBottom: 6
-        }}>
-          Type *
-        </label>
-        <select
-          name="type"
-          value={formData.type}
-          onChange={handleChange}
-          style={{
-            width: "100%",
-            padding: "8px 12px",
-            border: "1px solid #d1d5db",
-            borderRadius: 6,
-            fontSize: 13,
-            fontFamily: "inherit",
-            background: "white",
-            cursor: "pointer"
-          }}
-        >
-          <option>CDI</option>
-          <option>ST</option>
-        </select>
       </div>
 
       {/* MÉTIER */}
