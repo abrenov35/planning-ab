@@ -20,22 +20,29 @@ export const GanttChart = ({
     5: "#8b5cf6", // Violet
   };
 
-  // Générer 3 semaines du lundi au vendredi
+  // Générer 3 semaines du lundi au vendredi (CORRIGÉ)
   const getThreeWeeksDates = (date) => {
     const d = new Date(date);
+    
+    // Trouver le lundi de cette semaine
+    // getDay(): 0=dimanche, 1=lundi, 2=mardi, ..., 6=samedi
     const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Lundi
-    const start = new Date(d.setDate(diff));
+    const daysSinceMonday = (day === 0) ? 6 : day - 1; // 0 pour lundi, 1 pour mardi, ..., 6 pour dimanche
+    
+    const monday = new Date(d);
+    monday.setDate(d.getDate() - daysSinceMonday);
     
     const dates = [];
-    // 3 semaines = 15 jours, mais on ne prend que lundi-vendredi (5 jours par semaine)
+    
+    // 3 semaines, lundi à vendredi (5 jours par semaine)
     for (let week = 0; week < 3; week++) {
-      for (let dayOfWeek = 0; dayOfWeek < 5; dayOfWeek++) { // Lundi (0) à Vendredi (4)
-        const date = new Date(start);
-        date.setDate(start.getDate() + week * 7 + dayOfWeek);
+      for (let dayOfWeek = 0; dayOfWeek < 5; dayOfWeek++) {
+        const date = new Date(monday);
+        date.setDate(monday.getDate() + week * 7 + dayOfWeek);
         dates.push(date);
       }
     }
+    
     return dates;
   };
 
