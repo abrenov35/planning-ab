@@ -104,6 +104,12 @@ export const GanttPage = () => {
       return null;
     };
 
+    // Fonction pour parser JJ/MM/AAAA en Date
+    const parseDate = (dateStr) => {
+      const [d, m, y] = dateStr.split('/');
+      return new Date(y, m - 1, d);
+    };
+
     // Normaliser les dates
     const dateDebutStr = dateToString(aff.dateDebut);
     const dateFinStr = dateToString(aff.dateFin);
@@ -117,6 +123,24 @@ export const GanttPage = () => {
     console.log("dateDebut:", dateDebutStr);
     console.log("dateFin:", dateFinStr);
     console.log("dayToDelete:", dayToDeleteStr);
+
+    // ✅ VÉRIFICATION : Le jour est-il dans la plage ?
+    const debutDate = parseDate(dateDebutStr);
+    const finDate = parseDate(dateFinStr);
+    const deleteDate = new Date(dayToDelete);
+    deleteDate.setHours(0, 0, 0, 0);
+
+    console.log("Comparaison dates:", {
+      debut: debutDate.toISOString(),
+      fin: finDate.toISOString(),
+      delete: deleteDate.toISOString()
+    });
+
+    if (deleteDate < debutDate || deleteDate > finDate) {
+      console.log("❌ ERREUR: Le jour à supprimer n'est pas dans la plage !");
+      alert(`Le ${dayToDeleteStr} n'est pas dans la plage de cette affectation (${dateDebutStr} → ${dateFinStr})`);
+      return;
+    }
 
     // Si c'est le seul jour → Supprimer complètement
     if (dateDebutStr === dateFinStr && dateDebutStr === dayToDeleteStr) {
