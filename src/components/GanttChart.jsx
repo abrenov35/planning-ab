@@ -403,9 +403,9 @@ export const GanttChart = ({
                             width: `${posInDay.width}%`,
                             top: `${topOffset}px`,
                             display: "flex",
-                            flexDirection: "row",
+                            flexDirection: "column",
                             alignItems: "center",
-                            gap: "2px",
+                            gap: "1px",
                             cursor: "pointer",
                             transition: "all 0.2s",
                             padding: "0 2px"
@@ -416,9 +416,8 @@ export const GanttChart = ({
                           {/* CUBE AVEC 2 LETTRES DU CHANTIER */}
                           <div
                             style={{
-                              width: "32px",
+                              width: "100%",
                               height: "18px",
-                              minWidth: "32px",
                               background: chantierColor,
                               borderRadius: 2,
                               border: "1px solid rgba(0,0,0,0.2)",
@@ -434,17 +433,20 @@ export const GanttChart = ({
                           >
                             {chantierId2Lettres}
                           </div>
-                          {/* LABEL COMPLET À CÔTÉ DU CUBE */}
+                          {/* LABEL COMPLET SOUS LE CUBE */}
                           <div
                             style={{
                               fontSize: 7,
                               fontWeight: 600,
                               color: "#374151",
+                              textAlign: "center",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
+                              maxWidth: "100%",
+                              width: "100%",
                               lineHeight: 1,
-                              flex: 1
+                              padding: "0 2px"
                             }}
                           >
                             {tacheText}
