@@ -235,7 +235,7 @@ export const GanttChart = ({
               {/* NOM OUVRIER */}
               <div style={{
                 width: 150,
-                padding: "0.75rem",
+                padding: "0.5rem 0.75rem",
                 background: "white",
                 borderRight: "1px solid #e5e7eb",
                 fontSize: 11,
@@ -261,12 +261,12 @@ export const GanttChart = ({
                     onClick={() => onAddAffectation(ouvrier.id, date)}
                     style={{
                       borderRight: dayIdx < 6 ? "1px solid #e5e7eb" : "none",
-                      minHeight: "80px",
+                      minHeight: "50px",
                       position: "relative",
                       background: dayIdx >= 5 ? "#f9fafb" : "white",
                       cursor: "pointer",
                       transition: "background 0.2s",
-                      padding: "4px 2px"
+                      padding: "2px 2px"
                     }}
                     onMouseEnter={e => e.currentTarget.style.background = dayIdx >= 5 ? "#f3f4f6" : "#f9fafb"}
                     onMouseLeave={e => e.currentTarget.style.background = dayIdx >= 5 ? "#f9fafb" : "white"}
@@ -287,24 +287,23 @@ export const GanttChart = ({
                             position: "absolute",
                             left: `${pos.left}%`,
                             width: `${Math.max(pos.width, 10)}%`,
-                            top: "8px",
-                            height: "24px",
+                            top: "4px",
+                            height: "18px",
                             background: colorMap[chantier?.id] || "#6b7280",
-                            borderRadius: 3,
-                            border: "1px solid rgba(0,0,0,0.3)",
+                            borderRadius: 2,
+                            border: "1px solid rgba(0,0,0,0.2)",
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontSize: 9,
+                            fontSize: 8,
                             color: "white",
                             fontWeight: 600,
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
-                            padding: "0 4px",
-                            transition: "all 0.2s",
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.2)"
+                            padding: "0 2px",
+                            transition: "all 0.2s"
                           }}
                           title={chantier?.nom}
                           onMouseEnter={e => e.currentTarget.style.opacity = "0.8"}
