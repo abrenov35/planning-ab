@@ -284,7 +284,7 @@ export const GanttChart = ({
         border: "1px solid #e5e7eb",
         display: "flex",
         flexDirection: "column",
-        width: "1600px"
+        flex: 1
       }}>
         {/* HEADER AVEC DATES */}
         <div style={{ display: "flex", borderBottom: "1px solid #e5e7eb", height: "40px" }}>
@@ -304,10 +304,10 @@ export const GanttChart = ({
           </div>
           <div style={{
             display: "grid",
-            gridTemplateColumns: "repeat(20, 80px)",
+            gridTemplateColumns: "repeat(20, 1fr)",
             borderRight: "1px solid #e5e7eb",
             height: "40px",
-            width: "1600px"
+            flex: 1
           }}>
             {allDates.map((date, idx) => (
               <div
@@ -359,12 +359,12 @@ export const GanttChart = ({
               {/* TIMELINE */}
               <div style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(20, 80px)",
+                gridTemplateColumns: "repeat(20, 1fr)",
                 background: "white",
                 borderRight: "1px solid #e5e7eb",
                 position: "relative",
                 height: "45px",
-                width: "1600px"
+                flex: 1
               }}>
                 {allDates.map((date, dayIdx) => (
                   <div
