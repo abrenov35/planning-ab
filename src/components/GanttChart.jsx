@@ -339,7 +339,7 @@ export const GanttChart = ({
           );
           
           // Alternance de couleurs: pair=blanc, impair=gris clair
-          const rowBackground = idx % 2 === 0 ? "white" : "#f9fafb";
+          const rowBackground = idx % 2 === 0 ? "white" : "#f3f4f6";
 
           return (
             <div key={ouvrier.id}>

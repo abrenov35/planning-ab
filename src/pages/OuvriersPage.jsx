@@ -96,7 +96,7 @@ export const OuvriersPage = () => {
               cdi.map((ouvrier, idx) => (
                 <tr key={ouvrier.id} style={{ 
                   borderBottom: "1px solid #d1d5db",
-                  background: idx % 2 === 0 ? "white" : "#f9fafb"
+                  background: idx % 2 === 0 ? "white" : "#f3f4f6"
                 }}>
                   <td style={{ padding: 8, color: "#374151", fontWeight: 500 }}>{ouvrier.nom}</td>
                   <td style={{ padding: 8, textAlign: "center" }}>
@@ -169,7 +169,7 @@ export const OuvriersPage = () => {
               st.map((ouvrier, idx) => (
                 <tr key={ouvrier.id} style={{ 
                   borderBottom: "1px solid #d1d5db",
-                  background: idx % 2 === 0 ? "white" : "#f9fafb"
+                  background: idx % 2 === 0 ? "white" : "#f3f4f6"
                 }}>
                   <td style={{ padding: 8, color: "#374151", fontWeight: 500 }}>{ouvrier.nom}</td>
                   <td style={{ padding: 8, textAlign: "center" }}>
@@ -217,7 +217,7 @@ export const OuvriersPage = () => {
               {archived.map((ouvrier, idx) => (
                 <tr key={ouvrier.id} style={{ 
                   borderBottom: "1px solid #d1d5db",
-                  background: idx % 2 === 0 ? "white" : "#f9fafb"
+                  background: idx % 2 === 0 ? "white" : "#f3f4f6"
                 }}>
                   <td style={{ padding: 8, color: "#374151", fontWeight: 500 }}>{ouvrier.nom}</td>
                   <td style={{ padding: 8, textAlign: "center" }}>

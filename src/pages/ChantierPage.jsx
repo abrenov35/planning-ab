@@ -111,7 +111,7 @@ export const ChantierPage = () => {
               actifs.map((chantier, idx) => (
                 <tr key={chantier.id} style={{ 
                   borderBottom: "1px solid #d1d5db",
-                  background: idx % 2 === 0 ? "white" : "#f9fafb"
+                  background: idx % 2 === 0 ? "white" : "#f3f4f6"
                 }}>
                   <td style={{ padding: 8, color: "#374151", fontWeight: 500, fontSize: 11 }}>
                     {chantier.nom}
@@ -164,7 +164,7 @@ export const ChantierPage = () => {
               {archived.map((chantier, idx) => (
                 <tr key={chantier.id} style={{ 
                   borderBottom: "1px solid #d1d5db",
-                  background: idx % 2 === 0 ? "white" : "#f9fafb"
+                  background: idx % 2 === 0 ? "white" : "#f3f4f6"
                 }}>
                   <td style={{ padding: 8, color: "#374151", fontWeight: 500, fontSize: 11 }}>
                     {chantier.nom}
