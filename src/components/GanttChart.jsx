@@ -300,30 +300,46 @@ export const GanttChart = ({
                             position: "absolute",
                             left: `${pos.left}%`,
                             width: `${Math.max(pos.width, 10)}%`,
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            height: "24px",
-                            background: colorMap[chantier?.id] || "#6b7280",
-                            borderRadius: 2,
-                            border: "1px solid rgba(0,0,0,0.2)",
-                            cursor: "pointer",
+                            top: "2px",
                             display: "flex",
+                            flexDirection: "column",
                             alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 9,
-                            color: "white",
-                            fontWeight: 600,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                            padding: "0 3px",
+                            gap: "2px",
+                            cursor: "pointer",
                             transition: "all 0.2s"
                           }}
-                          title={`${aff.tache} (${chantier?.nom})`}
-                          onMouseEnter={e => e.currentTarget.style.opacity = "0.8"}
+                          onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
                           onMouseLeave={e => e.currentTarget.style.opacity = "1"}
                         >
-                          {aff.tache || chantier?.nom.substring(0, 3)}
+                          {/* CUBE / BARRE */}
+                          <div
+                            style={{
+                              width: "100%",
+                              height: "24px",
+                              background: colorMap[chantier?.id] || "#6b7280",
+                              borderRadius: 2,
+                              border: "1px solid rgba(0,0,0,0.2)",
+                              boxSizing: "border-box"
+                            }}
+                          />
+                          {/* LABEL SOUS LE CUBE */}
+                          <div
+                            style={{
+                              fontSize: 8,
+                              fontWeight: 600,
+                              color: "#374151",
+                              textAlign: "center",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              maxWidth: "100%",
+                              width: "100%",
+                              lineHeight: 1.2,
+                              padding: "0 2px"
+                            }}
+                          >
+                            {aff.tache || chantier?.nom.substring(0, 3)}
+                          </div>
                         </div>
                       );
                     })}
