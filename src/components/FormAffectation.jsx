@@ -6,6 +6,7 @@ export const FormAffectation = ({
   chantiers, 
   onSubmit, 
   onCancel, 
+  onDelete,
   mode = "add" 
 }) => {
   const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
@@ -47,6 +48,20 @@ export const FormAffectation = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // En mode édition, si dates vides = suppression
+    if (mode === "edit" && (!formData.dateDebut || !formData.dateFin)) {
+      const dateDebut = convertToSheetFormat(affectation.dateDebut);
+      const dateFin = convertToSheetFormat(affectation.dateFin);
+      const message = `Attention vous allez supprimer l'affectation du ${dateDebut} au ${dateFin}\n\nConfirmer oui ou non ?`;
+      
+      if (window.confirm(message)) {
+        onDelete && onDelete();
+      }
+      return;
+    }
+    
+    // En mode création, dates obligatoires
     if (!formData.chantierId || !formData.dateDebut || !formData.dateFin) {
       alert("Veuillez remplir tous les champs");
       return;
@@ -346,6 +361,33 @@ export const FormAffectation = ({
         >
           Annuler
         </button>
+        {mode === "edit" && (
+          <button
+            type="button"
+            onClick={() => {
+              const dateDebut = convertToSheetFormat(affectation.dateDebut);
+              const dateFin = convertToSheetFormat(affectation.dateFin);
+              const message = `Attention vous allez supprimer l'affectation du ${dateDebut} au ${dateFin}\n\nConfirmer oui ou non ?`;
+              
+              if (window.confirm(message)) {
+                onDelete && onDelete();
+              }
+            }}
+            style={{
+              flex: 1,
+              padding: "8px",
+              background: "#dc2626",
+              color: "white",
+              border: "none",
+              borderRadius: 4,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer"
+            }}
+          >
+            Supprimer
+          </button>
+        )}
       </div>
     </form>
   );

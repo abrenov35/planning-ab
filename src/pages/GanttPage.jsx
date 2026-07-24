@@ -59,6 +59,18 @@ export const GanttPage = () => {
     }
   };
 
+  const handleDeleteAffectation = async () => {
+    if (editingAffectation) {
+      const result = await deleteAffectation(editingAffectation.id);
+      if (result.success) {
+        setShowAffectationModal(false);
+        setEditingAffectation(null);
+      } else {
+        alert("Erreur: " + (result.error || "Impossible de supprimer l'affectation"));
+      }
+    }
+  };
+
   if (loading) return <div style={{ padding: "1rem" }}>Chargement...</div>;
 
   return (
@@ -84,6 +96,7 @@ export const GanttPage = () => {
             chantiers={chantiers}
             onSubmit={handleSubmitAffectation}
             onCancel={() => setShowAffectationModal(false)}
+            onDelete={handleDeleteAffectation}
             mode={editingAffectation ? "edit" : "add"}
           />
         )}
