@@ -1,20 +1,8 @@
-import React, { useContext, useState } from "react";
+import React, { useContext } from "react";
 import { AppContext } from "../context/AppContext";
-import { Modal } from "../components/Modal";
-import { FormOuvrier } from "../components/FormOuvrier";
 
 export const GanttPage = () => {
-  const { ouvriers, chantiers, addOuvrier, updateOuvrier, loading } = useContext(AppContext);
-  const [showModalOuvrier, setShowModalOuvrier] = useState(false);
-
-  const handleAddOuvrier = async (formData) => {
-    const result = await addOuvrier(formData.nom, formData.type, formData.metier);
-    if (result.success) {
-      setShowModalOuvrier(false);
-    } else {
-      alert("Erreur: " + (result.error || "Impossible d'ajouter l'ouvrier"));
-    }
-  };
+  const { ouvriers, chantiers, loading } = useContext(AppContext);
 
   const ouvrierActifs = ouvriers.filter(o => o.statut === "Actif");
   const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
@@ -23,44 +11,6 @@ export const GanttPage = () => {
 
   return (
     <div style={{ padding: "1rem", flex: 1, overflowY: "auto" }}>
-      <div style={{ marginBottom: "0.75rem", display: "flex", gap: "8px", flexWrap: "wrap" }}>
-        <button style={{
-          padding: "6px 10px",
-          border: "1px solid #d1d5db",
-          background: "white",
-          borderRadius: 4,
-          fontSize: 11,
-          cursor: "pointer"
-        }}>
-          ← Prec
-        </button>
-        <button style={{
-          padding: "6px 10px",
-          border: "1px solid #d1d5db",
-          background: "white",
-          borderRadius: 4,
-          fontSize: 11,
-          cursor: "pointer"
-        }}>
-          Suiv →
-        </button>
-        <button
-          onClick={() => setShowModalOuvrier(true)}
-          style={{
-            padding: "6px 10px",
-            background: "#1e3a8a",
-            color: "white",
-            border: "none",
-            borderRadius: 4,
-            fontSize: 11,
-            cursor: "pointer",
-            fontWeight: 600
-          }}
-        >
-          + Ouvrier
-        </button>
-      </div>
-
       {/* SECTION OUVRIERS */}
       <div style={{
         background: "white",
@@ -185,19 +135,6 @@ export const GanttPage = () => {
           )}
         </div>
       </div>
-
-      {/* MODAL AJOUTER OUVRIER */}
-      <Modal
-        isOpen={showModalOuvrier}
-        title="Ajouter un ouvrier"
-        onClose={() => setShowModalOuvrier(false)}
-      >
-        <FormOuvrier
-          onSubmit={handleAddOuvrier}
-          onCancel={() => setShowModalOuvrier(false)}
-          mode="add"
-        />
-      </Modal>
     </div>
   );
 };
