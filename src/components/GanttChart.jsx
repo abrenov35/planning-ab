@@ -18,6 +18,26 @@ export const GanttChart = ({
     3: "#f59e0b", // Orange
     4: "#ef4444", // Rouge
     5: "#8b5cf6", // Violet
+    6: "#06b6d4", // Cyan
+    7: "#ec4899", // Rose
+    8: "#f97316", // Orange foncé
+    9: "#6366f1", // Indigo
+    10: "#14b8a6", // Teal
+  };
+
+  // Fonction pour obtenir la couleur d'un chantier (fallback par modulo si ID pas dans la map)
+  const getChantierId2Lettres = (chantier) => {
+    return chantier?.nom.substring(0, 2).toUpperCase() || "??";
+  };
+
+  const getChantierColor = (chantierId) => {
+    // Si l'ID est dans la colorMap, utiliser cette couleur
+    if (colorMap[chantierId]) {
+      return colorMap[chantierId];
+    }
+    // Sinon, utiliser modulo pour mapper à une couleur existante
+    const colors = Object.values(colorMap);
+    return colors[chantierId % colors.length];
   };
 
   // Générer 4 semaines : lundi courant à vendredi semaine 4 (20 jours)
@@ -358,7 +378,8 @@ export const GanttChart = ({
                       const chantier = chantiers.find(c => c.id === aff.chantierId);
                       const posInDay = getBarPositionInDay(aff, date, weekStart);
                       const tacheText = aff.tache || chantier?.nom;
-                      const chantierId2Lettres = chantier?.nom.substring(0, 2).toUpperCase();
+                      const chantierId2Lettres = getChantierId2Lettres(chantier);
+                      const chantierColor = getChantierColor(chantier?.id);
                       
                       // Ne pas afficher si l'affectation ne chevauchent pas ce jour
                       if (!posInDay.isVisible) return null;
@@ -398,7 +419,7 @@ export const GanttChart = ({
                               width: "32px",
                               height: "18px",
                               minWidth: "32px",
-                              background: colorMap[chantier?.id] || "#6b7280",
+                              background: chantierColor,
                               borderRadius: 2,
                               border: "1px solid rgba(0,0,0,0.2)",
                               boxSizing: "border-box",
@@ -451,7 +472,7 @@ export const GanttChart = ({
                 style={{
                   width: 16,
                   height: 16,
-                  background: colorMap[chantier.id] || "#6b7280",
+                  background: getChantierColor(chantier.id),
                   borderRadius: 2
                 }}
               />
