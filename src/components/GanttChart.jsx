@@ -38,9 +38,16 @@ export const GanttChart = ({
 
   const weekDates = getWeekDates(currentDate);
 
-  // Convertir date string en Date object
+  // Convertir date string en Date object (gère ISO et JJ/MM/AAAA)
   const parseDate = (dateStr) => {
     if (!dateStr) return null;
+    
+    // Format ISO: 2026-07-28T22:00:00.000Z
+    if (dateStr.includes('T')) {
+      return new Date(dateStr);
+    }
+    
+    // Format JJ/MM/AAAA: 28/07/2026
     const [d, m, y] = dateStr.split("/");
     return new Date(y, m - 1, d);
   };
@@ -110,27 +117,6 @@ export const GanttChart = ({
 
   return (
     <div style={{ padding: "1rem", flex: 1, overflowY: "auto" }}>
-      {/* DEBUG - Affichage du nombre d'affectations */}
-      <div style={{
-        background: "#fee2e2",
-        border: "1px solid #fca5a5",
-        color: "#991b1b",
-        padding: "8px",
-        borderRadius: 4,
-        marginBottom: "1rem",
-        fontSize: 11
-      }}>
-        🔍 DEBUG: {affectations.length} affectations chargées
-        {affectations.length > 0 && (
-          <div style={{ marginTop: 4, maxHeight: "100px", overflowY: "auto", fontSize: 10 }}>
-            {affectations.map(a => (
-              <div key={a.id}>
-                ID{a.id}: Kevin={a.ouvrierID}, Chantier={a.chantierId}, {a.dateDebut} → {a.dateFin}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
       {/* CONTRÔLES */}
       <div style={{ 
         display: "flex", 
@@ -262,17 +248,6 @@ export const GanttChart = ({
           const affectsByOuvrier = affectations.filter(
             a => a.ouvrierID === ouvrier.id && isAffectationInWeek(a, weekStart, weekEnd)
           );
-          
-          // DEBUG
-          if (ouvrier.id === 1) {
-            console.log("DEBUG Gantt Kevin:", {
-              totalAffectations: affectations.length,
-              allAffectationsForKevin: affectations.filter(a => a.ouvrierID === ouvrier.id),
-              affectationsInWeek: affectsByOuvrier,
-              weekStart: weekStart.toLocaleDateString(),
-              weekEnd: weekEnd.toLocaleDateString()
-            });
-          }
 
           return (
             <div key={ouvrier.id} style={{ display: "flex", borderBottom: "1px solid #f3f4f6" }}>
