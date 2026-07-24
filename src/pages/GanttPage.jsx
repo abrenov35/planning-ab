@@ -7,6 +7,16 @@ export const GanttPage = () => {
   const ouvrierActifs = ouvriers.filter(o => o.statut === "Actif");
   const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
 
+  // Fonction pour formater les dates
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    const days = ["jan", "fév", "mar", "avr", "mai", "jun", "jul", "aoû", "sep", "oct", "nov", "déc"];
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = days[date.getMonth()];
+    return `${day} ${month}`;
+  };
+
   if (loading) return <div style={{ padding: "2rem" }}>Chargement...</div>;
 
   return (
@@ -109,12 +119,12 @@ export const GanttPage = () => {
                   fontSize: 11
                 }}
               >
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, color: "#1f2937" }}>
-                    {chantier.nom}
-                  </div>
-                  <div style={{ fontSize: 10, color: "#9ca3af" }}>
-                    {chantier.dateDebut} → {chantier.dateFin}
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontWeight: 600, color: "#1f2937", display: "flex", alignItems: "center", gap: 8 }}>
+                    <span>{chantier.nom}</span>
+                    <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 400 }}>
+                      {formatDate(chantier.dateDebut)} → {formatDate(chantier.dateFin)}
+                    </span>
                   </div>
                 </div>
                 <span style={{

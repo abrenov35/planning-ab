@@ -40,6 +40,16 @@ export const ChantierPage = () => {
 
   if (loading) return <div style={{ padding: "2rem" }}>Chargement...</div>;
 
+  // Fonction pour formater les dates
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    const days = ["jan", "fév", "mar", "avr", "mai", "jun", "jul", "aoû", "sep", "oct", "nov", "déc"];
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = days[date.getMonth()];
+    return `${day} ${month}`;
+  };
+
   const actifs = chantiers.filter(c => c.statut === "Actif");
   const archived = chantiers.filter(c => c.statut === "Archivé");
 
@@ -105,7 +115,7 @@ export const ChantierPage = () => {
                     {chantier.nom}
                   </td>
                   <td style={{ padding: 8, color: "#374151", fontSize: 10 }}>
-                    {chantier.dateDebut} → {chantier.dateFin}
+                    {formatDate(chantier.dateDebut)} → {formatDate(chantier.dateFin)}
                   </td>
                   <td style={{ padding: 8, color: "#10b981", fontWeight: 600 }}>50%</td>
                   <td style={{ padding: 8, color: "#374151", fontSize: 10 }}>Kevin...</td>
@@ -165,7 +175,7 @@ export const ChantierPage = () => {
                     {chantier.nom}
                   </td>
                   <td style={{ padding: 8, color: "#374151", fontSize: 10 }}>
-                    {chantier.dateDebut} → {chantier.dateFin}
+                    {formatDate(chantier.dateDebut)} → {formatDate(chantier.dateFin)}
                   </td>
                   <td style={{ padding: 8 }}>
                     <span style={{
