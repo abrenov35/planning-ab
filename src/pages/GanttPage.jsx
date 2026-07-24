@@ -82,43 +82,39 @@ export const GanttPage = () => {
     const aff = affectations.find(a => a.id === affectationId);
     if (!aff) return;
 
-    // Fonction pour parser et normaliser les dates
-    const parseDate = (dateStr) => {
-      if (!dateStr) return null;
-      let d;
-      if (typeof dateStr === 'string' && dateStr.includes('/')) {
-        const [day, month, year] = dateStr.split('/');
-        d = new Date(year, month - 1, day);
-      } else if (typeof dateStr === 'string' && dateStr.includes('-')) {
-        d = new Date(dateStr);
-      } else {
-        d = new Date(dateStr);
-      }
-      d.setHours(0, 0, 0, 0);
-      return d;
-    };
-
     // Fonction pour convertir date en string JJ/MM/AAAA
     const dateToString = (date) => {
       return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
     };
 
-    const dateDebut = parseDate(aff.dateDebut);
-    const dateFin = parseDate(aff.dateFin);
+    // Créer la string du jour à supprimer
     const dayToDeleteNorm = new Date(dayToDelete);
     dayToDeleteNorm.setHours(0, 0, 0, 0);
+    const dayToDeleteStr = dateToString(dayToDeleteNorm);
 
-    console.log("=== DEBUG ===");
-    console.log("dateDebut:", aff.dateDebut, "→", dateDebut, "time:", dateDebut?.getTime());
-    console.log("dateFin:", aff.dateFin, "→", dateFin, "time:", dateFin?.getTime());
-    console.log("dayToDelete:", dayToDelete, "→", dayToDeleteNorm, "time:", dayToDeleteNorm.getTime());
-    console.log("");
-    console.log("dateDebut === dayToDelete?", dateDebut?.getTime(), "===", dayToDeleteNorm.getTime(), "?", dateDebut?.getTime() === dayToDeleteNorm.getTime());
-    console.log("dateFin === dayToDelete?", dateFin?.getTime(), "===", dayToDeleteNorm.getTime(), "?", dateFin?.getTime() === dayToDeleteNorm.getTime());
+    // Normaliser les dates de l'affectation
+    // Les dates brutes peuvent être en JJ/MM/AAAA déjà
+    let dateDebutStr = aff.dateDebut;
+    let dateFinStr = aff.dateFin;
+
+    // Si c'est au format ISO, convertir en JJ/MM/AAAA
+    if (aff.dateDebut && aff.dateDebut.includes('-')) {
+      const d = new Date(aff.dateDebut);
+      dateDebutStr = dateToString(d);
+    }
+    if (aff.dateFin && aff.dateFin.includes('-')) {
+      const d = new Date(aff.dateFin);
+      dateFinStr = dateToString(d);
+    }
+
+    console.log("=== COMPARAISON STRINGS ===");
+    console.log("dateDebut:", dateDebutStr);
+    console.log("dateFin:", dateFinStr);
+    console.log("dayToDelete:", dayToDeleteStr);
 
     // Si c'est le seul jour → Supprimer complètement
-    if (dateDebut?.getTime() === dateFin?.getTime() && dateDebut?.getTime() === dayToDeleteNorm.getTime()) {
-      console.log("✓ Suppression complète");
+    if (dateDebutStr === dateFinStr && dateDebutStr === dayToDeleteStr) {
+      console.log("✓ Suppression complète (seul jour)");
       const result = await deleteAffectation(affectationId);
       if (!result.success) {
         alert("Erreur: " + (result.error || "Impossible de supprimer l'affectation"));
@@ -127,12 +123,12 @@ export const GanttPage = () => {
     }
 
     // Si c'est le premier jour → Avancer la date de début
-    if (dateDebut?.getTime() === dayToDeleteNorm.getTime()) {
-      console.log("✓ Suppression premier jour");
-      const newStart = new Date(dayToDeleteNorm);
+    if (dateDebutStr === dayToDeleteStr) {
+      console.log("✓ Suppression du premier jour");
+      const dateDebutDate = new Date(dayToDelete);
+      const newStart = new Date(dateDebutDate);
       newStart.setDate(newStart.getDate() + 1);
       const newStartStr = dateToString(newStart);
-      const dateFinStr = dateToString(dateFin);
       
       const result = await updateAffectation(
         affectationId,
@@ -148,12 +144,12 @@ export const GanttPage = () => {
     }
 
     // Si c'est le dernier jour → Reculer la date de fin
-    if (dateFin?.getTime() === dayToDeleteNorm.getTime()) {
-      console.log("✓ Suppression dernier jour");
-      const newEnd = new Date(dayToDeleteNorm);
+    if (dateFinStr === dayToDeleteStr) {
+      console.log("✓ Suppression du dernier jour");
+      const dateFinDate = new Date(dayToDelete);
+      const newEnd = new Date(dateFinDate);
       newEnd.setDate(newEnd.getDate() - 1);
       const newEndStr = dateToString(newEnd);
-      const dateDebutStr = dateToString(dateDebut);
       
       const result = await updateAffectation(
         affectationId,
