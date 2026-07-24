@@ -82,179 +82,62 @@ export const GanttPage = () => {
     const aff = affectations.find(a => a.id === affectationId);
     if (!aff) return;
 
-    // Fonction pour convertir date en string JJ/MM/AAAA (fuseau horaire indépendant)
+    // Convertir date en string JJ/MM/AAAA
     const dateToString = (dateStr) => {
       if (!dateStr) return null;
-      let d;
-      if (typeof dateStr === 'string' && dateStr.includes('/')) {
-        return dateStr;
-      } else if (typeof dateStr === 'string' && dateStr.includes('-')) {
+      if (typeof dateStr === 'string' && dateStr.includes('/')) return dateStr;
+      if (typeof dateStr === 'string' && dateStr.includes('-')) {
         const match = dateStr.match(/(\d{4})-(\d{2})-(\d{2})/);
         if (match) {
           const [, year, month, day] = match;
           return `${day}/${month}/${year}`;
         }
       } else {
-        d = new Date(dateStr);
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const year = d.getFullYear();
-        return `${day}/${month}/${year}`;
+        const d = new Date(dateStr);
+        return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
       }
       return null;
     };
 
-    // Fonction pour parser JJ/MM/AAAA en Date
-    const parseDate = (dateStr) => {
-      const [d, m, y] = dateStr.split('/');
-      return new Date(y, m - 1, d);
-    };
-
-    // Normaliser les dates
     const dateDebutStr = dateToString(aff.dateDebut);
     const dateFinStr = dateToString(aff.dateFin);
 
-    // Créer la string du jour à supprimer - NORMALISÉ
     const dayToDeleteDate = new Date(dayToDelete);
-    dayToDeleteDate.setHours(0, 0, 0, 0);  // Forcer minuit
-    const dayToDeleteStr = `${String(dayToDeleteDate.getDate()).padStart(2, '0')}/${String(dayToDeleteDate.getMonth() + 1).padStart(2, '0')}/${dayToDeleteDate.getFullYear()}`;
+    dayToDeleteDate.setHours(0, 0, 0, 0);
+    const dayToDeleteStr = `${String(dayToDeleteDate.getDate()).padStart(2,'0')}/${String(dayToDeleteDate.getMonth()+1).padStart(2,'0')}/${dayToDeleteDate.getFullYear()}`;
 
-    console.log("=== COMPARAISON STRINGS ===");
-    console.log("dateDebut:", dateDebutStr);
-    console.log("dateFin:", dateFinStr);
-    console.log("dayToDelete:", dayToDeleteStr);
+    console.log("🗑️ Suppression jour:", { debut: dateDebutStr, fin: dateFinStr, delete: dayToDeleteStr });
 
-    // ✅ VÉRIFICATION : Le jour est-il dans la plage ?
-    const debutDate = parseDate(dateDebutStr);
-    const finDate = parseDate(dateFinStr);
-    const deleteDate = new Date(dayToDelete);
-    deleteDate.setHours(0, 0, 0, 0);
-
-    console.log("Comparaison dates:", {
-      debut: debutDate.toISOString(),
-      fin: finDate.toISOString(),
-      delete: deleteDate.toISOString()
-    });
-
-    if (deleteDate < debutDate || deleteDate > finDate) {
-      console.log("❌ ERREUR: Le jour à supprimer n'est pas dans la plage !");
-      alert(`Le ${dayToDeleteStr} n'est pas dans la plage de cette affectation (${dateDebutStr} → ${dateFinStr})`);
-      return;
-    }
-
-    // Si c'est le seul jour → Supprimer complètement
+    // ➡️ SEUL JOUR → Supprimer complètement
     if (dateDebutStr === dateFinStr && dateDebutStr === dayToDeleteStr) {
-      console.log("✓ Suppression complète (seul jour)");
-      const result = await deleteAffectation(affectationId);
-      console.log("Résultat suppression:", result);
-      if (!result.success) {
-        alert("Erreur: " + (result.error || "Impossible de supprimer l'affectation"));
-      }
+      console.log("✓ Suppression complète");
+      await deleteAffectation(affectationId);
       return;
     }
 
-    // Si c'est le premier jour → Avancer la date de début
+    // ➡️ PREMIER JOUR → Avancer le début
     if (dateDebutStr === dayToDeleteStr) {
-      console.log("✓ Suppression du premier jour");
-      const dayDate = new Date(dayToDelete);
-      const newStart = new Date(dayDate);
+      console.log("✓ Raccourcir le début");
+      const newStart = new Date(dayToDelete);
       newStart.setDate(newStart.getDate() + 1);
-      const newStartStr = `${String(newStart.getDate()).padStart(2, '0')}/${String(newStart.getMonth() + 1).padStart(2, '0')}/${newStart.getFullYear()}`;
-      
-      const result = await updateAffectation(
-        affectationId,
-        newStartStr,
-        dateFinStr,
-        aff.tache,
-        "Actif"
-      );
-      console.log("Résultat update (premier jour):", result);
-      if (!result.success) {
-        alert("Erreur: " + (result.error || "Impossible de mettre à jour l'affectation"));
-      }
+      const newStartStr = `${String(newStart.getDate()).padStart(2,'0')}/${String(newStart.getMonth()+1).padStart(2,'0')}/${newStart.getFullYear()}`;
+      await updateAffectation(affectationId, newStartStr, dateFinStr, aff.tache, "Actif");
       return;
     }
 
-    // Si c'est le dernier jour → Reculer la date de fin
+    // ➡️ DERNIER JOUR → Reculer la fin
     if (dateFinStr === dayToDeleteStr) {
-      console.log("✓ Suppression du dernier jour");
-      const dayDate = new Date(dayToDelete);
-      const newEnd = new Date(dayDate);
+      console.log("✓ Raccourcir la fin");
+      const newEnd = new Date(dayToDelete);
       newEnd.setDate(newEnd.getDate() - 1);
-      const newEndStr = `${String(newEnd.getDate()).padStart(2, '0')}/${String(newEnd.getMonth() + 1).padStart(2, '0')}/${newEnd.getFullYear()}`;
-      
-      const result = await updateAffectation(
-        affectationId,
-        dateDebutStr,
-        newEndStr,
-        aff.tache,
-        "Actif"
-      );
-      console.log("Résultat update (dernier jour):", result);
-      if (!result.success) {
-        alert("Erreur: " + (result.error || "Impossible de mettre à jour l'affectation"));
-      }
+      const newEndStr = `${String(newEnd.getDate()).padStart(2,'0')}/${String(newEnd.getMonth()+1).padStart(2,'0')}/${newEnd.getFullYear()}`;
+      await updateAffectation(affectationId, dateDebutStr, newEndStr, aff.tache, "Actif");
       return;
     }
 
-    // Si c'est au milieu → SCINDER AUTOMATIQUEMENT EN 2
-    console.log("✓ JOUR AU MILIEU - Découpage automatique en 2 affectations");
-    
-    // Affectation 1 : dateDebut → jour précédent
-    const dayBeforeDate = new Date(dayToDelete);
-    dayBeforeDate.setDate(dayBeforeDate.getDate() - 1);
-    const dateBeforeStr = `${String(dayBeforeDate.getDate()).padStart(2, '0')}/${String(dayBeforeDate.getMonth() + 1).padStart(2, '0')}/${dayBeforeDate.getFullYear()}`;
-
-    // Affectation 2 : jour suivant → dateFin
-    const dayAfterDate = new Date(dayToDelete);
-    dayAfterDate.setDate(dayAfterDate.getDate() + 1);
-    const dateAfterStr = `${String(dayAfterDate.getDate()).padStart(2, '0')}/${String(dayAfterDate.getMonth() + 1).padStart(2, '0')}/${dayAfterDate.getFullYear()}`;
-
-    console.log("Création affectation 1:", dateDebutStr, "→", dateBeforeStr);
-    console.log("Création affectation 2:", dateAfterStr, "→", dateFinStr);
-
-    // Créer affectation 1
-    const result1 = await addAffectation(
-      aff.ouvrierID,
-      aff.chantierId,
-      dateDebutStr,
-      dateBeforeStr,
-      aff.tache
-    );
-    console.log("Résultat création aff 1:", result1);
-
-    if (!result1.success) {
-      alert("Erreur création affectation 1: " + result1.error);
-      return;
-    }
-
-    // Créer affectation 2
-    const result2 = await addAffectation(
-      aff.ouvrierID,
-      aff.chantierId,
-      dateAfterStr,
-      dateFinStr,
-      aff.tache
-    );
-    console.log("Résultat création aff 2:", result2);
-
-    if (!result2.success) {
-      alert("Erreur création affectation 2: " + result2.error);
-      // Supprimer affectation 1 si la 2ème échoue
-      await deleteAffectation(result1.data.id);
-      return;
-    }
-
-    // MAINTENANT SUPPRIMER L'AFFECTATION ORIGINALE
-    console.log("🗑️ Suppression de l'affectation originale:", affectationId);
-    const result3 = await deleteAffectation(affectationId);
-    console.log("Résultat suppression originale:", result3);
-    
-    if (!result3.success) {
-      alert("⚠️ Erreur suppression affectation originale: " + result3.error);
-    } else {
-      console.log("✅ SUCCÈS: Affectation découpage automatique complète!");
-    }
+    // ➡️ AU MILIEU → Refus simple
+    console.log("❌ Jour au milieu - impossible");
+    alert(`Impossible de supprimer un jour au milieu.\n\nVous pouvez:\n• Supprimer le premier jour (${dateDebutStr})\n• Supprimer le dernier jour (${dateFinStr})\n• Supprimer toute l'affectation`);
   };
 
   if (loading) return <div style={{ padding: "1rem" }}>Chargement...</div>;
