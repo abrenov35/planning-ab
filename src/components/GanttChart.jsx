@@ -475,10 +475,15 @@ export const GanttChart = ({
                             {hoveredAffectationId === aff.id && (
                               <button
                                 onClick={(e) => {
+                                  e.preventDefault();
                                   e.stopPropagation();
                                   if (onDeleteAffectationDay) {
                                     onDeleteAffectationDay(aff.id, date);
                                   }
+                                }}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
                                 }}
                                 style={{
                                   position: "absolute",
@@ -499,7 +504,9 @@ export const GanttChart = ({
                                   padding: 0,
                                   lineHeight: 1,
                                   transition: "all 0.2s",
-                                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+                                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                                  pointerEvents: "auto",
+                                  zIndex: 1000
                                 }}
                                 onMouseEnter={e => e.currentTarget.style.background = "#dc2626"}
                                 onMouseLeave={e => e.currentTarget.style.background = "#ef4444"}
