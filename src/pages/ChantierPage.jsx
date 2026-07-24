@@ -54,7 +54,15 @@ export const ChantierPage = () => {
   const archived = chantiers.filter(c => c.statut === "Archivé");
 
   return (
-    <div style={{ padding: "1rem", flex: 1, overflowY: "auto" }}>
+    <div style={{ 
+      padding: "1rem", 
+      flex: 1, 
+      overflowY: "auto",
+      display: "flex",
+      justifyContent: "center",
+      background: "#f3f4f6"
+    }}>
+      <div style={{ maxWidth: "900px", width: "100%" }}>
       {/* TABLE ACTIFS */}
       <div style={{
         background: "white",
@@ -66,18 +74,18 @@ export const ChantierPage = () => {
         <div style={{
           background: "#1e3a8a",
           color: "white",
-          padding: "0.5rem 0.75rem",
+          padding: "0.75rem 1rem",
           fontWeight: 600,
-          fontSize: 12,
+          fontSize: 13,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center"
         }}>
-          <span>CHANTIERS ACTIFS ({actifs.length})</span>
+          <span>🏗️ Chantiers actifs ({actifs.length})</span>
           <button
             onClick={() => setShowAddModal(true)}
             style={{
-              padding: "4px 8px",
+              padding: "6px 12px",
               background: "#10b981",
               color: "white",
               border: "none",
@@ -146,13 +154,13 @@ export const ChantierPage = () => {
           overflow: "hidden"
         }}>
           <div style={{
-            background: "#1e3a8a",
+            background: "#6b7280",
             color: "white",
-            padding: "0.5rem 0.75rem",
+            padding: "0.75rem 1rem",
             fontWeight: 600,
-            fontSize: 12
+            fontSize: 13
           }}>
-            ARCHIVÉS ({archived.length})
+            📦 Archivés ({archived.length})
           </div>
 
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
@@ -221,6 +229,7 @@ export const ChantierPage = () => {
           />
         )}
       </Modal>
+      </div>
     </div>
   );
 };

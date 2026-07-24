@@ -39,7 +39,15 @@ export const OuvriersPage = () => {
   const archived = ouvriers.filter(o => o.statut === "Archivé");
 
   return (
-    <div style={{ padding: "1rem", flex: 1, overflowY: "auto" }}>
+    <div style={{ 
+      padding: "1rem", 
+      flex: 1, 
+      overflowY: "auto",
+      display: "flex",
+      justifyContent: "center",
+      background: "#f3f4f6"
+    }}>
+      <div style={{ maxWidth: "900px", width: "100%" }}>
       {/* TABLE CDI */}
       <div style={{
         background: "white",
@@ -51,18 +59,18 @@ export const OuvriersPage = () => {
         <div style={{
           background: "#1e3a8a",
           color: "white",
-          padding: "0.5rem 0.75rem",
+          padding: "0.75rem 1rem",
           fontWeight: 600,
-          fontSize: 12,
+          fontSize: 13,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center"
         }}>
-          <span>ÉQUIPE CDI ({cdi.length})</span>
+          <span>👷 CDI ({cdi.length})</span>
           <button
             onClick={() => setShowAddModal(true)}
             style={{
-              padding: "4px 8px",
+              padding: "6px 12px",
               background: "#10b981",
               color: "white",
               border: "none",
@@ -129,18 +137,18 @@ export const OuvriersPage = () => {
         <div style={{
           background: "#1e3a8a",
           color: "white",
-          padding: "0.5rem 0.75rem",
+          padding: "0.75rem 1rem",
           fontWeight: 600,
-          fontSize: 12,
+          fontSize: 13,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center"
         }}>
-          <span>SOUS-TRAITANTS ({st.length})</span>
+          <span>🤝 Sous-traitants ({st.length})</span>
           <button
             onClick={() => setShowAddModal(true)}
             style={{
-              padding: "4px 8px",
+              padding: "6px 12px",
               background: "#10b981",
               color: "white",
               border: "none",
@@ -205,13 +213,13 @@ export const OuvriersPage = () => {
           overflow: "hidden"
         }}>
           <div style={{
-            background: "#1e3a8a",
+            background: "#6b7280",
             color: "white",
-            padding: "0.5rem 0.75rem",
+            padding: "0.75rem 1rem",
             fontWeight: 600,
-            fontSize: 12
+            fontSize: 13
           }}>
-            ARCHIVÉS ({archived.length})
+            📦 Archivés ({archived.length})
           </div>
 
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
@@ -276,6 +284,7 @@ export const OuvriersPage = () => {
           />
         )}
       </Modal>
+      </div>
     </div>
   );
 };
