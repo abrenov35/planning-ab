@@ -20,23 +20,26 @@ export const GanttChart = ({
     5: "#8b5cf6", // Violet
   };
 
-  // Générer les dates de la semaine
-  const getWeekDates = (date) => {
+  // Générer 3 semaines du lundi au vendredi
+  const getThreeWeeksDates = (date) => {
     const d = new Date(date);
     const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Lundi
     const start = new Date(d.setDate(diff));
     
     const dates = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(start);
-      date.setDate(start.getDate() + i);
-      dates.push(date);
+    // 3 semaines = 15 jours, mais on ne prend que lundi-vendredi (5 jours par semaine)
+    for (let week = 0; week < 3; week++) {
+      for (let dayOfWeek = 0; dayOfWeek < 5; dayOfWeek++) { // Lundi (0) à Vendredi (4)
+        const date = new Date(start);
+        date.setDate(start.getDate() + week * 7 + dayOfWeek);
+        dates.push(date);
+      }
     }
     return dates;
   };
 
-  const weekDates = getWeekDates(currentDate);
+  const allDates = getThreeWeeksDates(currentDate);
 
   // Convertir date string en Date object (gère ISO et JJ/MM/AAAA)
   const parseDate = (dateStr) => {
@@ -94,7 +97,7 @@ export const GanttChart = ({
     const endOffset = Math.floor((clippedEnd - weekStart) / (1000 * 60 * 60 * 24));
     const duration = Math.max(1, endOffset - startOffset); // Au minimum 1 jour
     
-    const totalDays = 7;
+    const totalDays = 15; // 3 semaines x 5 jours
     
     return {
       left: (startOffset / totalDays) * 100,
@@ -102,8 +105,8 @@ export const GanttChart = ({
     };
   };
 
-  const weekStart = weekDates[0];
-  const weekEnd = new Date(weekDates[6]);
+  const weekStart = allDates[0];
+  const weekEnd = new Date(allDates[allDates.length - 1]);
   weekEnd.setHours(23, 59, 59, 999);
 
   const ouvrierActifs = ouvriers.filter(o => o.statut === "Actif");
@@ -122,7 +125,7 @@ export const GanttChart = ({
           <button
             onClick={() => {
               const d = new Date(currentDate);
-              d.setDate(d.getDate() - 7);
+              d.setDate(d.getDate() - 21); // 3 semaines précédentes
               setCurrentDate(d);
             }}
             style={{
@@ -136,12 +139,12 @@ export const GanttChart = ({
               fontWeight: 600
             }}
           >
-            ← Sem Prec
+            ← 3 Sem Prec
           </button>
           <button
             onClick={() => {
               const d = new Date(currentDate);
-              d.setDate(d.getDate() + 7);
+              d.setDate(d.getDate() + 21); // 3 semaines suivantes
               setCurrentDate(d);
             }}
             style={{
@@ -155,7 +158,7 @@ export const GanttChart = ({
               fontWeight: 600
             }}
           >
-            Sem Suiv →
+            3 Sem Suiv →
           </button>
           <button
             onClick={() => setCurrentDate(new Date())}
@@ -175,7 +178,7 @@ export const GanttChart = ({
         </div>
 
         <div style={{ fontSize: 12, fontWeight: 600, color: "#1f2937" }}>
-          Semaine du {weekDates[0].toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
+          3 semaines du {allDates[0].toLocaleDateString("fr-FR", { day: "numeric", month: "long" })} au {allDates[allDates.length - 1].toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
         </div>
       </div>
 
@@ -202,16 +205,16 @@ export const GanttChart = ({
           <div style={{
             flex: 1,
             display: "grid",
-            gridTemplateColumns: "repeat(7, 1fr)",
+            gridTemplateColumns: "repeat(15, 1fr)",
             borderRight: "1px solid #e5e7eb"
           }}>
-            {weekDates.map((date, idx) => (
+            {allDates.map((date, idx) => (
               <div
                 key={idx}
                 style={{
                   padding: "0.5rem 0.75rem",
                   background: "#f9fafb",
-                  borderRight: idx < 6 ? "1px solid #e5e7eb" : "none",
+                  borderRight: idx < 14 ? "1px solid #e5e7eb" : "none",
                   textAlign: "center",
                   fontSize: 10,
                   fontWeight: 600,
@@ -250,20 +253,20 @@ export const GanttChart = ({
               <div style={{
                 flex: 1,
                 display: "grid",
-                gridTemplateColumns: "repeat(7, 1fr)",
+                gridTemplateColumns: "repeat(15, 1fr)",
                 background: "white",
                 borderRight: "1px solid #e5e7eb",
                 position: "relative"
               }}>
-                {weekDates.map((date, dayIdx) => (
+                {allDates.map((date, dayIdx) => (
                   <div
                     key={dayIdx}
                     onClick={() => onAddAffectation(ouvrier.id, date)}
                     style={{
-                      borderRight: dayIdx < 6 ? "1px solid #e5e7eb" : "none",
+                      borderRight: dayIdx < 14 ? "1px solid #e5e7eb" : "none",
                       minHeight: "50px",
                       position: "relative",
-                      background: dayIdx >= 5 ? "#f9fafb" : "white",
+                      background: "white",
                       cursor: "pointer",
                       transition: "background 0.2s",
                       padding: "2px 2px",
@@ -271,8 +274,8 @@ export const GanttChart = ({
                       alignItems: "center",
                       justifyContent: "flex-start"
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = dayIdx >= 5 ? "#f3f4f6" : "#f9fafb"}
-                    onMouseLeave={e => e.currentTarget.style.background = dayIdx >= 5 ? "#f9fafb" : "white"}
+                    onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"}
+                    onMouseLeave={e => e.currentTarget.style.background = "white"}
                   >
                     {/* BARRES D'AFFECTATION */}
                     {affectsByOuvrier.map(aff => {
