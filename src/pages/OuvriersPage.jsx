@@ -81,15 +81,13 @@ export const OuvriersPage = () => {
             <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
               <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Nom</th>
               <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Métier</th>
-              <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Charge</th>
-              <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Statut</th>
               <th style={{ padding: "8px", width: 60, fontWeight: 600, color: "#1f2937" }}>Action</th>
             </tr>
           </thead>
           <tbody>
             {cdi.length === 0 ? (
               <tr>
-                <td colSpan="5" style={{ padding: 8, textAlign: "center", color: "#9ca3af" }}>
+                <td colSpan="3" style={{ padding: 8, textAlign: "center", color: "#9ca3af" }}>
                   Aucun CDI
                 </td>
               </tr>
@@ -98,20 +96,6 @@ export const OuvriersPage = () => {
                 <tr key={ouvrier.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
                   <td style={{ padding: 8, color: "#374151", fontWeight: 500 }}>{ouvrier.nom}</td>
                   <td style={{ padding: 8, color: "#374151", fontSize: 11 }}>{ouvrier.metier}</td>
-                  <td style={{ padding: 8, color: "#374151" }}>75%</td>
-                  <td style={{ padding: 8 }}>
-                    <span style={{
-                      display: "inline-block",
-                      padding: "2px 6px",
-                      background: "#dbeafe",
-                      color: "#0c447c",
-                      borderRadius: 3,
-                      fontSize: 10,
-                      fontWeight: 600
-                    }}>
-                      ✓
-                    </span>
-                  </td>
                   <td style={{ padding: 8, textAlign: "center" }}>
                     <button
                       onClick={() => setEditingOuvrier(ouvrier)}
@@ -175,15 +159,13 @@ export const OuvriersPage = () => {
             <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
               <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Nom</th>
               <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Spécialité</th>
-              <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Tarif/J</th>
-              <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Statut</th>
               <th style={{ padding: "8px", width: 60, fontWeight: 600, color: "#1f2937" }}>Action</th>
             </tr>
           </thead>
           <tbody>
             {st.length === 0 ? (
               <tr>
-                <td colSpan="5" style={{ padding: 8, textAlign: "center", color: "#9ca3af" }}>
+                <td colSpan="3" style={{ padding: 8, textAlign: "center", color: "#9ca3af" }}>
                   Aucun ST
                 </td>
               </tr>
@@ -192,20 +174,6 @@ export const OuvriersPage = () => {
                 <tr key={ouvrier.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
                   <td style={{ padding: 8, color: "#374151", fontWeight: 500 }}>{ouvrier.nom}</td>
                   <td style={{ padding: 8, color: "#374151", fontSize: 11 }}>{ouvrier.metier}</td>
-                  <td style={{ padding: 8, color: "#374151" }}>200€</td>
-                  <td style={{ padding: 8 }}>
-                    <span style={{
-                      display: "inline-block",
-                      padding: "2px 6px",
-                      background: "#fef3c7",
-                      color: "#92400e",
-                      borderRadius: 3,
-                      fontSize: 10,
-                      fontWeight: 600
-                    }}>
-                      ✓
-                    </span>
-                  </td>
                   <td style={{ padding: 8, textAlign: "center" }}>
                     <button
                       onClick={() => setEditingOuvrier(ouvrier)}
@@ -250,7 +218,6 @@ export const OuvriersPage = () => {
             <thead>
               <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
                 <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Nom</th>
-                <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Type</th>
                 <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Métier</th>
                 <th style={{ padding: "8px", width: 60, fontWeight: 600, color: "#1f2937" }}>Action</th>
               </tr>
@@ -259,7 +226,6 @@ export const OuvriersPage = () => {
               {archived.map(ouvrier => (
                 <tr key={ouvrier.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
                   <td style={{ padding: 8, color: "#374151", fontWeight: 500 }}>{ouvrier.nom}</td>
-                  <td style={{ padding: 8, color: "#374151", fontSize: 11 }}>{ouvrier.type}</td>
                   <td style={{ padding: 8, color: "#374151", fontSize: 11 }}>{ouvrier.metier}</td>
                   <td style={{ padding: 8, textAlign: "center" }}>
                     <button

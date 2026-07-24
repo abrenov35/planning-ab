@@ -96,15 +96,13 @@ export const ChantierPage = () => {
             <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
               <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Nom</th>
               <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Dates</th>
-              <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Avanc.</th>
-              <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Équipe</th>
               <th style={{ padding: "8px", width: 60, fontWeight: 600, color: "#1f2937" }}>Action</th>
             </tr>
           </thead>
           <tbody>
             {actifs.length === 0 ? (
               <tr>
-                <td colSpan="5" style={{ padding: 8, textAlign: "center", color: "#9ca3af" }}>
+                <td colSpan="3" style={{ padding: 8, textAlign: "center", color: "#9ca3af" }}>
                   Aucun chantier
                 </td>
               </tr>
@@ -117,8 +115,6 @@ export const ChantierPage = () => {
                   <td style={{ padding: 8, color: "#374151", fontSize: 10 }}>
                     {formatDate(chantier.dateDebut)} → {formatDate(chantier.dateFin)}
                   </td>
-                  <td style={{ padding: 8, color: "#10b981", fontWeight: 600 }}>50%</td>
-                  <td style={{ padding: 8, color: "#374151", fontSize: 10 }}>Kevin...</td>
                   <td style={{ padding: 8, textAlign: "center" }}>
                     <button
                       onClick={() => setEditingChantier(chantier)}
@@ -164,7 +160,6 @@ export const ChantierPage = () => {
               <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
                 <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Nom</th>
                 <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Durée</th>
-                <th style={{ padding: "8px", textAlign: "left", fontWeight: 600, color: "#1f2937" }}>Statut</th>
                 <th style={{ padding: "8px", width: 60, fontWeight: 600, color: "#1f2937" }}>Action</th>
               </tr>
             </thead>
@@ -176,19 +171,6 @@ export const ChantierPage = () => {
                   </td>
                   <td style={{ padding: 8, color: "#374151", fontSize: 10 }}>
                     {formatDate(chantier.dateDebut)} → {formatDate(chantier.dateFin)}
-                  </td>
-                  <td style={{ padding: 8 }}>
-                    <span style={{
-                      display: "inline-block",
-                      padding: "2px 6px",
-                      background: "#f3f4f6",
-                      color: "#6b7280",
-                      borderRadius: 3,
-                      fontSize: 10,
-                      fontWeight: 600
-                    }}>
-                      Arch
-                    </span>
                   </td>
                   <td style={{ padding: 8, textAlign: "center" }}>
                     <button
