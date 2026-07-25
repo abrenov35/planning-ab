@@ -2,7 +2,7 @@ import React, { useState } from "react";
 
 export const FormChantier = ({ chantier, onSubmit, onCancel, mode = "add" }) => {
   const [formData, setFormData] = useState(
-    chantier || { nom: "", dateDebut: "", dateFin: "", description: "", statut: "Actif" }
+    chantier || { nom: "", dateDebut: "", description: "", statut: "Actif" }
   );
 
   const handleChange = (e) => {
