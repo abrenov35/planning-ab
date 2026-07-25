@@ -83,7 +83,7 @@ export const FormAffectationV2 = ({
   }, [affectation, mode]);
 
   // Convertir les jours cochés en dates début/fin
-  const getDateRange = () => {
+  const getDateRanges = () => {
     const dayOrder = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi'];
     const checkedDays = dayOrder.filter(day => days[day]);
 
@@ -103,27 +103,43 @@ export const FormAffectationV2 = ({
     monday.setDate(monday.getDate() - daysToMonday);
     monday.setHours(0,0,0,0);
 
-    // Min et max des jours cochés
-    const dayIndices = checkedDays.map(day => dayOrder.indexOf(day));
-    const minDay = Math.min(...dayIndices);
-    const maxDay = Math.max(...dayIndices);
-
-    const dateDebut = new Date(monday);
-    dateDebut.setDate(dateDebut.getDate() + minDay);
-
-    const dateFin = new Date(monday);
-    dateFin.setDate(dateFin.getDate() + maxDay);
-
     const dateToString = (d) => 
       `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 
-    return {
-      dateDebut: dateToString(dateDebut),
-      dateFin: dateToString(dateFin)
-    };
+    // Grouper les jours consécutifs
+    const dayIndices = checkedDays.map(day => dayOrder.indexOf(day));
+    const ranges = [];
+    let currentStart = dayIndices[0];
+    let currentEnd = dayIndices[0];
+
+    for (let i = 1; i < dayIndices.length; i++) {
+      if (dayIndices[i] === currentEnd + 1) {
+        currentEnd = dayIndices[i];
+      } else {
+        // Nouvelle plage
+        ranges.push({ start: currentStart, end: currentEnd });
+        currentStart = dayIndices[i];
+        currentEnd = dayIndices[i];
+      }
+    }
+    ranges.push({ start: currentStart, end: currentEnd });
+
+    // Convertir en dates
+    return ranges.map(range => {
+      const dateDebut = new Date(monday);
+      dateDebut.setDate(dateDebut.getDate() + range.start);
+
+      const dateFin = new Date(monday);
+      dateFin.setDate(dateFin.getDate() + range.end);
+
+      return {
+        dateDebut: dateToString(dateDebut),
+        dateFin: dateToString(dateFin)
+      };
+    });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.chantierId || !formData.tache) {
@@ -131,8 +147,8 @@ export const FormAffectationV2 = ({
       return;
     }
 
-    const dateRange = getDateRange();
-    if (!dateRange) return;
+    const dateRanges = getDateRanges();
+    if (!dateRanges || dateRanges.length === 0) return;
 
     // Sauvegarder la tâche
     if (formData.tache.trim()) {
@@ -141,12 +157,29 @@ export const FormAffectationV2 = ({
       localStorage.setItem("tacheHistory", JSON.stringify(updated));
     }
 
-    onSubmit({
-      chantierId: formData.chantierId,
-      dateDebut: dateRange.dateDebut,
-      dateFin: dateRange.dateFin,
-      tache: formData.tache
-    });
+    // Créer une affectation pour chaque groupe de jours consécutifs
+    const results = [];
+    for (const dateRange of dateRanges) {
+      const result = {
+        chantierId: formData.chantierId,
+        dateDebut: dateRange.dateDebut,
+        dateFin: dateRange.dateFin,
+        tache: formData.tache
+      };
+      results.push(result);
+    }
+
+    // Si plusieurs affectations, confirmer
+    if (results.length > 1) {
+      const daysText = results.map(r => `${r.dateDebut} → ${r.dateFin}`).join('\n');
+      const msg = `Cela va créer ${results.length} affectations :\n\n${daysText}\n\nContinuer ?`;
+      if (!window.confirm(msg)) return;
+    }
+
+    // Appeler onSubmit pour chaque affectation
+    for (const result of results) {
+      onSubmit(result);
+    }
   };
 
   return (
