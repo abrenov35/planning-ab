@@ -2,7 +2,7 @@ import React, { useContext, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import { GanttChart } from "../components/GanttChart";
 import { Modal } from "../components/Modal";
-import { FormAffectation } from "../components/FormAffectation";
+import { FormAffectationV2 } from "../components/FormAffectationV2";
 
 export const GanttPage = () => {
   const { ouvriers, chantiers, affectations, addAffectation, updateAffectation, deleteAffectation, loading } = useContext(AppContext);
@@ -168,7 +168,7 @@ export const GanttPage = () => {
         onClose={() => setShowAffectationModal(false)}
       >
         {selectedOuvrier && (
-          <FormAffectation
+          <FormAffectationV2
             affectation={editingAffectation}
             ouvrier={selectedOuvrier}
             chantiers={chantiers}
@@ -176,6 +176,7 @@ export const GanttPage = () => {
             onCancel={() => setShowAffectationModal(false)}
             onDelete={handleDeleteAffectation}
             mode={editingAffectation ? "edit" : "add"}
+            selectedDate={selectedDate}
           />
         )}
       </Modal>
