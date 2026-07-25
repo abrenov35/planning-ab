@@ -1,12 +1,15 @@
 import React, { useContext, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import { GanttChart } from "../components/GanttChart";
+import { Modal } from "../components/Modal";
+import { FormAffectation } from "../components/FormAffectation";
 import { ConfirmModal } from "../components/ConfirmModal";
 
 export const GanttPage = () => {
   const { ouvriers, chantiers, affectations, addAffectation, updateAffectation, deleteAffectation, loading } = useContext(AppContext);
 
   // STATES
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteDayConfirm, setShowDeleteDayConfirm] = useState(null);
   const [showDeleteAffectationConfirm, setShowDeleteAffectationConfirm] = useState(null);
   const [selectedOuvrier, setSelectedOuvrier] = useState(null);
@@ -129,10 +132,29 @@ export const GanttPage = () => {
     setShowDeleteDayConfirm(null);
   };
 
-  // ===== AFFECTATION : Supprimer =====
+  // ===== CRÉATION AFFECTATION : Ouvrir formulaire =====
   const handleAddAffectation = (ouvrierID, date) => {
     setSelectedOuvrier(ouvriers.find(o => o.id === ouvrierID));
     setSelectedDate(date);
+    setShowCreateModal(true);
+  };
+
+  // Submit du formulaire de création
+  const handleSubmitAffectation = async (formData) => {
+    const result = await addAffectation(
+      selectedOuvrier.id,
+      formData.chantierId,
+      formData.dateDebut,
+      formData.dateFin,
+      formData.tache
+    );
+    if (result.success) {
+      setShowCreateModal(false);
+      setSelectedOuvrier(null);
+      setSelectedDate(null);
+    } else {
+      alert("Erreur: " + (result.error || "Impossible de créer l'affectation"));
+    }
   };
 
   const handleAffectationClick = (affectation) => {
@@ -157,6 +179,31 @@ export const GanttPage = () => {
         onAffectationClick={handleAffectationClick}
         onDeleteAffectationDay={handleDeleteAffectationDay}
       />
+
+      {/* MODAL CRÉATION AFFECTATION */}
+      <Modal
+        isOpen={showCreateModal}
+        title="Ajouter une affectation"
+        onClose={() => {
+          setShowCreateModal(false);
+          setSelectedOuvrier(null);
+          setSelectedDate(null);
+        }}
+      >
+        {selectedOuvrier && (
+          <FormAffectation
+            ouvrier={selectedOuvrier}
+            chantiers={chantiers}
+            onSubmit={handleSubmitAffectation}
+            onCancel={() => {
+              setShowCreateModal(false);
+              setSelectedOuvrier(null);
+              setSelectedDate(null);
+            }}
+            selectedDate={selectedDate}
+          />
+        )}
+      </Modal>
 
       {/* MODAL CONFIRMATION - Supprimer un jour */}
       <ConfirmModal
