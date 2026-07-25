@@ -151,7 +151,8 @@ export const GanttChart = ({
     affEndPlus.setDate(affEndPlus.getDate() + 1);
     
     // Vérifier si l'affectation chevauchent ce jour
-    if (!(affStart <= dayEnd && affEndPlus >= dayStart)) {
+    // Change >= en > pour éviter les affectations qui "touchent" juste le début du jour suivant
+    if (!(affStart <= dayEnd && affEndPlus > dayStart)) {
       return { left: 0, width: 0, isVisible: false };
     }
     
@@ -165,7 +166,7 @@ export const GanttChart = ({
     
     return {
       left: startOffset,
-      width: Math.max(100, endOffset - startOffset),
+      width: endOffset - startOffset,
       isVisible: true
     };
   };
@@ -185,7 +186,7 @@ export const GanttChart = ({
         if (!aStart || !aEnd) return false;
         const aEndPlus = new Date(aEnd);
         aEndPlus.setDate(aEndPlus.getDate() + 1);
-        return aStart <= dayEnd && aEndPlus >= dayStart;
+        return aStart <= dayEnd && aEndPlus > dayStart; // Change >= en >
       })
       .sort((a, b) => a.id - b.id); // Tri stable par ID
     

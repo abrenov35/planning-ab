@@ -12,7 +12,7 @@ export const ChantierPage = () => {
     const result = await addChantier(
       formData.nom,
       formData.dateDebut,
-      formData.dateFin || formData.dateDebut, // Si pas de dateFin, mettre la même que dateDebut
+      formData.dateDebut, // Utiliser dateDebut pour dateFin aussi
       formData.description
     );
     if (result.success) {
@@ -27,7 +27,7 @@ export const ChantierPage = () => {
       editingChantier.id,
       formData.nom,
       formData.dateDebut,
-      formData.dateFin || formData.dateDebut, // Si pas de dateFin, mettre la même que dateDebut
+      formData.dateDebut, // Utiliser dateDebut pour dateFin aussi
       formData.description,
       formData.statut
     );
