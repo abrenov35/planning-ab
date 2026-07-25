@@ -6,7 +6,6 @@ export const GanttChart = ({
   affectations, 
   onAffectationClick,
   onAddAffectation,
-  onDeleteAffectation,
   onDeleteAffectationDay
 }) => {
   const [viewMode, setViewMode] = useState("semaine"); // semaine ou mois

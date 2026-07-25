@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { ConfirmModal } from "./ConfirmModal";
 
 export const FormAffectationV2 = ({ 
   affectation, 
@@ -7,9 +6,8 @@ export const FormAffectationV2 = ({
   chantiers, 
   onSubmit, 
   onCancel,
-  onDelete,
   mode = "add",
-  selectedDate = null // La date du jour cliqué
+  selectedDate = null
 }) => {
   const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
   
@@ -28,13 +26,6 @@ export const FormAffectationV2 = ({
   });
 
   const [tacheHistory, setTacheHistory] = useState([]);
-  const [confirmDialog, setConfirmDialog] = useState({
-    isOpen: false,
-    title: "",
-    message: "",
-    onConfirm: null,
-    isDangerous: false
-  });
 
   // Charger historique des tâches
   useEffect(() => {
@@ -51,7 +42,6 @@ export const FormAffectationV2 = ({
   // Si on edit, pré-cocher les jours de l'affectation existante
   useEffect(() => {
     if (affectation && mode === "edit") {
-      // Calculer quels jours sont cochés
       const parseDate = (dateStr) => {
         if (typeof dateStr === 'string' && dateStr.includes('/')) {
           const [d, m, y] = dateStr.split('/');
@@ -66,7 +56,7 @@ export const FormAffectationV2 = ({
       end.setHours(0,0,0,0);
 
       // Déterminer le lundi de la semaine de start
-      const dayOfWeek = start.getDay(); // 0=dim, 1=lun
+      const dayOfWeek = start.getDay();
       const daysToMonday = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 0 : dayOfWeek - 1;
       const monday = new Date(start);
       monday.setDate(monday.getDate() - daysToMonday);
@@ -91,7 +81,7 @@ export const FormAffectationV2 = ({
   }, [affectation, mode]);
 
   // Convertir les jours cochés en dates début/fin
-  const getDateRanges = () => {
+  const getDateRange = () => {
     const dayOrder = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi'];
     const checkedDays = dayOrder.filter(day => days[day]);
 
@@ -100,54 +90,35 @@ export const FormAffectationV2 = ({
       return null;
     }
 
-    // Utiliser selectedDate si fournie, sinon aujourd'hui
     const clickedDate = selectedDate ? new Date(selectedDate) : new Date();
     clickedDate.setHours(0,0,0,0);
 
-    // Trouver le lundi de la semaine
     const dayOfWeek = clickedDate.getDay();
     const daysToMonday = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 0 : dayOfWeek - 1;
     const monday = new Date(clickedDate);
     monday.setDate(monday.getDate() - daysToMonday);
     monday.setHours(0,0,0,0);
 
+    const dayIndices = checkedDays.map(day => dayOrder.indexOf(day));
+    const minDay = Math.min(...dayIndices);
+    const maxDay = Math.max(...dayIndices);
+
+    const dateDebut = new Date(monday);
+    dateDebut.setDate(dateDebut.getDate() + minDay);
+
+    const dateFin = new Date(monday);
+    dateFin.setDate(dateFin.getDate() + maxDay);
+
     const dateToString = (d) => 
       `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 
-    // Grouper les jours consécutifs
-    const dayIndices = checkedDays.map(day => dayOrder.indexOf(day));
-    const ranges = [];
-    let currentStart = dayIndices[0];
-    let currentEnd = dayIndices[0];
-
-    for (let i = 1; i < dayIndices.length; i++) {
-      if (dayIndices[i] === currentEnd + 1) {
-        currentEnd = dayIndices[i];
-      } else {
-        // Nouvelle plage
-        ranges.push({ start: currentStart, end: currentEnd });
-        currentStart = dayIndices[i];
-        currentEnd = dayIndices[i];
-      }
-    }
-    ranges.push({ start: currentStart, end: currentEnd });
-
-    // Convertir en dates
-    return ranges.map(range => {
-      const dateDebut = new Date(monday);
-      dateDebut.setDate(dateDebut.getDate() + range.start);
-
-      const dateFin = new Date(monday);
-      dateFin.setDate(dateFin.getDate() + range.end);
-
-      return {
-        dateDebut: dateToString(dateDebut),
-        dateFin: dateToString(dateFin)
-      };
-    });
+    return {
+      dateDebut: dateToString(dateDebut),
+      dateFin: dateToString(dateFin)
+    };
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     if (!formData.chantierId || !formData.tache) {
@@ -155,8 +126,8 @@ export const FormAffectationV2 = ({
       return;
     }
 
-    const dateRanges = getDateRanges();
-    if (!dateRanges || dateRanges.length === 0) return;
+    const dateRange = getDateRange();
+    if (!dateRange) return;
 
     // Sauvegarder la tâche
     if (formData.tache.trim()) {
@@ -165,122 +136,25 @@ export const FormAffectationV2 = ({
       localStorage.setItem("tacheHistory", JSON.stringify(updated));
     }
 
-    // MODE EDIT : Gérer la suppression/modification intelligemment
-    if (mode === "edit" && affectation) {
-      console.log("Mode EDIT - Gestion des changements");
-      
-      // Convertir les anciennes dates
-      const parseDate = (dateStr) => {
-        if (typeof dateStr === 'string' && dateStr.includes('/')) {
-          const [d, m, y] = dateStr.split('/');
-          return new Date(parseInt(y), parseInt(m)-1, parseInt(d));
-        }
-        return new Date(dateStr);
-      };
-
-      const oldStart = parseDate(affectation.dateDebut);
-      const oldEnd = parseDate(affectation.dateFin);
-      oldStart.setHours(0,0,0,0);
-      oldEnd.setHours(0,0,0,0);
-
-      // Si aucun jour sélectionné → supprimer l'affectation
-      if (dateRanges.length === 0) {
-        setConfirmDialog({
-          isOpen: true,
-          title: "Confirmation",
-          message: "Aucun jour sélectionné. Supprimer l'affectation complètement ?",
-          onConfirm: () => {
-            setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-            onDelete && onDelete();
-          },
-          isDangerous: true
-        });
-        return;
-      }
-
-      // Si les dates n'ont pas changé → juste enregistrer
-      const newStart = parseDate(dateRanges[0].dateDebut);
-      const newEnd = parseDate(dateRanges[dateRanges.length - 1].dateFin);
-      
-      if (oldStart.getTime() === newStart.getTime() && 
-          oldEnd.getTime() === newEnd.getTime() &&
-          dateRanges.length === 1) {
-        console.log("Aucun changement de dates");
-        // Juste mettre à jour la tâche si elle a changé
-        onSubmit({
-          ...affectation,
-          tache: formData.tache
-        });
-        return;
-      }
-
-      // Sinon → Supprimer l'ancienne et créer les nouvelles
-      console.log("Changement de dates détecté");
-      
-      const msg = `L'affectation sera modifiée :\n\nAncienne: ${affectation.dateDebut} → ${affectation.dateFin}\nNouvelle: ${dateRanges.map(r => `${r.dateDebut} → ${r.dateFin}`).join(', ')}\n\nContinuer ?`;
-      
-      setConfirmDialog({
-        isOpen: true,
-        title: "Modifier affectation",
-        message: msg,
-        onConfirm: async () => {
-          setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-          
-          // Supprimer l'affectation existante
-          await onDelete();
-
-          // Créer les nouvelles affectations
-          for (const dateRange of dateRanges) {
-            await onSubmit({
-              chantierId: formData.chantierId,
-              dateDebut: dateRange.dateDebut,
-              dateFin: dateRange.dateFin,
-              tache: formData.tache
-            });
-          }
-        },
-        isDangerous: false
-      });
-      return;
-    }
-
-    // MODE ADD : Créer une affectation pour chaque groupe de jours consécutifs
-    const results = [];
-    for (const dateRange of dateRanges) {
-      const result = {
+    // En mode edit, remplacer simplement l'affectation
+    if (mode === "edit") {
+      onSubmit({
+        ...affectation,
         chantierId: formData.chantierId,
         dateDebut: dateRange.dateDebut,
         dateFin: dateRange.dateFin,
         tache: formData.tache
-      };
-      results.push(result);
-    }
-
-    // Si plusieurs affectations, confirmer
-    if (results.length > 1) {
-      const daysText = results.map(r => `${r.dateDebut} → ${r.dateFin}`).join('\n');
-      const msg = `Cela va créer ${results.length} affectations :\n\n${daysText}\n\nContinuer ?`;
-      
-      setConfirmDialog({
-        isOpen: true,
-        title: "Créer plusieurs affectations",
-        message: msg,
-        onConfirm: () => {
-          setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-          // Appeler onSubmit pour chaque affectation
-          for (const result of results) {
-            onSubmit(result);
-          }
-        },
-        isDangerous: false
       });
       return;
     }
 
-    // Appeler onSubmit pour chaque affectation
-    for (const result of results) {
-      onSubmit(result);
-    }
+    // En mode add, créer l'affectation
+    onSubmit({
+      chantierId: formData.chantierId,
+      dateDebut: dateRange.dateDebut,
+      dateFin: dateRange.dateFin,
+      tache: formData.tache
+    });
   };
 
   return (
@@ -457,51 +331,7 @@ export const FormAffectationV2 = ({
         >
           Annuler
         </button>
-        {mode === "edit" && (
-          <button
-            type="button"
-            onClick={() => {
-              setConfirmDialog({
-                isOpen: true,
-                title: "Supprimer cette affectation ?",
-                message: "Cette action est irréversible.",
-                onConfirm: () => {
-                  setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-                  onDelete && onDelete();
-                },
-                confirmText: "Supprimer",
-                cancelText: "Annuler",
-                isDangerous: true
-              });
-            }}
-            style={{
-              flex: 1,
-              padding: "8px",
-              background: "#dc2626",
-              color: "white",
-              border: "none",
-              borderRadius: 4,
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: "pointer"
-            }}
-          >
-            Supprimer
-          </button>
-        )}
       </div>
-
-      {/* MODAL DE CONFIRMATION */}
-      <ConfirmModal
-        isOpen={confirmDialog.isOpen}
-        title={confirmDialog.title}
-        message={confirmDialog.message}
-        onConfirm={confirmDialog.onConfirm}
-        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
-        confirmText={confirmDialog.confirmText || "Supprimer"}
-        cancelText={confirmDialog.cancelText || "Annuler"}
-        isDangerous={confirmDialog.isDangerous}
-      />
     </form>
   );
 };
