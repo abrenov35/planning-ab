@@ -150,6 +150,25 @@ export const GanttChart = ({
     const affEndPlus = new Date(affEnd);
     affEndPlus.setDate(affEndPlus.getDate() + 1);
     
+    // DEBUG
+    if (aff.tache === "VA" || !aff.tache) {
+      console.log("DEBUG getBarPositionInDay:", {
+        aff_id: aff.id,
+        dateDebut: aff.dateDebut,
+        dateFin: aff.dateFin,
+        affStart: affStart.toISOString(),
+        affEnd: affEnd.toISOString(),
+        affEndPlus: affEndPlus.toISOString(),
+        dayDate: dayDate.toISOString(),
+        dayStart: dayStart.toISOString(),
+        dayEnd: dayEnd.toISOString(),
+        condition: `affStart(${affStart.getTime()}) <= dayEnd(${dayEnd.getTime()}) && affEndPlus(${affEndPlus.getTime()}) > dayStart(${dayStart.getTime()})`,
+        check1: affStart <= dayEnd,
+        check2: affEndPlus > dayStart,
+        isVisible: affStart <= dayEnd && affEndPlus > dayStart
+      });
+    }
+    
     // Vérifier si l'affectation chevauchent ce jour
     // Change >= en > pour éviter les affectations qui "touchent" juste le début du jour suivant
     if (!(affStart <= dayEnd && affEndPlus > dayStart)) {
