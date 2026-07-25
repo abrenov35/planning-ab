@@ -19,6 +19,9 @@ export const GanttPage = () => {
 
   // ===== CROIX : Supprimer un jour =====
   const handleDeleteAffectationDay = (affectationId, dayToDelete) => {
+    // Éviter les appels multiples
+    if (showDeleteDayConfirm) return;
+
     const aff = affectations.find(a => a.id === affectationId);
     if (!aff) return;
 
@@ -47,7 +50,7 @@ export const GanttPage = () => {
       return;
     }
 
-    // Ouvrir le modal de confirmation
+    // Ouvrir le modal JUSTE UNE FOIS
     setShowDeleteDayConfirm({
       affectationId,
       dayString: dateToString(deleteDate),
@@ -62,8 +65,12 @@ export const GanttPage = () => {
     if (!showDeleteDayConfirm || isLoadingDeleteDay) return;
 
     setIsLoadingDeleteDay(true);
+    
+    // Fermer le modal IMMÉDIATEMENT
+    const confirm = showDeleteDayConfirm;
+    setShowDeleteDayConfirm(null);
 
-    const { affectationId, affStart, affEnd, deleteDate, aff } = showDeleteDayConfirm;
+    const { affectationId, affStart, affEnd, deleteDate, aff } = confirm;
 
     const dateToString = (d) => 
       `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
@@ -72,7 +79,6 @@ export const GanttPage = () => {
       // SEUL JOUR
       if (affStart.getTime() === affEnd.getTime() && affStart.getTime() === deleteDate.getTime()) {
         await deleteAffectation(affectationId);
-        setShowDeleteDayConfirm(null);
         setIsLoadingDeleteDay(false);
         return;
       }
@@ -82,7 +88,6 @@ export const GanttPage = () => {
         const newStart = new Date(deleteDate);
         newStart.setDate(newStart.getDate() + 1);
         await updateAffectation(affectationId, dateToString(newStart), dateToString(affEnd), aff.tache, "Actif");
-        setShowDeleteDayConfirm(null);
         setIsLoadingDeleteDay(false);
         return;
       }
@@ -92,7 +97,6 @@ export const GanttPage = () => {
         const newEnd = new Date(deleteDate);
         newEnd.setDate(newEnd.getDate() - 1);
         await updateAffectation(affectationId, dateToString(affStart), dateToString(newEnd), aff.tache, "Actif");
-        setShowDeleteDayConfirm(null);
         setIsLoadingDeleteDay(false);
         return;
       }
@@ -104,7 +108,6 @@ export const GanttPage = () => {
       const part2Start = new Date(deleteDate);
       part2Start.setDate(part2Start.getDate() + 1);
 
-      // Créer aff 1
       const res1 = await addAffectation(
         aff.ouvrierID,
         aff.chantierId,
@@ -114,13 +117,11 @@ export const GanttPage = () => {
       );
       
       if (!res1.success) {
-        alert("Erreur création affectation 1");
-        setShowDeleteDayConfirm(null);
+        console.error("Erreur création affectation 1");
         setIsLoadingDeleteDay(false);
         return;
       }
 
-      // Créer aff 2
       const res2 = await addAffectation(
         aff.ouvrierID,
         aff.chantierId,
@@ -130,16 +131,13 @@ export const GanttPage = () => {
       );
       
       if (!res2.success) {
-        alert("Erreur création affectation 2");
+        console.error("Erreur création affectation 2");
         await deleteAffectation(res1.data.id);
-        setShowDeleteDayConfirm(null);
         setIsLoadingDeleteDay(false);
         return;
       }
 
-      // Supprimer l'originale
       await deleteAffectation(affectationId);
-      setShowDeleteDayConfirm(null);
       setIsLoadingDeleteDay(false);
     } catch (error) {
       console.error("Erreur suppression jour:", error);
@@ -173,6 +171,9 @@ export const GanttPage = () => {
   };
 
   const handleAffectationClick = (affectation) => {
+    // Éviter les appels multiples
+    if (showDeleteAffectationConfirm) return;
+    
     setShowDeleteAffectationConfirm(affectation);
   };
 
