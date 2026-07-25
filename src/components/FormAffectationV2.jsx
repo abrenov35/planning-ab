@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { ConfirmModal } from "./ConfirmModal";
 
 export const FormAffectationV2 = ({ 
   affectation, 
@@ -27,6 +28,13 @@ export const FormAffectationV2 = ({
   });
 
   const [tacheHistory, setTacheHistory] = useState([]);
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    isDangerous: false
+  });
 
   // Charger historique des tâches
   useEffect(() => {
@@ -177,9 +185,16 @@ export const FormAffectationV2 = ({
 
       // Si aucun jour sélectionné → supprimer l'affectation
       if (dateRanges.length === 0) {
-        if (window.confirm("Aucun jour sélectionné. Supprimer l'affectation complètement ?")) {
-          onDelete && onDelete();
-        }
+        setConfirmDialog({
+          isOpen: true,
+          title: "Confirmation",
+          message: "Aucun jour sélectionné. Supprimer l'affectation complètement ?",
+          onConfirm: () => {
+            setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+            onDelete && onDelete();
+          },
+          isDangerous: true
+        });
         return;
       }
 
@@ -204,20 +219,28 @@ export const FormAffectationV2 = ({
       
       const msg = `L'affectation sera modifiée :\n\nAncienne: ${affectation.dateDebut} → ${affectation.dateFin}\nNouvelle: ${dateRanges.map(r => `${r.dateDebut} → ${r.dateFin}`).join(', ')}\n\nContinuer ?`;
       
-      if (!window.confirm(msg)) return;
+      setConfirmDialog({
+        isOpen: true,
+        title: "Modifier affectation",
+        message: msg,
+        onConfirm: async () => {
+          setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+          
+          // Supprimer l'affectation existante
+          await onDelete();
 
-      // Supprimer l'affectation existante
-      await onDelete();
-
-      // Créer les nouvelles affectations
-      for (const dateRange of dateRanges) {
-        await onSubmit({
-          chantierId: formData.chantierId,
-          dateDebut: dateRange.dateDebut,
-          dateFin: dateRange.dateFin,
-          tache: formData.tache
-        });
-      }
+          // Créer les nouvelles affectations
+          for (const dateRange of dateRanges) {
+            await onSubmit({
+              chantierId: formData.chantierId,
+              dateDebut: dateRange.dateDebut,
+              dateFin: dateRange.dateFin,
+              tache: formData.tache
+            });
+          }
+        },
+        isDangerous: false
+      });
       return;
     }
 
@@ -237,7 +260,21 @@ export const FormAffectationV2 = ({
     if (results.length > 1) {
       const daysText = results.map(r => `${r.dateDebut} → ${r.dateFin}`).join('\n');
       const msg = `Cela va créer ${results.length} affectations :\n\n${daysText}\n\nContinuer ?`;
-      if (!window.confirm(msg)) return;
+      
+      setConfirmDialog({
+        isOpen: true,
+        title: "Créer plusieurs affectations",
+        message: msg,
+        onConfirm: () => {
+          setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+          // Appeler onSubmit pour chaque affectation
+          for (const result of results) {
+            onSubmit(result);
+          }
+        },
+        isDangerous: false
+      });
+      return;
     }
 
     // Appeler onSubmit pour chaque affectation
@@ -424,9 +461,18 @@ export const FormAffectationV2 = ({
           <button
             type="button"
             onClick={() => {
-              if (window.confirm("Supprimer cette affectation ?")) {
-                onDelete && onDelete();
-              }
+              setConfirmDialog({
+                isOpen: true,
+                title: "Supprimer cette affectation ?",
+                message: "Cette action est irréversible.",
+                onConfirm: () => {
+                  setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                  onDelete && onDelete();
+                },
+                confirmText: "Supprimer",
+                cancelText: "Annuler",
+                isDangerous: true
+              });
             }}
             style={{
               flex: 1,
@@ -444,6 +490,18 @@ export const FormAffectationV2 = ({
           </button>
         )}
       </div>
+
+      {/* MODAL DE CONFIRMATION */}
+      <ConfirmModal
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+        confirmText={confirmDialog.confirmText || "Supprimer"}
+        cancelText={confirmDialog.cancelText || "Annuler"}
+        isDangerous={confirmDialog.isDangerous}
+      />
     </form>
   );
 };
