@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.js": "/planning-ab/static/js/main.e45b7665.js",
+    "main.js": "/planning-ab/static/js/main.dc155e3b.js",
     "index.html": "/planning-ab/index.html",
-    "main.e45b7665.js.map": "/planning-ab/static/js/main.e45b7665.js.map"
+    "main.dc155e3b.js.map": "/planning-ab/static/js/main.dc155e3b.js.map"
   },
   "entrypoints": [
-    "static/js/main.e45b7665.js"
+    "static/js/main.dc155e3b.js"
   ]
 }

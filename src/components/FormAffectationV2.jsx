@@ -157,7 +157,71 @@ export const FormAffectationV2 = ({
       localStorage.setItem("tacheHistory", JSON.stringify(updated));
     }
 
-    // Créer une affectation pour chaque groupe de jours consécutifs
+    // MODE EDIT : Gérer la suppression/modification intelligemment
+    if (mode === "edit" && affectation) {
+      console.log("Mode EDIT - Gestion des changements");
+      
+      // Convertir les anciennes dates
+      const parseDate = (dateStr) => {
+        if (typeof dateStr === 'string' && dateStr.includes('/')) {
+          const [d, m, y] = dateStr.split('/');
+          return new Date(parseInt(y), parseInt(m)-1, parseInt(d));
+        }
+        return new Date(dateStr);
+      };
+
+      const oldStart = parseDate(affectation.dateDebut);
+      const oldEnd = parseDate(affectation.dateFin);
+      oldStart.setHours(0,0,0,0);
+      oldEnd.setHours(0,0,0,0);
+
+      // Si aucun jour sélectionné → supprimer l'affectation
+      if (dateRanges.length === 0) {
+        if (window.confirm("Aucun jour sélectionné. Supprimer l'affectation complètement ?")) {
+          onDelete && onDelete();
+        }
+        return;
+      }
+
+      // Si les dates n'ont pas changé → juste enregistrer
+      const newStart = parseDate(dateRanges[0].dateDebut);
+      const newEnd = parseDate(dateRanges[dateRanges.length - 1].dateFin);
+      
+      if (oldStart.getTime() === newStart.getTime() && 
+          oldEnd.getTime() === newEnd.getTime() &&
+          dateRanges.length === 1) {
+        console.log("Aucun changement de dates");
+        // Juste mettre à jour la tâche si elle a changé
+        onSubmit({
+          ...affectation,
+          tache: formData.tache
+        });
+        return;
+      }
+
+      // Sinon → Supprimer l'ancienne et créer les nouvelles
+      console.log("Changement de dates détecté");
+      
+      const msg = `L'affectation sera modifiée :\n\nAncienne: ${affectation.dateDebut} → ${affectation.dateFin}\nNouvelle: ${dateRanges.map(r => `${r.dateDebut} → ${r.dateFin}`).join(', ')}\n\nContinuer ?`;
+      
+      if (!window.confirm(msg)) return;
+
+      // Supprimer l'affectation existante
+      await onDelete();
+
+      // Créer les nouvelles affectations
+      for (const dateRange of dateRanges) {
+        await onSubmit({
+          chantierId: formData.chantierId,
+          dateDebut: dateRange.dateDebut,
+          dateFin: dateRange.dateFin,
+          tache: formData.tache
+        });
+      }
+      return;
+    }
+
+    // MODE ADD : Créer une affectation pour chaque groupe de jours consécutifs
     const results = [];
     for (const dateRange of dateRanges) {
       const result = {

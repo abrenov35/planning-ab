@@ -6,8 +6,7 @@ export const GanttChart = ({
   affectations, 
   onAffectationClick,
   onAddAffectation,
-  onDeleteAffectation,
-  onDeleteAffectationDay
+  onDeleteAffectation
 }) => {
   const [viewMode, setViewMode] = useState("semaine"); // semaine ou mois
   const [currentDate, setCurrentDate] = useState(new Date()); // Aujourd'hui par défaut
@@ -479,82 +478,7 @@ export const GanttChart = ({
                               {tacheText}
                             </div>
 
-                            {/* BOUTON SUPPRESSION AU SURVOL - SUR TOUS LES JOURS */}
-                            {hoveredAffectationId === aff.id && (
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  
-                                  // ✅ Calculer le type de jour
-                                  const parseDate = (dateStr) => {
-                                    if (typeof dateStr === 'string' && dateStr.includes('/')) {
-                                      const [d, m, y] = dateStr.split('/');
-                                      return new Date(parseInt(y), parseInt(m)-1, parseInt(d));
-                                    } else if (typeof dateStr === 'string' && dateStr.includes('-')) {
-                                      const [y, m, d] = dateStr.split('-');
-                                      return new Date(parseInt(y), parseInt(m)-1, parseInt(d));
-                                    }
-                                    return new Date(dateStr);
-                                  };
-                                  
-                                  const affStart = parseDate(aff.dateDebut);
-                                  const affEnd = parseDate(aff.dateFin);
-                                  const clickedDay = parseDate(date);
-                                  
-                                  affStart.setHours(0,0,0,0);
-                                  affEnd.setHours(0,0,0,0);
-                                  clickedDay.setHours(0,0,0,0);
-                                  
-                                  const isOnlyDay = affStart.getTime() === affEnd.getTime();
-                                  const isFirstDay = clickedDay.getTime() === affStart.getTime();
-                                  const isLastDay = clickedDay.getTime() === affEnd.getTime();
-                                  
-                                  let clickType = "MILIEU";
-                                  if (isOnlyDay) clickType = "SEUL";
-                                  else if (isFirstDay) clickType = "PREMIER";
-                                  else if (isLastDay) clickType = "DERNIER";
-                                  
-                                  console.log("🔴 X CLIQUÉ:", { clickType, affStart: aff.dateDebut, affEnd: aff.dateFin, clicked: date });
-                                  
-                                  if (onDeleteAffectationDay) {
-                                    onDeleteAffectationDay(aff.id, clickType);
-                                  }
-                                }}
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                }}
-                                style={{
-                                  position: "absolute",
-                                  top: "-8px",
-                                  right: "-8px",
-                                  width: "18px",
-                                  height: "18px",
-                                  borderRadius: "50%",
-                                  background: "#ef4444",
-                                  color: "white",
-                                  border: "none",
-                                  cursor: "pointer",
-                                  fontSize: "12px",
-                                  fontWeight: "bold",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  padding: 0,
-                                  lineHeight: 1,
-                                  transition: "all 0.2s",
-                                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                                  pointerEvents: "auto",
-                                  zIndex: 1000
-                                }}
-                                onMouseEnter={e => e.currentTarget.style.background = "#dc2626"}
-                                onMouseLeave={e => e.currentTarget.style.background = "#ef4444"}
-                                title="Supprimer ce jour"
-                              >
-                                ✕
-                              </button>
-                            )}
+                            {/* CROIX SUPPRESSION ENLEVÉE - Utiliser "Modifier" pour ajouter/enlever des jours */}
                           </div>
                         );
                       })}
