@@ -482,19 +482,45 @@ export const GanttChart = ({
                             {hoveredAffectationId === aff.id && (
                               <button
                                 onClick={(e) => {
-                                  console.log("🔴 BOUTON X CLIQUÉ!");
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  console.log("🔴 stopPropagation() exécuté");
+                                  
+                                  // ✅ Calculer le type de jour
+                                  const parseDate = (dateStr) => {
+                                    if (typeof dateStr === 'string' && dateStr.includes('/')) {
+                                      const [d, m, y] = dateStr.split('/');
+                                      return new Date(parseInt(y), parseInt(m)-1, parseInt(d));
+                                    } else if (typeof dateStr === 'string' && dateStr.includes('-')) {
+                                      const [y, m, d] = dateStr.split('-');
+                                      return new Date(parseInt(y), parseInt(m)-1, parseInt(d));
+                                    }
+                                    return new Date(dateStr);
+                                  };
+                                  
+                                  const affStart = parseDate(aff.dateDebut);
+                                  const affEnd = parseDate(aff.dateFin);
+                                  const clickedDay = parseDate(date);
+                                  
+                                  affStart.setHours(0,0,0,0);
+                                  affEnd.setHours(0,0,0,0);
+                                  clickedDay.setHours(0,0,0,0);
+                                  
+                                  const isOnlyDay = affStart.getTime() === affEnd.getTime();
+                                  const isFirstDay = clickedDay.getTime() === affStart.getTime();
+                                  const isLastDay = clickedDay.getTime() === affEnd.getTime();
+                                  
+                                  let clickType = "MILIEU";
+                                  if (isOnlyDay) clickType = "SEUL";
+                                  else if (isFirstDay) clickType = "PREMIER";
+                                  else if (isLastDay) clickType = "DERNIER";
+                                  
+                                  console.log("🔴 X CLIQUÉ:", { clickType, affStart: aff.dateDebut, affEnd: aff.dateFin, clicked: date });
+                                  
                                   if (onDeleteAffectationDay) {
-                                    console.log("🔴 Appel onDeleteAffectationDay:", aff.id, date);
-                                    onDeleteAffectationDay(aff.id, date);
-                                  } else {
-                                    console.log("🔴 ⚠️ onDeleteAffectationDay est NULL!");
+                                    onDeleteAffectationDay(aff.id, clickType);
                                   }
                                 }}
                                 onMouseDown={(e) => {
-                                  console.log("🔴 MOUSE DOWN sur X");
                                   e.preventDefault();
                                   e.stopPropagation();
                                 }}

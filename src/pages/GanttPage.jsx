@@ -78,14 +78,15 @@ export const GanttPage = () => {
     }
   };
 
-  const handleDeleteAffectationDay = async (affectationId, dayToDelete) => {
+  const handleDeleteAffectationDay = async (affectationId, clickType) => {
     const aff = affectations.find(a => a.id === affectationId);
-    if (!aff) {
-      console.log("❌ Affectation NOT FOUND:", affectationId);
-      return;
-    }
+    if (!aff) return;
 
-    // Convertir date en string JJ/MM/AAAA
+    console.log("=== SUPPRESSION ===");
+    console.log("Type de clic:", clickType);
+    console.log("Affectation:", aff.id, { debut: aff.dateDebut, fin: aff.dateFin });
+
+    // Convertir en JJ/MM/AAAA
     const dateToString = (dateStr) => {
       if (!dateStr) return null;
       if (typeof dateStr === 'string' && dateStr.includes('/')) return dateStr;
@@ -105,49 +106,45 @@ export const GanttPage = () => {
     const dateDebutStr = dateToString(aff.dateDebut);
     const dateFinStr = dateToString(aff.dateFin);
 
-    const dayToDeleteDate = new Date(dayToDelete);
-    dayToDeleteDate.setHours(0, 0, 0, 0);
-    const dayToDeleteStr = `${String(dayToDeleteDate.getDate()).padStart(2,'0')}/${String(dayToDeleteDate.getMonth()+1).padStart(2,'0')}/${dayToDeleteDate.getFullYear()}`;
-
-    console.log("=== SUPPRESSION JOUR ===");
-    console.log("Affectation:", aff.id, { debut: dateDebutStr, fin: dateFinStr });
-    console.log("Jour à supprimer:", dayToDeleteStr);
-
-    // ➡️ SEUL JOUR → Supprimer complètement
-    if (dateDebutStr === dateFinStr && dateDebutStr === dayToDeleteStr) {
-      console.log("✓ CAS 1: Seul jour - supprimer complètement");
-      const result = await deleteAffectation(affectationId);
-      console.log("✅ Résultat deleteAffectation:", result);
+    // ➡️ SEUL JOUR
+    if (clickType === "SEUL") {
+      console.log("✓ Suppression complète (seul jour)");
+      await deleteAffectation(affectationId);
       return;
     }
 
-    // ➡️ PREMIER JOUR → Avancer le début
-    if (dateDebutStr === dayToDeleteStr) {
-      console.log("✓ CAS 2: Premier jour - avancer le début");
-      const newStart = new Date(dayToDelete);
-      newStart.setDate(newStart.getDate() + 1);
-      const newStartStr = `${String(newStart.getDate()).padStart(2,'0')}/${String(newStart.getMonth()+1).padStart(2,'0')}/${newStart.getFullYear()}`;
-      console.log("Nouvelle date début:", newStartStr);
-      const result = await updateAffectation(affectationId, newStartStr, dateFinStr, aff.tache, "Actif");
-      console.log("✅ Résultat updateAffectation (début):", result);
+    // ➡️ PREMIER JOUR
+    if (clickType === "PREMIER") {
+      console.log("✓ Raccourcir le début");
+      // Calculer le jour suivant
+      const [d, m, y] = dateDebutStr.split('/');
+      const nextDay = new Date(parseInt(y), parseInt(m)-1, parseInt(d)+1);
+      const newStart = `${String(nextDay.getDate()).padStart(2,'0')}/${String(nextDay.getMonth()+1).padStart(2,'0')}/${nextDay.getFullYear()}`;
+      console.log("Nouvelle date début:", newStart);
+      const result = await updateAffectation(affectationId, newStart, dateFinStr, aff.tache, "Actif");
+      console.log("Résultat:", result);
       return;
     }
 
-    // ➡️ DERNIER JOUR → Reculer la fin
-    if (dateFinStr === dayToDeleteStr) {
-      console.log("✓ CAS 3: Dernier jour - reculer la fin");
-      const newEnd = new Date(dayToDelete);
-      newEnd.setDate(newEnd.getDate() - 1);
-      const newEndStr = `${String(newEnd.getDate()).padStart(2,'0')}/${String(newEnd.getMonth()+1).padStart(2,'0')}/${newEnd.getFullYear()}`;
-      console.log("Nouvelle date fin:", newEndStr);
-      const result = await updateAffectation(affectationId, dateDebutStr, newEndStr, aff.tache, "Actif");
-      console.log("✅ Résultat updateAffectation (fin):", result);
+    // ➡️ DERNIER JOUR
+    if (clickType === "DERNIER") {
+      console.log("✓ Raccourcir la fin");
+      // Calculer le jour précédent
+      const [d, m, y] = dateFinStr.split('/');
+      const prevDay = new Date(parseInt(y), parseInt(m)-1, parseInt(d)-1);
+      const newEnd = `${String(prevDay.getDate()).padStart(2,'0')}/${String(prevDay.getMonth()+1).padStart(2,'0')}/${prevDay.getFullYear()}`;
+      console.log("Nouvelle date fin:", newEnd);
+      const result = await updateAffectation(affectationId, dateDebutStr, newEnd, aff.tache, "Actif");
+      console.log("Résultat:", result);
       return;
     }
 
-    // ➡️ AU MILIEU → Refus simple
-    console.log("❌ CAS 4: Au milieu - impossible");
-    alert(`Impossible de supprimer un jour au milieu.\n\nVous pouvez:\n• Supprimer le premier jour (${dateDebutStr})\n• Supprimer le dernier jour (${dateFinStr})\n• Supprimer toute l'affectation`);
+    // ➡️ AU MILIEU
+    if (clickType === "MILIEU") {
+      console.log("❌ Jour au milieu - impossible");
+      alert(`Impossible de supprimer un jour au milieu.\n\nVous pouvez:\n• Supprimer le premier jour (${dateDebutStr})\n• Supprimer le dernier jour (${dateFinStr})\n• Supprimer toute l'affectation`);
+      return;
+    }
   };
 
   if (loading) return <div style={{ padding: "1rem" }}>Chargement...</div>;
