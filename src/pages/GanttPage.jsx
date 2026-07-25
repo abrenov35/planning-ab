@@ -112,6 +112,13 @@ export const GanttPage = () => {
       delete: dateToString(deleteDate) 
     });
 
+    // ✅ VÉRIFICATION : Le jour est-il dans la plage ?
+    if (deleteDate < affStart || deleteDate > affEnd) {
+      console.log("❌ ERREUR: Le jour cliqué n'est pas dans l'affectation !");
+      alert(`Le ${dateToString(deleteDate)} n'est pas dans l'affectation (${dateToString(affStart)} → ${dateToString(affEnd)})`);
+      return;
+    }
+
     // ✅ SEUL JOUR → Supprimer complètement
     if (affStart.getTime() === affEnd.getTime() && affStart.getTime() === deleteDate.getTime()) {
       console.log("✓ Suppression complète (seul jour)");
