@@ -8,7 +8,8 @@ export const ConfirmModal = ({
   onCancel,
   confirmText = "Supprimer",
   cancelText = "Annuler",
-  isDangerous = false
+  isDangerous = false,
+  isLoading = false
 }) => {
   if (!isOpen) return null;
 
@@ -62,40 +63,46 @@ export const ConfirmModal = ({
         }}>
           <button
             onClick={onCancel}
+            disabled={isLoading}
             style={{
               padding: "10px 20px",
-              background: "#e5e7eb",
+              background: isLoading ? "#d1d5db" : "#e5e7eb",
               color: "#374151",
               border: "none",
               borderRadius: 6,
               fontSize: 14,
               fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.2s"
+              cursor: isLoading ? "not-allowed" : "pointer",
+              transition: "all 0.2s",
+              opacity: isLoading ? 0.6 : 1
             }}
-            onMouseEnter={e => e.currentTarget.style.background = "#d1d5db"}
-            onMouseLeave={e => e.currentTarget.style.background = "#e5e7eb"}
+            onMouseEnter={e => !isLoading && (e.currentTarget.style.background = "#d1d5db")}
+            onMouseLeave={e => !isLoading && (e.currentTarget.style.background = "#e5e7eb")}
           >
             {cancelText}
           </button>
 
           <button
             onClick={onConfirm}
+            disabled={isLoading}
             style={{
               padding: "10px 20px",
-              background: isDangerous ? "#dc2626" : "#1e3a8a",
+              background: isLoading 
+                ? "#9ca3af" 
+                : (isDangerous ? "#dc2626" : "#1e3a8a"),
               color: "white",
               border: "none",
               borderRadius: 6,
               fontSize: 14,
               fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.2s"
+              cursor: isLoading ? "not-allowed" : "pointer",
+              transition: "all 0.2s",
+              opacity: isLoading ? 0.6 : 1
             }}
-            onMouseEnter={e => e.currentTarget.style.background = isDangerous ? "#b91c1c" : "#1e40af"}
-            onMouseLeave={e => e.currentTarget.style.background = isDangerous ? "#dc2626" : "#1e3a8a"}
+            onMouseEnter={e => !isLoading && (e.currentTarget.style.background = isDangerous ? "#b91c1c" : "#1e40af")}
+            onMouseLeave={e => !isLoading && (e.currentTarget.style.background = isDangerous ? "#dc2626" : "#1e3a8a")}
           >
-            {confirmText}
+            {isLoading ? "Suppression..." : confirmText}
           </button>
         </div>
       </div>

@@ -14,6 +14,8 @@ export const GanttPage = () => {
   const [showDeleteAffectationConfirm, setShowDeleteAffectationConfirm] = useState(null);
   const [selectedOuvrier, setSelectedOuvrier] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [isLoadingDeleteDay, setIsLoadingDeleteDay] = useState(false);
+  const [isLoadingDeleteAffectation, setIsLoadingDeleteAffectation] = useState(false);
 
   // ===== CROIX : Supprimer un jour =====
   const handleDeleteAffectationDay = (affectationId, dayToDelete) => {
@@ -57,79 +59,92 @@ export const GanttPage = () => {
   };
 
   const confirmDeleteDay = async () => {
-    if (!showDeleteDayConfirm) return;
+    if (!showDeleteDayConfirm || isLoadingDeleteDay) return;
+
+    setIsLoadingDeleteDay(true);
 
     const { affectationId, affStart, affEnd, deleteDate, aff } = showDeleteDayConfirm;
 
     const dateToString = (d) => 
       `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 
-    // SEUL JOUR
-    if (affStart.getTime() === affEnd.getTime() && affStart.getTime() === deleteDate.getTime()) {
+    try {
+      // SEUL JOUR
+      if (affStart.getTime() === affEnd.getTime() && affStart.getTime() === deleteDate.getTime()) {
+        await deleteAffectation(affectationId);
+        setShowDeleteDayConfirm(null);
+        setIsLoadingDeleteDay(false);
+        return;
+      }
+
+      // PREMIER JOUR
+      if (affStart.getTime() === deleteDate.getTime()) {
+        const newStart = new Date(deleteDate);
+        newStart.setDate(newStart.getDate() + 1);
+        await updateAffectation(affectationId, dateToString(newStart), dateToString(affEnd), aff.tache, "Actif");
+        setShowDeleteDayConfirm(null);
+        setIsLoadingDeleteDay(false);
+        return;
+      }
+
+      // DERNIER JOUR
+      if (affEnd.getTime() === deleteDate.getTime()) {
+        const newEnd = new Date(deleteDate);
+        newEnd.setDate(newEnd.getDate() - 1);
+        await updateAffectation(affectationId, dateToString(affStart), dateToString(newEnd), aff.tache, "Actif");
+        setShowDeleteDayConfirm(null);
+        setIsLoadingDeleteDay(false);
+        return;
+      }
+
+      // AU MILIEU - SCINDER
+      const part1End = new Date(deleteDate);
+      part1End.setDate(part1End.getDate() - 1);
+      
+      const part2Start = new Date(deleteDate);
+      part2Start.setDate(part2Start.getDate() + 1);
+
+      // Créer aff 1
+      const res1 = await addAffectation(
+        aff.ouvrierID,
+        aff.chantierId,
+        dateToString(affStart),
+        dateToString(part1End),
+        aff.tache
+      );
+      
+      if (!res1.success) {
+        alert("Erreur création affectation 1");
+        setShowDeleteDayConfirm(null);
+        setIsLoadingDeleteDay(false);
+        return;
+      }
+
+      // Créer aff 2
+      const res2 = await addAffectation(
+        aff.ouvrierID,
+        aff.chantierId,
+        dateToString(part2Start),
+        dateToString(affEnd),
+        aff.tache
+      );
+      
+      if (!res2.success) {
+        alert("Erreur création affectation 2");
+        await deleteAffectation(res1.data.id);
+        setShowDeleteDayConfirm(null);
+        setIsLoadingDeleteDay(false);
+        return;
+      }
+
+      // Supprimer l'originale
       await deleteAffectation(affectationId);
       setShowDeleteDayConfirm(null);
-      return;
+      setIsLoadingDeleteDay(false);
+    } catch (error) {
+      console.error("Erreur suppression jour:", error);
+      setIsLoadingDeleteDay(false);
     }
-
-    // PREMIER JOUR
-    if (affStart.getTime() === deleteDate.getTime()) {
-      const newStart = new Date(deleteDate);
-      newStart.setDate(newStart.getDate() + 1);
-      await updateAffectation(affectationId, dateToString(newStart), dateToString(affEnd), aff.tache, "Actif");
-      setShowDeleteDayConfirm(null);
-      return;
-    }
-
-    // DERNIER JOUR
-    if (affEnd.getTime() === deleteDate.getTime()) {
-      const newEnd = new Date(deleteDate);
-      newEnd.setDate(newEnd.getDate() - 1);
-      await updateAffectation(affectationId, dateToString(affStart), dateToString(newEnd), aff.tache, "Actif");
-      setShowDeleteDayConfirm(null);
-      return;
-    }
-
-    // AU MILIEU - SCINDER
-    const part1End = new Date(deleteDate);
-    part1End.setDate(part1End.getDate() - 1);
-    
-    const part2Start = new Date(deleteDate);
-    part2Start.setDate(part2Start.getDate() + 1);
-
-    // Créer aff 1
-    const res1 = await addAffectation(
-      aff.ouvrierID,
-      aff.chantierId,
-      dateToString(affStart),
-      dateToString(part1End),
-      aff.tache
-    );
-    
-    if (!res1.success) {
-      alert("Erreur création affectation 1");
-      setShowDeleteDayConfirm(null);
-      return;
-    }
-
-    // Créer aff 2
-    const res2 = await addAffectation(
-      aff.ouvrierID,
-      aff.chantierId,
-      dateToString(part2Start),
-      dateToString(affEnd),
-      aff.tache
-    );
-    
-    if (!res2.success) {
-      alert("Erreur création affectation 2");
-      await deleteAffectation(res1.data.id);
-      setShowDeleteDayConfirm(null);
-      return;
-    }
-
-    // Supprimer l'originale
-    await deleteAffectation(affectationId);
-    setShowDeleteDayConfirm(null);
   };
 
   // ===== CRÉATION AFFECTATION : Ouvrir formulaire =====
@@ -162,9 +177,18 @@ export const GanttPage = () => {
   };
 
   const confirmDeleteAffectation = async () => {
-    if (!showDeleteAffectationConfirm) return;
-    await deleteAffectation(showDeleteAffectationConfirm.id);
-    setShowDeleteAffectationConfirm(null);
+    if (!showDeleteAffectationConfirm || isLoadingDeleteAffectation) return;
+    
+    setIsLoadingDeleteAffectation(true);
+    
+    try {
+      await deleteAffectation(showDeleteAffectationConfirm.id);
+      setShowDeleteAffectationConfirm(null);
+      setIsLoadingDeleteAffectation(false);
+    } catch (error) {
+      console.error("Erreur suppression affectation:", error);
+      setIsLoadingDeleteAffectation(false);
+    }
   };
 
   if (loading) return <div style={{ padding: "1rem" }}>Chargement...</div>;
@@ -211,10 +235,11 @@ export const GanttPage = () => {
         title="Supprimer ce jour ?"
         message={`Êtes-vous sûr de vouloir supprimer le ${showDeleteDayConfirm?.dayString} ?`}
         onConfirm={confirmDeleteDay}
-        onCancel={() => setShowDeleteDayConfirm(null)}
+        onCancel={() => !isLoadingDeleteDay && setShowDeleteDayConfirm(null)}
         confirmText="Supprimer"
         cancelText="Annuler"
         isDangerous={true}
+        isLoading={isLoadingDeleteDay}
       />
 
       {/* MODAL CONFIRMATION - Supprimer l'affectation */}
@@ -225,10 +250,11 @@ export const GanttPage = () => {
           `${showDeleteAffectationConfirm.tache} (${showDeleteAffectationConfirm.dateDebut} → ${showDeleteAffectationConfirm.dateFin})` 
           : ""}
         onConfirm={confirmDeleteAffectation}
-        onCancel={() => setShowDeleteAffectationConfirm(null)}
+        onCancel={() => !isLoadingDeleteAffectation && setShowDeleteAffectationConfirm(null)}
         confirmText="Supprimer"
         cancelText="Annuler"
         isDangerous={true}
+        isLoading={isLoadingDeleteAffectation}
       />
     </div>
   );

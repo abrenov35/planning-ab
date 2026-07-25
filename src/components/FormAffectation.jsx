@@ -8,6 +8,7 @@ export const FormAffectation = ({
   selectedDate = null
 }) => {
   const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [days, setDays] = useState({
     lundi: false,
@@ -72,8 +73,10 @@ export const FormAffectation = ({
     };
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (isSubmitting) return; // Éviter les clics multiples
 
     if (!formData.chantierId || !formData.tache) {
       alert("Veuillez remplir tous les champs");
@@ -83,18 +86,22 @@ export const FormAffectation = ({
     const dateRange = getDateRange();
     if (!dateRange) return;
 
+    setIsSubmitting(true); // Désactiver les boutons
+
     if (formData.tache.trim()) {
       const updated = [formData.tache, ...tacheHistory.filter(t => t !== formData.tache)].slice(0, 10);
       setTacheHistory(updated);
       localStorage.setItem("tacheHistory", JSON.stringify(updated));
     }
 
-    onSubmit({
+    await onSubmit({
       chantierId: formData.chantierId,
       dateDebut: dateRange.dateDebut,
       dateFin: dateRange.dateFin,
       tache: formData.tache
     });
+
+    setIsSubmitting(false); // Réactiver les boutons (au cas où)
   };
 
   return (
@@ -240,23 +247,26 @@ export const FormAffectation = ({
       <div style={{ display: "flex", gap: "8px", marginTop: "0.5rem" }}>
         <button
           type="submit"
+          disabled={isSubmitting}
           style={{
             flex: 1,
             padding: "8px",
-            background: "#1e3a8a",
+            background: isSubmitting ? "#9ca3af" : "#1e3a8a",
             color: "white",
             border: "none",
             borderRadius: 4,
             fontSize: 12,
             fontWeight: 600,
-            cursor: "pointer"
+            cursor: isSubmitting ? "not-allowed" : "pointer",
+            opacity: isSubmitting ? 0.6 : 1
           }}
         >
-          Ajouter
+          {isSubmitting ? "Enregistrement..." : "Ajouter"}
         </button>
         <button
           type="button"
           onClick={onCancel}
+          disabled={isSubmitting}
           style={{
             flex: 1,
             padding: "8px",
@@ -266,7 +276,8 @@ export const FormAffectation = ({
             borderRadius: 4,
             fontSize: 12,
             fontWeight: 600,
-            cursor: "pointer"
+            cursor: isSubmitting ? "not-allowed" : "pointer",
+            opacity: isSubmitting ? 0.6 : 1
           }}
         >
           Annuler
