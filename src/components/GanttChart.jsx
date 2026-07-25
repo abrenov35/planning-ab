@@ -6,7 +6,8 @@ export const GanttChart = ({
   affectations, 
   onAffectationClick,
   onAddAffectation,
-  onDeleteAffectation
+  onDeleteAffectation,
+  onDeleteAffectationDay
 }) => {
   const [viewMode, setViewMode] = useState("semaine"); // semaine ou mois
   const [currentDate, setCurrentDate] = useState(new Date()); // Aujourd'hui par défaut
@@ -478,7 +479,51 @@ export const GanttChart = ({
                               {tacheText}
                             </div>
 
-                            {/* CROIX SUPPRESSION ENLEVÉE - Utiliser "Modifier" pour ajouter/enlever des jours */}
+                            {/* BOUTON SUPPRESSION AU SURVOL - UN POUR CHAQUE JOUR */}
+                            {hoveredAffectationId === aff.id && (
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  console.log("🔴 X CLIQUÉ sur jour:", date);
+                                  if (onDeleteAffectationDay) {
+                                    onDeleteAffectationDay(aff.id, date);
+                                  }
+                                }}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
+                                style={{
+                                  position: "absolute",
+                                  top: "-8px",
+                                  right: "-8px",
+                                  width: "18px",
+                                  height: "18px",
+                                  borderRadius: "50%",
+                                  background: "#ef4444",
+                                  color: "white",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  fontSize: "12px",
+                                  fontWeight: "bold",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  padding: 0,
+                                  lineHeight: 1,
+                                  transition: "all 0.2s",
+                                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                                  pointerEvents: "auto",
+                                  zIndex: 1000
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = "#dc2626"}
+                                onMouseLeave={e => e.currentTarget.style.background = "#ef4444"}
+                                title="Supprimer ce jour (scinde si au milieu)"
+                              >
+                                ✕
+                              </button>
+                            )}
                           </div>
                         );
                       })}

@@ -78,7 +78,110 @@ export const GanttPage = () => {
     }
   };
 
-  // Suppression gérée dans le formulaire (en décochant les jours)
+  // Suppression d'un jour spécifique avec scission automatique
+  const handleDeleteAffectationDay = async (affectationId, dayToDelete) => {
+    const aff = affectations.find(a => a.id === affectationId);
+    if (!aff) return;
+
+    // Parser une date JJ/MM/AAAA
+    const parseDate = (dateStr) => {
+      if (typeof dateStr === 'string' && dateStr.includes('/')) {
+        const [d, m, y] = dateStr.split('/');
+        return new Date(parseInt(y), parseInt(m)-1, parseInt(d));
+      } else if (typeof dateStr === 'string' && dateStr.includes('-')) {
+        const [y, m, d] = dateStr.split('-');
+        return new Date(parseInt(y), parseInt(m)-1, parseInt(d));
+      }
+      return new Date(dateStr);
+    };
+
+    const dateToString = (d) => 
+      `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+
+    const affStart = parseDate(aff.dateDebut);
+    const affEnd = parseDate(aff.dateFin);
+    const deleteDate = new Date(dayToDelete);
+    
+    affStart.setHours(0,0,0,0);
+    affEnd.setHours(0,0,0,0);
+    deleteDate.setHours(0,0,0,0);
+
+    console.log("🗑️ Suppression jour:", { 
+      debut: dateToString(affStart), 
+      fin: dateToString(affEnd), 
+      delete: dateToString(deleteDate) 
+    });
+
+    // ✅ SEUL JOUR → Supprimer complètement
+    if (affStart.getTime() === affEnd.getTime() && affStart.getTime() === deleteDate.getTime()) {
+      console.log("✓ Suppression complète (seul jour)");
+      await deleteAffectation(affectationId);
+      return;
+    }
+
+    // ✅ PREMIER JOUR → Avancer le début
+    if (affStart.getTime() === deleteDate.getTime()) {
+      console.log("✓ Raccourcir le début");
+      const newStart = new Date(deleteDate);
+      newStart.setDate(newStart.getDate() + 1);
+      await updateAffectation(affectationId, dateToString(newStart), dateToString(affEnd), aff.tache, "Actif");
+      return;
+    }
+
+    // ✅ DERNIER JOUR → Reculer la fin
+    if (affEnd.getTime() === deleteDate.getTime()) {
+      console.log("✓ Raccourcir la fin");
+      const newEnd = new Date(deleteDate);
+      newEnd.setDate(newEnd.getDate() - 1);
+      await updateAffectation(affectationId, dateToString(affStart), dateToString(newEnd), aff.tache, "Actif");
+      return;
+    }
+
+    // ✅ AU MILIEU → SCINDER EN 2 AFFECTATIONS
+    console.log("✓ Jour au milieu - scinder en 2 affectations");
+    
+    const part1End = new Date(deleteDate);
+    part1End.setDate(part1End.getDate() - 1);
+    
+    const part2Start = new Date(deleteDate);
+    part2Start.setDate(part2Start.getDate() + 1);
+
+    console.log("Créer aff 1:", dateToString(affStart), "→", dateToString(part1End));
+    console.log("Créer aff 2:", dateToString(part2Start), "→", dateToString(affEnd));
+
+    // Créer affectation 1
+    const res1 = await addAffectation(
+      aff.ouvrierID,
+      aff.chantierId,
+      dateToString(affStart),
+      dateToString(part1End),
+      aff.tache
+    );
+    
+    if (!res1.success) {
+      alert("Erreur création affectation 1");
+      return;
+    }
+
+    // Créer affectation 2
+    const res2 = await addAffectation(
+      aff.ouvrierID,
+      aff.chantierId,
+      dateToString(part2Start),
+      dateToString(affEnd),
+      aff.tache
+    );
+    
+    if (!res2.success) {
+      alert("Erreur création affectation 2");
+      await deleteAffectation(res1.data.id);
+      return;
+    }
+
+    // Supprimer l'affectation originale
+    await deleteAffectation(affectationId);
+    console.log("✅ Scission complète !");
+  };
 
   if (loading) return <div style={{ padding: "1rem" }}>Chargement...</div>;
 
@@ -91,6 +194,7 @@ export const GanttPage = () => {
         onAddAffectation={handleAddAffectation}
         onAffectationClick={handleAffectationClick}
         onDeleteAffectation={handleDeleteAffectationDirect}
+        onDeleteAffectationDay={handleDeleteAffectationDay}
       />
 
       {/* MODAL AFFECTATION */}
