@@ -1,24 +1,19 @@
 import React, { useContext, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import { GanttChart } from "../components/GanttChart";
-import { Modal } from "../components/Modal";
-import { FormAffectationV2 } from "../components/FormAffectationV2";
-import { ChoiceModal } from "../components/ChoiceModal";
 import { ConfirmModal } from "../components/ConfirmModal";
 
 export const GanttPage = () => {
   const { ouvriers, chantiers, affectations, addAffectation, updateAffectation, deleteAffectation, loading } = useContext(AppContext);
 
   // STATES
-  const [showFormModal, setShowFormModal] = useState(false);
-  const [showChoiceModal, setShowChoiceModal] = useState(false);
   const [showDeleteDayConfirm, setShowDeleteDayConfirm] = useState(null);
+  const [showDeleteAffectationConfirm, setShowDeleteAffectationConfirm] = useState(null);
   const [selectedOuvrier, setSelectedOuvrier] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
-  const [editingAffectation, setEditingAffectation] = useState(null);
 
   // ===== CROIX : Supprimer un jour =====
-  const handleDeleteAffectationDay = async (affectationId, dayToDelete) => {
+  const handleDeleteAffectationDay = (affectationId, dayToDelete) => {
     const aff = affectations.find(a => a.id === affectationId);
     if (!aff) return;
 
@@ -47,7 +42,7 @@ export const GanttPage = () => {
       return;
     }
 
-    // Ouvrir le modal de confirmation simple
+    // Ouvrir le modal de confirmation
     setShowDeleteDayConfirm({
       affectationId,
       dayString: dateToString(deleteDate),
@@ -109,6 +104,7 @@ export const GanttPage = () => {
     
     if (!res1.success) {
       alert("Erreur création affectation 1");
+      setShowDeleteDayConfirm(null);
       return;
     }
 
@@ -133,69 +129,20 @@ export const GanttPage = () => {
     setShowDeleteDayConfirm(null);
   };
 
-  // ===== AFFECTATION : Modifier ou Supprimer =====
+  // ===== AFFECTATION : Supprimer =====
   const handleAddAffectation = (ouvrierID, date) => {
     setSelectedOuvrier(ouvriers.find(o => o.id === ouvrierID));
     setSelectedDate(date);
-    setEditingAffectation(null);
-    setShowFormModal(true);
   };
 
   const handleAffectationClick = (affectation) => {
-    setSelectedOuvrier(ouvriers.find(o => o.id === affectation.ouvrierID));
-    setEditingAffectation(affectation);
-    setShowChoiceModal(true);
+    setShowDeleteAffectationConfirm(affectation);
   };
 
-  // Choix: Modifier
-  const handleModifyAffectation = () => {
-    setShowChoiceModal(false);
-    setShowFormModal(true);
-  };
-
-  // Choix: Supprimer
-  const handleDeleteAffectation = async () => {
-    setShowChoiceModal(false);
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer cette affectation complètement ?")) {
-      await deleteAffectation(editingAffectation.id);
-      setEditingAffectation(null);
-    }
-  };
-
-  // Submit formulaire
-  const handleSubmitAffectation = async (formData) => {
-    if (editingAffectation) {
-      // Modification
-      const result = await updateAffectation(
-        editingAffectation.id,
-        formData.dateDebut,
-        formData.dateFin,
-        formData.tache,
-        "Actif"
-      );
-      if (result.success) {
-        setShowFormModal(false);
-        setEditingAffectation(null);
-      } else {
-        alert("Erreur: " + (result.error || "Impossible de modifier"));
-      }
-    } else {
-      // Création
-      const result = await addAffectation(
-        selectedOuvrier.id,
-        formData.chantierId,
-        formData.dateDebut,
-        formData.dateFin,
-        formData.tache
-      );
-      if (result.success) {
-        setShowFormModal(false);
-        setSelectedOuvrier(null);
-        setSelectedDate(null);
-      } else {
-        alert("Erreur: " + (result.error || "Impossible de créer"));
-      }
-    }
+  const confirmDeleteAffectation = async () => {
+    if (!showDeleteAffectationConfirm) return;
+    await deleteAffectation(showDeleteAffectationConfirm.id);
+    setShowDeleteAffectationConfirm(null);
   };
 
   if (loading) return <div style={{ padding: "1rem" }}>Chargement...</div>;
@@ -211,44 +158,6 @@ export const GanttPage = () => {
         onDeleteAffectationDay={handleDeleteAffectationDay}
       />
 
-      {/* MODAL FORMULAIRE - Ajouter ou Modifier */}
-      <Modal
-        isOpen={showFormModal}
-        title={editingAffectation ? "Modifier affectation" : "Ajouter affectation"}
-        onClose={() => {
-          setShowFormModal(false);
-          setEditingAffectation(null);
-          setSelectedOuvrier(null);
-        }}
-      >
-        {selectedOuvrier && (
-          <FormAffectationV2
-            affectation={editingAffectation}
-            ouvrier={selectedOuvrier}
-            chantiers={chantiers}
-            onSubmit={handleSubmitAffectation}
-            onCancel={() => {
-              setShowFormModal(false);
-              setEditingAffectation(null);
-            }}
-            mode={editingAffectation ? "edit" : "add"}
-            selectedDate={selectedDate}
-          />
-        )}
-      </Modal>
-
-      {/* MODAL CHOIX - Modifier ou Supprimer */}
-      <ChoiceModal
-        isOpen={showChoiceModal}
-        title={editingAffectation ? `${editingAffectation.tache} (${editingAffectation.dateDebut} → ${editingAffectation.dateFin})` : ""}
-        onModify={handleModifyAffectation}
-        onDelete={handleDeleteAffectation}
-        onCancel={() => {
-          setShowChoiceModal(false);
-          setEditingAffectation(null);
-        }}
-      />
-
       {/* MODAL CONFIRMATION - Supprimer un jour */}
       <ConfirmModal
         isOpen={!!showDeleteDayConfirm}
@@ -256,6 +165,20 @@ export const GanttPage = () => {
         message={`Êtes-vous sûr de vouloir supprimer le ${showDeleteDayConfirm?.dayString} ?`}
         onConfirm={confirmDeleteDay}
         onCancel={() => setShowDeleteDayConfirm(null)}
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        isDangerous={true}
+      />
+
+      {/* MODAL CONFIRMATION - Supprimer l'affectation */}
+      <ConfirmModal
+        isOpen={!!showDeleteAffectationConfirm}
+        title="Supprimer cette affectation ?"
+        message={showDeleteAffectationConfirm ? 
+          `${showDeleteAffectationConfirm.tache} (${showDeleteAffectationConfirm.dateDebut} → ${showDeleteAffectationConfirm.dateFin})` 
+          : ""}
+        onConfirm={confirmDeleteAffectation}
+        onCancel={() => setShowDeleteAffectationConfirm(null)}
         confirmText="Supprimer"
         cancelText="Annuler"
         isDangerous={true}
