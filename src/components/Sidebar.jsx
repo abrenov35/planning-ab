@@ -4,10 +4,18 @@ export const Sidebar = ({ currentPage, setCurrentPage }) => {
   const [version, setVersion] = useState("?");
 
   useEffect(() => {
-    fetch("/planning-ab/version.json")
-      .then(r => r.json())
+    // Utiliser process.env.PUBLIC_URL pour gérer les chemins correctement
+    const url = `${process.env.PUBLIC_URL}/version.json`;
+    fetch(url)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then(data => setVersion(data.version))
-      .catch(() => setVersion("?"));
+      .catch(err => {
+        console.error("Erreur fetch version:", err);
+        setVersion("?");
+      });
   }, []);
 
   const pages = [
