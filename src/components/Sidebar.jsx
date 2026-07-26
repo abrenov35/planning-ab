@@ -4,7 +4,7 @@ export const Sidebar = ({ currentPage, setCurrentPage }) => {
   const [version, setVersion] = useState("?");
 
   useEffect(() => {
-    fetch("/planning-ab/public/version.json")
+    fetch("/planning-ab/version.json")
       .then(r => r.json())
       .then(data => setVersion(data.version))
       .catch(() => setVersion("?"));
