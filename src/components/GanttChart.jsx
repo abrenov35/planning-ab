@@ -216,8 +216,6 @@ export const GanttChart = ({
     <div style={{ 
       padding: "1rem", 
       flex: 1, 
-      overflowY: "auto",
-      overflowX: "auto",
       display: "flex",
       flexDirection: "column"
     }}>
@@ -290,17 +288,19 @@ export const GanttChart = ({
         </div>
       </div>
 
-      {/* GANTT CHART */}
+      {/* GANTT CHART - SCROLL CONTAINER */}
       <div style={{
         background: "white",
         borderRadius: 6,
         border: "1px solid #e5e7eb",
         display: "flex",
         flexDirection: "column",
-        flex: 1
+        flex: 1,
+        overflowY: "auto",
+        overflowX: "auto"
       }}>
         {/* HEADER AVEC DATES */}
-        <div style={{ display: "flex", borderBottom: "1px solid #d1d5db", height: "40px" }}>
+        <div style={{ display: "flex", borderBottom: "1px solid #d1d5db", height: "40px", flexShrink: 0 }}>
           <div style={{
             width: 150,
             padding: "0.5rem 0.75rem",
@@ -311,7 +311,8 @@ export const GanttChart = ({
             color: "#1f2937",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center"
+            justifyContent: "center",
+            flexShrink: 0
           }}>
             OUVRIER
           </div>
@@ -368,7 +369,8 @@ export const GanttChart = ({
                   color: "#1f2937",
                   display: "flex",
                   flexDirection: "column",
-                  justifyContent: "center"
+                  justifyContent: "center",
+                  flexShrink: 0
                 }}>
                   <div>{ouvrier.nom}</div>
                   <div style={{ fontSize: 8, color: "#9ca3af" }}>{ouvrier.metier}</div>
