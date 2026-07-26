@@ -248,7 +248,7 @@ export const GanttPage = () => {
         isOpen={!!showDeleteAffectationConfirm}
         title="Supprimer cette affectation ?"
         message={showDeleteAffectationConfirm ? 
-          `${showDeleteAffectationConfirm.tache} (${showDeleteAffectationConfirm.dateDebut} → ${showDeleteAffectationConfirm.dateFin})` 
+          `${showDeleteAffectationConfirm.tache} (${showDeleteAffectationConfirm.dateDebut.slice(0, 10)} → ${showDeleteAffectationConfirm.dateFin.slice(0, 10)})` 
           : ""}
         onConfirm={confirmDeleteAffectation}
         onCancel={() => !isLoadingDeleteAffectation && setShowDeleteAffectationConfirm(null)}
