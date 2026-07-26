@@ -43,6 +43,10 @@ export const Sidebar = ({ currentPage, setCurrentPage }) => {
           </button>
         ))}
       </div>
+
+      <div style={{ fontSize: 11, opacity: 0.6, marginLeft: "auto" }}>
+        v1
+      </div>
     </div>
   );
 };
