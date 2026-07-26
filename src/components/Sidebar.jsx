@@ -1,6 +1,23 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 export const Sidebar = ({ currentPage, setCurrentPage }) => {
+  const [version, setVersion] = useState("?");
+
+  useEffect(() => {
+    // Fetch version.json from public folder
+    const fetchVersion = async () => {
+      try {
+        const response = await fetch("/planning-ab/version.json");
+        const data = await response.json();
+        setVersion(data.version);
+      } catch (error) {
+        console.error("Failed to fetch version:", error);
+        setVersion("?");
+      }
+    };
+    fetchVersion();
+  }, []);
+
   const pages = [
     { id: "gantt", label: "📅 Vue Gantt" },
     { id: "ouvriers", label: "👷 Ouvriers" },
@@ -15,13 +32,14 @@ export const Sidebar = ({ currentPage, setCurrentPage }) => {
       alignItems: "center",
       padding: "0.75rem 1.5rem",
       borderBottom: "1px solid rgba(255,255,255,0.1)",
-      gap: "0.5rem"
+      gap: "0.5rem",
+      whiteSpace: "nowrap"
     }}>
-      <div style={{ fontSize: 14, fontWeight: 700, marginRight: "2rem" }}>
+      <div style={{ fontSize: 14, fontWeight: 700, marginRight: "2rem", flexShrink: 0 }}>
         AB PLANNING
       </div>
 
-      <div style={{ display: "flex", gap: "0.5rem", flex: 1 }}>
+      <div style={{ display: "flex", gap: "0.5rem", flex: 1, minWidth: 0 }}>
         {pages.map(page => (
           <button
             key={page.id}
@@ -36,7 +54,8 @@ export const Sidebar = ({ currentPage, setCurrentPage }) => {
               color: "white",
               borderRadius: "4px",
               transition: "all 0.2s",
-              borderBottom: currentPage === page.id ? "2px solid #f59e0b" : "2px solid transparent"
+              borderBottom: currentPage === page.id ? "2px solid #f59e0b" : "2px solid transparent",
+              flexShrink: 0
             }}
           >
             {page.label}
@@ -44,14 +63,19 @@ export const Sidebar = ({ currentPage, setCurrentPage }) => {
         ))}
       </div>
 
-      <span style={{ 
+      <div style={{ 
         fontSize: 11, 
-        opacity: 0.6,
-        marginLeft: "auto",
-        paddingRight: "1rem"
+        opacity: 0.7,
+        marginLeft: "1rem",
+        paddingLeft: "1rem",
+        paddingRight: "0.5rem",
+        borderLeft: "1px solid rgba(255,255,255,0.3)",
+        flexShrink: 0,
+        fontWeight: 600,
+        letterSpacing: "0.5px"
       }}>
-        v12
-      </span>
+        v{version}
+      </div>
     </div>
   );
 };
