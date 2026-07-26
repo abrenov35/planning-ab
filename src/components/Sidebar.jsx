@@ -1,22 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
+import { VERSION } from "../version.js";
 
 export const Sidebar = ({ currentPage, setCurrentPage }) => {
-  const [version, setVersion] = useState("?");
-
-  useEffect(() => {
-    // Fetch version.json from public folder
-    const fetchVersion = async () => {
-      try {
-        const response = await fetch("/planning-ab/version.json");
-        const data = await response.json();
-        setVersion(data.version);
-      } catch (error) {
-        console.error("Failed to fetch version:", error);
-        setVersion("?");
-      }
-    };
-    fetchVersion();
-  }, []);
 
   const pages = [
     { id: "gantt", label: "📅 Vue Gantt" },
@@ -74,7 +59,7 @@ export const Sidebar = ({ currentPage, setCurrentPage }) => {
         fontWeight: 600,
         letterSpacing: "0.5px"
       }}>
-        v{version}
+        v{VERSION}
       </div>
     </div>
   );
