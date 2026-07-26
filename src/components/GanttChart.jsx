@@ -209,6 +209,9 @@ export const GanttChart = ({
 
   const ouvrierActifs = ouvriers.filter(o => o.statut === "Actif");
 
+  // GRID TEMPLATE AVEC LARGEUR MINIMALE PAR COLONNE (50px min)
+  const gridTemplate = "repeat(20, minmax(50px, 1fr))";
+
   return (
     <div style={{ 
       padding: "1rem", 
@@ -314,7 +317,7 @@ export const GanttChart = ({
           </div>
           <div style={{
             display: "grid",
-            gridTemplateColumns: "repeat(20, 1fr)",
+            gridTemplateColumns: gridTemplate,
             borderRight: "1px solid #9ca3af",
             height: "40px",
             flex: 1,
@@ -374,7 +377,7 @@ export const GanttChart = ({
                 {/* TIMELINE */}
                 <div style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(20, 1fr)",
+                  gridTemplateColumns: gridTemplate,
                   background: rowBackground,
                   borderRight: "1px solid #9ca3af",
                   position: "relative",
