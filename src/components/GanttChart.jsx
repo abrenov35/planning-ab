@@ -9,8 +9,18 @@ export const GanttChart = ({
   onDeleteAffectationDay
 }) => {
   const [viewMode, setViewMode] = useState("semaine"); // semaine ou mois
-  const [currentDate, setCurrentDate] = useState(new Date()); // Aujourd'hui par défaut
+  const [currentDate, setCurrentDate] = useState(() => {
+    // Charger depuis localStorage, sinon aujourd'hui
+    const saved = localStorage.getItem("ganttCurrentDate");
+    return saved ? new Date(saved) : new Date();
+  });
   const [hoveredAffectationId, setHoveredAffectationId] = useState(null);
+
+  // Sauvegarder currentDate quand il change
+  const handleSetCurrentDate = (date) => {
+    localStorage.setItem("ganttCurrentDate", date.toISOString());
+    setCurrentDate(date);
+  };
 
   // Couleurs par chantier
   const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
@@ -221,7 +231,7 @@ export const GanttChart = ({
             onClick={() => {
               const d = new Date(currentDate);
               d.setDate(d.getDate() - 7); // 1 semaine précédente
-              setCurrentDate(d);
+              handleSetCurrentDate(d);
             }}
             style={{
               padding: "6px 12px",
@@ -240,7 +250,7 @@ export const GanttChart = ({
             onClick={() => {
               const d = new Date(currentDate);
               d.setDate(d.getDate() + 7); // 1 semaine suivante
-              setCurrentDate(d);
+              handleSetCurrentDate(d);
             }}
             style={{
               padding: "6px 12px",
@@ -256,7 +266,7 @@ export const GanttChart = ({
             4 Sem Suiv →
           </button>
           <button
-            onClick={() => setCurrentDate(new Date())}
+            onClick={() => handleSetCurrentDate(new Date())}
             style={{
               padding: "6px 12px",
               background: "#10b981",
