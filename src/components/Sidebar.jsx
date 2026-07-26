@@ -1,22 +1,8 @@
 import React, { useState, useEffect } from "react";
+import versionData from "../version.json";
 
 export const Sidebar = ({ currentPage, setCurrentPage }) => {
-  const [version, setVersion] = useState("?");
-
-  useEffect(() => {
-    // Utiliser process.env.PUBLIC_URL pour gérer les chemins correctement
-    const url = `${process.env.PUBLIC_URL}/version.json`;
-    fetch(url)
-      .then(r => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then(data => setVersion(data.version))
-      .catch(err => {
-        console.error("Erreur fetch version:", err);
-        setVersion("?");
-      });
-  }, []);
+  const [version, setVersion] = useState(versionData?.version || "?");
 
   const pages = [
     { id: "gantt", label: "📅 Vue Gantt" },
