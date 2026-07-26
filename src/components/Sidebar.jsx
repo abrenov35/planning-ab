@@ -44,9 +44,14 @@ export const Sidebar = ({ currentPage, setCurrentPage }) => {
         ))}
       </div>
 
-      <div style={{ fontSize: 11, opacity: 0.6, marginLeft: "auto" }}>
+      <span style={{ 
+        fontSize: 11, 
+        opacity: 0.6,
+        marginLeft: "auto",
+        paddingRight: "1rem"
+      }}>
         v1
-      </div>
+      </span>
     </div>
   );
 };
