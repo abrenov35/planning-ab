@@ -13,12 +13,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Increment version
-        run: |
-          VERSION=$(grep -oP "v\K\d+" src/components/Sidebar.jsx | head -1)
-          NEW_VERSION=$((VERSION + 1))
-          sed -i "s/v$VERSION/v$NEW_VERSION/g" src/components/Sidebar.jsx
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -28,16 +22,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build
+      - name: Build (includes auto-version bump)
         run: npm run build
-
-      - name: Commit & Push version change
-        run: |
-          git config user.email "github-actions@github.com"
-          git config user.name "GitHub Actions"
-          git add src/components/Sidebar.jsx
-          git commit -m "Auto-increment version" || echo "No version change"
-          git push || echo "Nothing to push"
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
