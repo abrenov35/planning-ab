@@ -1,4 +1,5 @@
 import React from "react";
+import versionData from "../version.json";
 
 export const Sidebar = ({ currentPage, setCurrentPage }) => {
   const pages = [
@@ -50,7 +51,7 @@ export const Sidebar = ({ currentPage, setCurrentPage }) => {
         marginLeft: "auto",
         paddingRight: "1rem"
       }}>
-        v3
+        v{versionData.version}
       </span>
     </div>
   );
