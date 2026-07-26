@@ -50,7 +50,7 @@ export const Sidebar = ({ currentPage, setCurrentPage }) => {
         marginLeft: "auto",
         paddingRight: "1rem"
       }}>
-        v1
+        v2
       </span>
     </div>
   );
