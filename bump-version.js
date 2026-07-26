@@ -1,10 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const versionFile = path.join(__dirname, 'src', 'version.json');
+const versionFile = path.join(__dirname, 'public', 'version.json');
 
 try {
-  let versionData = { version: 1 };
+  let versionData = { version: 4 };
   
   if (fs.existsSync(versionFile)) {
     const content = fs.readFileSync(versionFile, 'utf8');
