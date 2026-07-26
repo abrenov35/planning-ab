@@ -1,7 +1,15 @@
-import React from "react";
-import versionData from "../version.json";
+import React, { useState, useEffect } from "react";
 
 export const Sidebar = ({ currentPage, setCurrentPage }) => {
+  const [version, setVersion] = useState("?");
+
+  useEffect(() => {
+    fetch("/planning-ab/public/version.json")
+      .then(r => r.json())
+      .then(data => setVersion(data.version))
+      .catch(() => setVersion("?"));
+  }, []);
+
   const pages = [
     { id: "gantt", label: "📅 Vue Gantt" },
     { id: "ouvriers", label: "👷 Ouvriers" },
@@ -51,7 +59,7 @@ export const Sidebar = ({ currentPage, setCurrentPage }) => {
         marginLeft: "auto",
         paddingRight: "1rem"
       }}>
-        v{versionData.version}
+        v{version}
       </span>
     </div>
   );
