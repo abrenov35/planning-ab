@@ -1,9 +1,6 @@
-import React, { useState, useEffect } from "react";
-import versionData from "../version.json";
+import React from "react";
 
 export const Sidebar = ({ currentPage, setCurrentPage }) => {
-  const [version, setVersion] = useState(versionData?.version || "?");
-
   const pages = [
     { id: "gantt", label: "📅 Vue Gantt" },
     { id: "ouvriers", label: "👷 Ouvriers" },
@@ -53,7 +50,7 @@ export const Sidebar = ({ currentPage, setCurrentPage }) => {
         marginLeft: "auto",
         paddingRight: "1rem"
       }}>
-        v{version}
+        v12
       </span>
     </div>
   );
