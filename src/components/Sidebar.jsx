@@ -8,11 +8,13 @@ export const Sidebar = ({
 }) => {
 
   const pages = [
-    { id: "gantt", label: "📅 Vue Gantt" },
-    { id: "chantiers", label: "🏗️ Chantiers" }
+    { id: "gantt", label: "📅 Vue Gantt" }
   ];
 
-  const ouvrierButton = { id: "ouvriers", label: "👷 Ouvriers" };
+  const sideButtons = [
+    { id: "ouvriers", label: "👷 Ouvriers" },
+    { id: "chantiers", label: "🏗️ Chantiers" }
+  ];
 
   return (
     <div style={{
@@ -145,33 +147,38 @@ export const Sidebar = ({
         </>
       )}
 
-      {/* BOUTON OUVRIERS + VERSION À DROITE */}
+      {/* BOUTONS DROITE + VERSION */}
       <div style={{ 
         display: "flex",
         alignItems: "center",
-        gap: "0.75rem",
+        gap: "0.5rem",
         marginLeft: "auto",
         flexShrink: 0
       }}>
-        {/* BOUTON OUVRIERS */}
-        <button
-          onClick={() => setCurrentPage(ouvrierButton.id)}
-          style={{
-            padding: "4px 12px",
-            cursor: "pointer",
-            fontSize: 12,
-            fontWeight: currentPage === ouvrierButton.id ? 600 : 400,
-            border: "none",
-            background: currentPage === ouvrierButton.id ? "rgba(255,255,255,0.2)" : "transparent",
-            color: "white",
-            borderRadius: "4px",
-            transition: "all 0.2s",
-            borderBottom: currentPage === ouvrierButton.id ? "2px solid #f59e0b" : "2px solid transparent",
-            flexShrink: 0
-          }}
-        >
-          {ouvrierButton.label}
-        </button>
+        {/* BOUTONS OUVRIERS ET CHANTIERS */}
+        <div style={{ display: "flex", gap: "0.25rem", flexShrink: 0 }}>
+          {sideButtons.map(btn => (
+            <button
+              key={btn.id}
+              onClick={() => setCurrentPage(btn.id)}
+              style={{
+                padding: "4px 12px",
+                cursor: "pointer",
+                fontSize: 12,
+                fontWeight: currentPage === btn.id ? 600 : 400,
+                border: "none",
+                background: currentPage === btn.id ? "rgba(255,255,255,0.2)" : "transparent",
+                color: "white",
+                borderRadius: "4px",
+                transition: "all 0.2s",
+                borderBottom: currentPage === btn.id ? "2px solid #f59e0b" : "2px solid transparent",
+                flexShrink: 0
+              }}
+            >
+              {btn.label}
+            </button>
+          ))}
+        </div>
 
         {/* SÉPARATEUR */}
         <div style={{
