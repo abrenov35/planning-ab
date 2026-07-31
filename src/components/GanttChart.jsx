@@ -480,14 +480,8 @@ export const GanttChart = ({
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  console.log("🔴 X CLIQUÉ sur jour:", date);
-                                  
-                                  // Demander confirmation
-                                  const dateStr = date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
-                                  if (window.confirm(`Êtes-vous sûr de vouloir supprimer le ${dateStr} ?\n\n⚠️ Si ce jour est au milieu, l'affectation sera scindée.`)) {
-                                    if (onDeleteAffectationDay) {
-                                      onDeleteAffectationDay(aff.id, date);
-                                    }
+                                  if (onDeleteAffectationDay) {
+                                    onDeleteAffectationDay(aff.id, date);
                                   }
                                 }}
                                 onMouseDown={(e) => {
