@@ -12,8 +12,8 @@ export const Sidebar = ({
   ];
 
   const sideButtons = [
-    { id: "ouvriers", label: "👷 Ouvriers" },
-    { id: "chantiers", label: "🏗️ Chantiers" }
+    { id: "chantiers", label: "🏗️ Chantiers" },
+    { id: "ouvriers", label: "👷 Ouvriers" }
   ];
 
   return (
