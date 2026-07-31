@@ -9,7 +9,6 @@ export const GanttPage = ({ onGanttControlsReady }) => {
 
   // STATES
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [deletingDays, setDeletingDays] = useState({}); // { affectationId: { dayString, dates, isLoading } }
   const [selectedOuvrier, setSelectedOuvrier] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
 
@@ -38,28 +37,13 @@ export const GanttPage = ({ onGanttControlsReady }) => {
     deleteDate.setHours(0,0,0,0);
 
     if (deleteDate < affStart || deleteDate > affEnd) {
-      alert(`Le ${dateToString(deleteDate)} n'est pas dans cette affectation`);
       return;
     }
-
-    // Marquer comme en cours de suppression pour cette affectation
-    setDeletingDays(prev => ({
-      ...prev,
-      [affectationId]: {
-        dayString: dateToString(deleteDate),
-        affStart,
-        affEnd,
-        deleteDate,
-        aff,
-        isLoading: true
-      }
-    }));
 
     try {
       // SEUL JOUR
       if (affStart.getTime() === affEnd.getTime() && affStart.getTime() === deleteDate.getTime()) {
         await deleteAffectation(affectationId);
-        setDeletingDays(prev => ({ ...prev, [affectationId]: undefined }));
         return;
       }
 
@@ -68,7 +52,6 @@ export const GanttPage = ({ onGanttControlsReady }) => {
         const newStart = new Date(deleteDate);
         newStart.setDate(newStart.getDate() + 1);
         await updateAffectation(affectationId, dateToString(newStart), dateToString(affEnd), aff.tache, "Actif");
-        setDeletingDays(prev => ({ ...prev, [affectationId]: undefined }));
         return;
       }
 
@@ -77,7 +60,6 @@ export const GanttPage = ({ onGanttControlsReady }) => {
         const newEnd = new Date(deleteDate);
         newEnd.setDate(newEnd.getDate() - 1);
         await updateAffectation(affectationId, dateToString(affStart), dateToString(newEnd), aff.tache, "Actif");
-        setDeletingDays(prev => ({ ...prev, [affectationId]: undefined }));
         return;
       }
 
@@ -96,10 +78,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
         aff.tache
       );
       
-      if (!res1.success) {
-        setDeletingDays(prev => ({ ...prev, [affectationId]: undefined }));
-        return;
-      }
+      if (!res1.success) return;
 
       const res2 = await addAffectation(
         aff.ouvrierID,
@@ -111,15 +90,12 @@ export const GanttPage = ({ onGanttControlsReady }) => {
       
       if (!res2.success) {
         await deleteAffectation(res1.data.id);
-        setDeletingDays(prev => ({ ...prev, [affectationId]: undefined }));
         return;
       }
 
       await deleteAffectation(affectationId);
-      setDeletingDays(prev => ({ ...prev, [affectationId]: undefined }));
     } catch (error) {
       console.error("Erreur suppression jour:", error);
-      setDeletingDays(prev => ({ ...prev, [affectationId]: undefined }));
     }
   };
 
