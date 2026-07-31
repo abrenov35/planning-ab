@@ -241,6 +241,33 @@ export const GanttChart = ({
       flexDirection: "column"
     }}>
 
+      {/* LÉGENDE DES CHANTIERS */}
+      <div style={{
+        display: "flex",
+        gap: "1rem",
+        alignItems: "center",
+        flexWrap: "wrap",
+        padding: "0.75rem 0.5rem",
+        marginBottom: "0.5rem",
+        background: "rgba(255,255,255,0.5)",
+        borderRadius: "4px",
+        fontSize: "11px"
+      }}>
+        {chantiersActifs.map(chantier => (
+          <div key={chantier.id} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <div
+              style={{
+                width: "10px",
+                height: "10px",
+                background: getChantierColor(chantier.id),
+                borderRadius: "2px",
+                flexShrink: 0
+              }}
+            />
+            <span style={{ color: "#4b5563", fontWeight: 500 }}>{chantier.nom}</span>
+          </div>
+        ))}
+      </div>
 
       {/* GANTT CHART - SCROLL CONTAINER */}
       <div style={{
