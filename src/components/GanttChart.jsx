@@ -288,6 +288,28 @@ export const GanttChart = ({
         </div>
       </div>
 
+      {/* LÉGENDE - DÉPLACÉE AVANT LE TABLEAU */}
+      <div style={{ marginBottom: "1rem", padding: "0.75rem", background: "#f9fafb", borderRadius: 6 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, marginBottom: "0.5rem", color: "#1f2937" }}>
+          Chantiers :
+        </div>
+        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+          {chantiersActifs.map(chantier => (
+            <div key={chantier.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div
+                style={{
+                  width: 16,
+                  height: 16,
+                  background: getChantierColor(chantier.id),
+                  borderRadius: 2
+                }}
+              />
+              <span style={{ fontSize: 10, color: "#6b7280" }}>{chantier.nom}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* GANTT CHART - SCROLL CONTAINER */}
       <div style={{
         background: "white",
@@ -554,28 +576,6 @@ export const GanttChart = ({
             </div>
           );
         })}
-      </div>
-
-      {/* LÉGENDE */}
-      <div style={{ marginTop: "1rem", padding: "0.75rem", background: "#f9fafb", borderRadius: 6 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, marginBottom: "0.5rem", color: "#1f2937" }}>
-          Chantiers :
-        </div>
-        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-          {chantiersActifs.map(chantier => (
-            <div key={chantier.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div
-                style={{
-                  width: 16,
-                  height: 16,
-                  background: getChantierColor(chantier.id),
-                  borderRadius: 2
-                }}
-              />
-              <span style={{ fontSize: 10, color: "#6b7280" }}>{chantier.nom}</span>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
