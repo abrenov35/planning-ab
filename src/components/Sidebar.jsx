@@ -9,9 +9,10 @@ export const Sidebar = ({
 
   const pages = [
     { id: "gantt", label: "📅 Vue Gantt" },
-    { id: "ouvriers", label: "👷 Ouvriers" },
     { id: "chantiers", label: "🏗️ Chantiers" }
   ];
+
+  const ouvrierButton = { id: "ouvriers", label: "👷 Ouvriers" };
 
   return (
     <div style={{
@@ -144,18 +145,52 @@ export const Sidebar = ({
         </>
       )}
 
-      {/* VERSION - TOUJOURS À DROITE */}
+      {/* BOUTON OUVRIERS + VERSION À DROITE */}
       <div style={{ 
-        fontSize: 10, 
-        opacity: 0.7,
+        display: "flex",
+        alignItems: "center",
+        gap: "0.75rem",
         marginLeft: "auto",
-        paddingLeft: "1rem",
-        borderLeft: "1px solid rgba(255,255,255,0.3)",
-        flexShrink: 0,
-        fontWeight: 600,
-        letterSpacing: "0.5px"
+        flexShrink: 0
       }}>
-        v{VERSION}
+        {/* BOUTON OUVRIERS */}
+        <button
+          onClick={() => setCurrentPage(ouvrierButton.id)}
+          style={{
+            padding: "4px 12px",
+            cursor: "pointer",
+            fontSize: 12,
+            fontWeight: currentPage === ouvrierButton.id ? 600 : 400,
+            border: "none",
+            background: currentPage === ouvrierButton.id ? "rgba(255,255,255,0.2)" : "transparent",
+            color: "white",
+            borderRadius: "4px",
+            transition: "all 0.2s",
+            borderBottom: currentPage === ouvrierButton.id ? "2px solid #f59e0b" : "2px solid transparent",
+            flexShrink: 0
+          }}
+        >
+          {ouvrierButton.label}
+        </button>
+
+        {/* SÉPARATEUR */}
+        <div style={{
+          width: "1px",
+          height: "24px",
+          background: "rgba(255,255,255,0.3)",
+          flexShrink: 0
+        }} />
+
+        {/* VERSION */}
+        <div style={{ 
+          fontSize: 10, 
+          opacity: 0.7,
+          flexShrink: 0,
+          fontWeight: 600,
+          letterSpacing: "0.5px"
+        }}>
+          v{VERSION}
+        </div>
       </div>
     </div>
   );
