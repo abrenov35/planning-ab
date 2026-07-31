@@ -219,15 +219,15 @@ export const GanttChart = ({
       display: "flex",
       flexDirection: "column"
     }}>
-      {/* CONTRÔLES + TITRE + LÉGENDE - TOUT SUR UNE SEULE LIGNE */}
+      {/* CONTRÔLES + TITRE + LÉGENDE - UNE SEULE LIGNE STRICTE */}
       <div style={{ 
         display: "flex", 
-        justifyContent: "space-between", 
         alignItems: "center",
         marginBottom: "1rem",
         gap: "1rem",
-        minHeight: "40px",
-        overflow: "auto"
+        flexWrap: "nowrap",
+        overflow: "auto",
+        minHeight: "44px"
       }}>
         {/* BOUTONS */}
         <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
@@ -294,20 +294,20 @@ export const GanttChart = ({
           Semaine du {allDates[0].toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} au {allDates[19].toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
         </div>
 
-        {/* LÉGENDE DES CHANTIERS - INLINE */}
-        <div style={{ display: "flex", gap: "1rem", alignItems: "center", flexShrink: 0, overflow: "auto" }}>
+        {/* LÉGENDE DES CHANTIERS - SCROLL SI TROP LONG */}
+        <div style={{ display: "flex", gap: "1rem", alignItems: "center", flexShrink: 0, overflow: "auto", maxWidth: "50%" }}>
           {chantiersActifs.map(chantier => (
-            <div key={chantier.id} style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+            <div key={chantier.id} style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
               <div
                 style={{
-                  width: 12,
-                  height: 12,
+                  width: 10,
+                  height: 10,
                   background: getChantierColor(chantier.id),
                   borderRadius: 2,
                   flexShrink: 0
                 }}
               />
-              <span style={{ fontSize: 10, color: "#6b7280", whiteSpace: "nowrap" }}>{chantier.nom}</span>
+              <span style={{ fontSize: 9, color: "#6b7280", whiteSpace: "nowrap" }}>{chantier.nom}</span>
             </div>
           ))}
         </div>
