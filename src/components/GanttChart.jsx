@@ -219,14 +219,16 @@ export const GanttChart = ({
       display: "flex",
       flexDirection: "column"
     }}>
-      {/* CONTRÔLES */}
+      {/* CONTRÔLES + TITRE + LÉGENDE - TOUT SUR UNE LIGNE */}
       <div style={{ 
         display: "flex", 
         justifyContent: "space-between", 
         alignItems: "center",
         marginBottom: "1rem",
-        gap: "1rem"
+        gap: "1.5rem",
+        flexWrap: "wrap"
       }}>
+        {/* BOUTONS */}
         <div style={{ display: "flex", gap: "8px" }}>
           <button
             onClick={() => {
@@ -283,28 +285,24 @@ export const GanttChart = ({
           </button>
         </div>
 
+        {/* TITRE SEMAINE */}
         <div style={{ fontSize: 12, fontWeight: 600, color: "#1f2937" }}>
           Semaine du {allDates[0].toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} au {allDates[19].toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
         </div>
-      </div>
 
-      {/* LÉGENDE - DÉPLACÉE AVANT LE TABLEAU */}
-      <div style={{ marginBottom: "1rem", padding: "0.75rem", background: "#f9fafb", borderRadius: 6 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, marginBottom: "0.5rem", color: "#1f2937" }}>
-          Chantiers :
-        </div>
-        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+        {/* LÉGENDE DES CHANTIERS - MAINTENANT SUR LA MÊME LIGNE */}
+        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
           {chantiersActifs.map(chantier => (
             <div key={chantier.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <div
                 style={{
-                  width: 16,
-                  height: 16,
+                  width: 14,
+                  height: 14,
                   background: getChantierColor(chantier.id),
                   borderRadius: 2
                 }}
               />
-              <span style={{ fontSize: 10, color: "#6b7280" }}>{chantier.nom}</span>
+              <span style={{ fontSize: 9, color: "#6b7280" }}>{chantier.nom}</span>
             </div>
           ))}
         </div>
