@@ -12,7 +12,6 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "prebuild": "node bump-version.js",
     "build": "react-scripts build",
     "deploy": "npm run build && gh-pages -d build"
   },
