@@ -1,17 +1,33 @@
-import React from "react";
+import React, { useContext } from "react";
 import { VERSION } from "../version.js";
+import { AppContext } from "../context/AppContext";
 
 export const Sidebar = ({ 
   currentPage, 
   setCurrentPage,
   ganttControls 
 }) => {
+  const { chantiers } = useContext(AppContext);
 
   const pages = [
     { id: "gantt", label: "📅 Vue Gantt" },
     { id: "ouvriers", label: "👷 Ouvriers" },
     { id: "chantiers", label: "🏗️ Chantiers" }
   ];
+
+  // Couleurs par chantier
+  const colorMap = {
+    1: "#3b82f6", 2: "#10b981", 3: "#f59e0b", 4: "#ef4444", 5: "#8b5cf6",
+    6: "#06b6d4", 7: "#ec4899", 8: "#f97316", 9: "#6366f1", 10: "#14b8a6",
+  };
+
+  const getChantierColor = (chantierId) => {
+    if (colorMap[chantierId]) return colorMap[chantierId];
+    const colors = Object.values(colorMap);
+    return colors[chantierId % colors.length];
+  };
+
+  const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
 
   return (
     <div style={{
@@ -141,6 +157,33 @@ export const Sidebar = ({
               {ganttControls.weekText}
             </div>
           )}
+
+          {/* LÉGENDE DES CHANTIERS */}
+          <div style={{
+            display: "flex",
+            gap: "0.75rem",
+            alignItems: "center",
+            flexShrink: 0,
+            overflow: "auto",
+            maxWidth: "60%"
+          }}>
+            {chantiersActifs.map(chantier => (
+              <div key={chantier.id} style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+                <div
+                  style={{
+                    width: "8px",
+                    height: "8px",
+                    background: getChantierColor(chantier.id),
+                    borderRadius: "1px",
+                    flexShrink: 0
+                  }}
+                />
+                <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.8)", whiteSpace: "nowrap" }}>
+                  {chantier.nom}
+                </span>
+              </div>
+            ))}
+          </div>
         </>
       )}
 
