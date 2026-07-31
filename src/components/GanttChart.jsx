@@ -219,18 +219,18 @@ export const GanttChart = ({
       display: "flex",
       flexDirection: "column"
     }}>
-      {/* CONTRÔLES + TITRE + LÉGENDE - UNE SEULE LIGNE STRICTE */}
+      {/* CONTRÔLES + TITRE + LÉGENDE - UNE SEULE LIGNE AVEC MEILLEURE DISTRIBUTION */}
       <div style={{ 
         display: "flex", 
         alignItems: "center",
         marginBottom: "1rem",
-        gap: "1rem",
+        gap: "0.75rem",
         flexWrap: "nowrap",
         overflow: "auto",
-        minHeight: "44px"
+        minHeight: "40px"
       }}>
         {/* BOUTONS */}
-        <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+        <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
           <button
             onClick={() => {
               const d = new Date(currentDate);
@@ -238,18 +238,18 @@ export const GanttChart = ({
               handleSetCurrentDate(d);
             }}
             style={{
-              padding: "6px 12px",
+              padding: "4px 10px",
               background: "#1e3a8a",
               color: "white",
               border: "none",
               borderRadius: 4,
-              fontSize: 11,
+              fontSize: 10,
               cursor: "pointer",
               fontWeight: 600,
               whiteSpace: "nowrap"
             }}
           >
-            ← 4 Sem Prec
+            ← 4 Sem
           </button>
           <button
             onClick={() => {
@@ -258,56 +258,56 @@ export const GanttChart = ({
               handleSetCurrentDate(d);
             }}
             style={{
-              padding: "6px 12px",
+              padding: "4px 10px",
               background: "#1e3a8a",
               color: "white",
               border: "none",
               borderRadius: 4,
-              fontSize: 11,
+              fontSize: 10,
               cursor: "pointer",
               fontWeight: 600,
               whiteSpace: "nowrap"
             }}
           >
-            4 Sem Suiv →
+            4 Sem →
           </button>
           <button
             onClick={() => handleSetCurrentDate(new Date())}
             style={{
-              padding: "6px 12px",
+              padding: "4px 10px",
               background: "#10b981",
               color: "white",
               border: "none",
               borderRadius: 4,
-              fontSize: 11,
+              fontSize: 10,
               cursor: "pointer",
               fontWeight: 600,
               whiteSpace: "nowrap"
             }}
           >
-            Aujourd'hui
+            Auj.
           </button>
         </div>
 
-        {/* TITRE SEMAINE */}
-        <div style={{ fontSize: 12, fontWeight: 600, color: "#1f2937", whiteSpace: "nowrap", flexShrink: 0 }}>
+        {/* TITRE SEMAINE - RÉDUIT */}
+        <div style={{ fontSize: 11, fontWeight: 600, color: "#1f2937", whiteSpace: "nowrap", flexShrink: 0 }}>
           Semaine du {allDates[0].toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} au {allDates[19].toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
         </div>
 
-        {/* LÉGENDE DES CHANTIERS - SCROLL SI TROP LONG */}
-        <div style={{ display: "flex", gap: "1rem", alignItems: "center", flexShrink: 0, overflow: "auto", maxWidth: "50%" }}>
+        {/* LÉGENDE DES CHANTIERS - COMPACT ET VISIBLE */}
+        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexShrink: 0, overflow: "auto" }}>
           {chantiersActifs.map(chantier => (
-            <div key={chantier.id} style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+            <div key={chantier.id} style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
               <div
                 style={{
-                  width: 10,
-                  height: 10,
+                  width: 8,
+                  height: 8,
                   background: getChantierColor(chantier.id),
-                  borderRadius: 2,
+                  borderRadius: 1,
                   flexShrink: 0
                 }}
               />
-              <span style={{ fontSize: 9, color: "#6b7280", whiteSpace: "nowrap" }}>{chantier.nom}</span>
+              <span style={{ fontSize: 8, color: "#6b7280", whiteSpace: "nowrap" }}>{chantier.nom}</span>
             </div>
           ))}
         </div>
