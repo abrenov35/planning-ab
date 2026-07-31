@@ -7,6 +7,7 @@ export const ChantierPage = () => {
   const { chantiers, addChantier, updateChantier, loading } = useContext(AppContext);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingChantier, setEditingChantier] = useState(null);
+  const [isArchivedExpanded, setIsArchivedExpanded] = useState(false);
 
   const handleAddChantier = async (formData) => {
     const result = await addChantier(
@@ -141,7 +142,7 @@ export const ChantierPage = () => {
         </table>
       </div>
 
-      {/* TABLE ARCHIVÉS */}
+      {/* TABLE ARCHIVÉS - ACCORDION */}
       {archived.length > 0 && (
         <div style={{
           background: "white",
@@ -149,48 +150,64 @@ export const ChantierPage = () => {
           border: "1px solid #e5e7eb",
           overflow: "hidden"
         }}>
-          <div style={{
-            background: "#6b7280",
-            color: "white",
-            padding: "0.75rem 1rem",
-            fontWeight: 600,
-            fontSize: 13
-          }}>
-            📦 Archivés ({archived.length})
+          <div 
+            onClick={() => setIsArchivedExpanded(!isArchivedExpanded)}
+            style={{
+              background: "#6b7280",
+              color: "white",
+              padding: "0.75rem 1rem",
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: "pointer",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              userSelect: "none",
+              transition: "background 0.2s"
+            }}
+            onMouseEnter={(e) => e.target.style.background = "#4b5563"}
+            onMouseLeave={(e) => e.target.style.background = "#6b7280"}
+          >
+            <span>📦 Archivés ({archived.length})</span>
+            <span style={{ fontSize: 16 }}>
+              {isArchivedExpanded ? "▼" : "▶"}
+            </span>
           </div>
 
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-            <tbody>
-              {archived.map((chantier, idx) => (
-                <tr key={chantier.id} style={{ 
-                  borderBottom: "1px solid #d1d5db",
-                  background: idx % 2 === 0 ? "white" : "#f3f4f6"
-                }}>
-                  <td style={{ padding: 8, color: "#374151", fontWeight: 500, fontSize: 11 }}>
-                    {chantier.nom}
-                  </td>
-                  <td style={{ padding: 8, color: "#374151", fontSize: 10 }}>
-                    {formatDate(chantier.dateDebut)} → {formatDate(chantier.dateFin)}
-                  </td>
-                  <td style={{ padding: 8, textAlign: "center" }}>
-                    <button
-                      onClick={() => setEditingChantier(chantier)}
-                      style={{
-                        padding: "2px 6px",
-                        border: "1px solid #d1d5db",
-                        background: "white",
-                        borderRadius: 3,
-                        fontSize: 10,
-                        cursor: "pointer"
-                      }}
-                    >
-                      ↻
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {isArchivedExpanded && (
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+              <tbody>
+                {archived.map((chantier, idx) => (
+                  <tr key={chantier.id} style={{ 
+                    borderBottom: "1px solid #d1d5db",
+                    background: idx % 2 === 0 ? "white" : "#f3f4f6"
+                  }}>
+                    <td style={{ padding: 8, color: "#374151", fontWeight: 500, fontSize: 11 }}>
+                      {chantier.nom}
+                    </td>
+                    <td style={{ padding: 8, color: "#374151", fontSize: 10 }}>
+                      {formatDate(chantier.dateDebut)} → {formatDate(chantier.dateFin)}
+                    </td>
+                    <td style={{ padding: 8, textAlign: "center" }}>
+                      <button
+                        onClick={() => setEditingChantier(chantier)}
+                        style={{
+                          padding: "2px 6px",
+                          border: "1px solid #d1d5db",
+                          background: "white",
+                          borderRadius: 3,
+                          fontSize: 10,
+                          cursor: "pointer"
+                        }}
+                      >
+                        ↻
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
 
