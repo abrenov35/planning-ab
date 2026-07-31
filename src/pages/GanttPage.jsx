@@ -11,11 +11,9 @@ export const GanttPage = ({ onGanttControlsReady }) => {
   // STATES
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteDayConfirm, setShowDeleteDayConfirm] = useState(null);
-  const [showDeleteAffectationConfirm, setShowDeleteAffectationConfirm] = useState(null);
   const [selectedOuvrier, setSelectedOuvrier] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [isLoadingDeleteDay, setIsLoadingDeleteDay] = useState(false);
-  const [isLoadingDeleteAffectation, setIsLoadingDeleteAffectation] = useState(false);
 
   // ===== CROIX : Supprimer un jour =====
   const handleDeleteAffectationDay = (affectationId, dayToDelete) => {
@@ -170,25 +168,12 @@ export const GanttPage = ({ onGanttControlsReady }) => {
     }
   };
 
-  const handleAffectationClick = (affectation) => {
-    // Éviter les appels multiples
-    if (showDeleteAffectationConfirm) return;
-    
-    setShowDeleteAffectationConfirm(affectation);
-  };
-
-  const confirmDeleteAffectation = async () => {
-    if (!showDeleteAffectationConfirm || isLoadingDeleteAffectation) return;
-    
-    setIsLoadingDeleteAffectation(true);
-    
+  const handleAffectationClick = async (affectation) => {
+    // Supprimer directement sans confirmation
     try {
-      await deleteAffectation(showDeleteAffectationConfirm.id);
-      setShowDeleteAffectationConfirm(null);
-      setIsLoadingDeleteAffectation(false);
+      await deleteAffectation(affectation.id);
     } catch (error) {
       console.error("Erreur suppression affectation:", error);
-      setIsLoadingDeleteAffectation(false);
     }
   };
 
@@ -242,21 +227,6 @@ export const GanttPage = ({ onGanttControlsReady }) => {
         cancelText="Annuler"
         isDangerous={true}
         isLoading={isLoadingDeleteDay}
-      />
-
-      {/* MODAL CONFIRMATION - Supprimer l'affectation */}
-      <ConfirmModal
-        isOpen={!!showDeleteAffectationConfirm}
-        title="Supprimer cette affectation ?"
-        message={showDeleteAffectationConfirm ? 
-          `${showDeleteAffectationConfirm.tache} (${showDeleteAffectationConfirm.dateDebut.slice(0, 10)} → ${showDeleteAffectationConfirm.dateFin.slice(0, 10)})` 
-          : ""}
-        onConfirm={confirmDeleteAffectation}
-        onCancel={() => !isLoadingDeleteAffectation && setShowDeleteAffectationConfirm(null)}
-        confirmText="Supprimer"
-        cancelText="Annuler"
-        isDangerous={true}
-        isLoading={isLoadingDeleteAffectation}
       />
     </div>
   );
