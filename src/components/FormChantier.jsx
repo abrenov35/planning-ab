@@ -4,18 +4,28 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, mode = "add" }) => 
   const [formData, setFormData] = useState(
     chantier || { nom: "", dateDebut: "", description: "", statut: "Actif" }
   );
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.nom || !formData.dateDebut) {
       alert("Veuillez remplir tous les champs obligatoires");
       return;
     }
-    onSubmit(formData);
+    
+    // Bloquer le bouton
+    setIsSubmitting(true);
+    
+    try {
+      await onSubmit(formData);
+    } catch (error) {
+      console.error("Erreur lors de la soumission:", error);
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -181,6 +191,7 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, mode = "add" }) => 
         </button>
         <button
           onClick={handleSubmit}
+          disabled={isSubmitting}
           style={{
             flex: 1,
             padding: 10,
@@ -190,10 +201,12 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, mode = "add" }) => 
             borderRadius: 6,
             fontSize: 13,
             fontWeight: 600,
-            cursor: "pointer"
+            cursor: isSubmitting ? "not-allowed" : "pointer",
+            opacity: isSubmitting ? 0.6 : 1,
+            transition: "all 0.2s"
           }}
         >
-          {mode === "edit" ? "Enregistrer" : "Créer"}
+          {isSubmitting ? "Enregistrement..." : (mode === "edit" ? "Enregistrer" : "Créer")}
         </button>
       </div>
     </div>
