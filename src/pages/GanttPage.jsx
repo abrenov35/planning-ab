@@ -5,7 +5,7 @@ import { Modal } from "../components/Modal";
 import { FormAffectation } from "../components/FormAffectation";
 import { ConfirmModal } from "../components/ConfirmModal";
 
-export const GanttPage = () => {
+export const GanttPage = ({ onGanttControlsReady }) => {
   const { ouvriers, chantiers, affectations, addAffectation, updateAffectation, deleteAffectation, loading } = useContext(AppContext);
 
   // STATES
@@ -203,6 +203,7 @@ export const GanttPage = () => {
         onAddAffectation={handleAddAffectation}
         onAffectationClick={handleAffectationClick}
         onDeleteAffectationDay={handleDeleteAffectationDay}
+        onControlsReady={onGanttControlsReady}
       />
 
       {/* MODAL CRÉATION AFFECTATION */}

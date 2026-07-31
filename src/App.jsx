@@ -7,11 +7,11 @@ import { ChantierPage } from "./pages/ChantierPage";
 
 function App() {
   const [currentPage, setCurrentPage] = useState(() => {
-    // Charger depuis localStorage, sinon "gantt" par défaut
     return localStorage.getItem("currentPage") || "gantt";
   });
 
-  // Sauvegarder le currentPage quand il change
+  const [ganttControls, setGanttControls] = useState(null);
+
   const handleSetCurrentPage = (page) => {
     localStorage.setItem("currentPage", page);
     setCurrentPage(page);
@@ -40,7 +40,11 @@ function App() {
   return (
     <AppProvider>
       <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
-        <Sidebar currentPage={currentPage} setCurrentPage={handleSetCurrentPage} />
+        <Sidebar 
+          currentPage={currentPage} 
+          setCurrentPage={handleSetCurrentPage}
+          ganttControls={ganttControls}
+        />
         <div style={{ 
           flex: 1, 
           overflowY: "auto", 
@@ -55,7 +59,7 @@ function App() {
             display: "flex",
             flexDirection: "column"
           }}>
-            <CurrentPage />
+            <CurrentPage onGanttControlsReady={setGanttControls} />
           </div>
         </div>
       </div>

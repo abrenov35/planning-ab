@@ -6,7 +6,8 @@ export const GanttChart = ({
   affectations, 
   onAffectationClick,
   onAddAffectation,
-  onDeleteAffectationDay
+  onDeleteAffectationDay,
+  onControlsReady
 }) => {
   const [viewMode, setViewMode] = useState("semaine"); // semaine ou mois
   const [currentDate, setCurrentDate] = useState(() => {
@@ -79,6 +80,26 @@ export const GanttChart = ({
   };
 
   const allDates = getFourWeeksDates(currentDate);
+
+  // Passer les contrôles du Gantt à App/Sidebar
+  React.useEffect(() => {
+    if (onControlsReady) {
+      onControlsReady({
+        onPrevWeek: () => {
+          const d = new Date(currentDate);
+          d.setDate(d.getDate() - 7);
+          handleSetCurrentDate(d);
+        },
+        onNextWeek: () => {
+          const d = new Date(currentDate);
+          d.setDate(d.getDate() + 7);
+          handleSetCurrentDate(d);
+        },
+        onToday: () => handleSetCurrentDate(new Date()),
+        weekText: `Semaine du ${allDates[0].toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} au ${allDates[19].toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}`
+      });
+    }
+  }, [currentDate, allDates, onControlsReady]);
 
   // Convertir date string en Date object (gère ISO et JJ/MM/AAAA)
   const parseDate = (dateStr) => {
@@ -219,99 +240,7 @@ export const GanttChart = ({
       display: "flex",
       flexDirection: "column"
     }}>
-      {/* CONTRÔLES + TITRE + LÉGENDE - UNE SEULE LIGNE AVEC MEILLEURE DISTRIBUTION */}
-      <div style={{ 
-        display: "flex", 
-        alignItems: "center",
-        marginBottom: "1rem",
-        gap: "0.75rem",
-        flexWrap: "nowrap",
-        overflow: "auto",
-        minHeight: "40px"
-      }}>
-        {/* BOUTONS */}
-        <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
-          <button
-            onClick={() => {
-              const d = new Date(currentDate);
-              d.setDate(d.getDate() - 7);
-              handleSetCurrentDate(d);
-            }}
-            style={{
-              padding: "4px 10px",
-              background: "#1e3a8a",
-              color: "white",
-              border: "none",
-              borderRadius: 4,
-              fontSize: 10,
-              cursor: "pointer",
-              fontWeight: 600,
-              whiteSpace: "nowrap"
-            }}
-          >
-            ← 4 Sem
-          </button>
-          <button
-            onClick={() => {
-              const d = new Date(currentDate);
-              d.setDate(d.getDate() + 7);
-              handleSetCurrentDate(d);
-            }}
-            style={{
-              padding: "4px 10px",
-              background: "#1e3a8a",
-              color: "white",
-              border: "none",
-              borderRadius: 4,
-              fontSize: 10,
-              cursor: "pointer",
-              fontWeight: 600,
-              whiteSpace: "nowrap"
-            }}
-          >
-            4 Sem →
-          </button>
-          <button
-            onClick={() => handleSetCurrentDate(new Date())}
-            style={{
-              padding: "4px 10px",
-              background: "#10b981",
-              color: "white",
-              border: "none",
-              borderRadius: 4,
-              fontSize: 10,
-              cursor: "pointer",
-              fontWeight: 600,
-              whiteSpace: "nowrap"
-            }}
-          >
-            Auj.
-          </button>
-        </div>
 
-        {/* TITRE SEMAINE - RÉDUIT */}
-        <div style={{ fontSize: 11, fontWeight: 600, color: "#1f2937", whiteSpace: "nowrap", flexShrink: 0 }}>
-          Semaine du {allDates[0].toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} au {allDates[19].toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
-        </div>
-
-        {/* LÉGENDE DES CHANTIERS - COMPACT ET VISIBLE */}
-        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexShrink: 0, overflow: "auto" }}>
-          {chantiersActifs.map(chantier => (
-            <div key={chantier.id} style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
-              <div
-                style={{
-                  width: 8,
-                  height: 8,
-                  background: getChantierColor(chantier.id),
-                  borderRadius: 1,
-                  flexShrink: 0
-                }}
-              />
-              <span style={{ fontSize: 8, color: "#6b7280", whiteSpace: "nowrap" }}>{chantier.nom}</span>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* GANTT CHART - SCROLL CONTAINER */}
       <div style={{
