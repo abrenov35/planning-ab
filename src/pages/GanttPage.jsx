@@ -172,6 +172,8 @@ export const GanttPage = ({ onGanttControlsReady }) => {
     // Supprimer directement sans confirmation
     try {
       await deleteAffectation(affectation.id);
+      // Fermer tous les modals après suppression
+      setShowDeleteDayConfirm(null);
     } catch (error) {
       console.error("Erreur suppression affectation:", error);
     }
