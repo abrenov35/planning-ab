@@ -3,23 +3,18 @@ import { AppContext } from "../context/AppContext";
 import { GanttChart } from "../components/GanttChart";
 import { Modal } from "../components/Modal";
 import { FormAffectation } from "../components/FormAffectation";
-import { ConfirmModal } from "../components/ConfirmModal";
 
 export const GanttPage = ({ onGanttControlsReady }) => {
   const { ouvriers, chantiers, affectations, addAffectation, updateAffectation, deleteAffectation, loading } = useContext(AppContext);
 
   // STATES
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showDeleteDayConfirm, setShowDeleteDayConfirm] = useState(null);
+  const [deletingDays, setDeletingDays] = useState({}); // { affectationId: { dayString, dates, isLoading } }
   const [selectedOuvrier, setSelectedOuvrier] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
-  const [isLoadingDeleteDay, setIsLoadingDeleteDay] = useState(false);
 
   // ===== CROIX : Supprimer un jour =====
-  const handleDeleteAffectationDay = (affectationId, dayToDelete) => {
-    // Éviter les appels multiples
-    if (showDeleteDayConfirm) return;
-
+  const handleDeleteAffectationDay = async (affectationId, dayToDelete) => {
     const aff = affectations.find(a => a.id === affectationId);
     if (!aff) return;
 
@@ -42,42 +37,29 @@ export const GanttPage = ({ onGanttControlsReady }) => {
     affEnd.setHours(0,0,0,0);
     deleteDate.setHours(0,0,0,0);
 
-    // Vérif
     if (deleteDate < affStart || deleteDate > affEnd) {
       alert(`Le ${dateToString(deleteDate)} n'est pas dans cette affectation`);
       return;
     }
 
-    // Ouvrir le modal JUSTE UNE FOIS
-    setShowDeleteDayConfirm({
-      affectationId,
-      dayString: dateToString(deleteDate),
-      affStart,
-      affEnd,
-      deleteDate,
-      aff
-    });
-  };
-
-  const confirmDeleteDay = async () => {
-    if (!showDeleteDayConfirm || isLoadingDeleteDay) return;
-
-    setIsLoadingDeleteDay(true);
-    
-    // Fermer le modal IMMÉDIATEMENT
-    const confirm = showDeleteDayConfirm;
-    setShowDeleteDayConfirm(null);
-
-    const { affectationId, affStart, affEnd, deleteDate, aff } = confirm;
-
-    const dateToString = (d) => 
-      `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+    // Marquer comme en cours de suppression pour cette affectation
+    setDeletingDays(prev => ({
+      ...prev,
+      [affectationId]: {
+        dayString: dateToString(deleteDate),
+        affStart,
+        affEnd,
+        deleteDate,
+        aff,
+        isLoading: true
+      }
+    }));
 
     try {
       // SEUL JOUR
       if (affStart.getTime() === affEnd.getTime() && affStart.getTime() === deleteDate.getTime()) {
         await deleteAffectation(affectationId);
-        setIsLoadingDeleteDay(false);
+        setDeletingDays(prev => ({ ...prev, [affectationId]: undefined }));
         return;
       }
 
@@ -86,7 +68,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
         const newStart = new Date(deleteDate);
         newStart.setDate(newStart.getDate() + 1);
         await updateAffectation(affectationId, dateToString(newStart), dateToString(affEnd), aff.tache, "Actif");
-        setIsLoadingDeleteDay(false);
+        setDeletingDays(prev => ({ ...prev, [affectationId]: undefined }));
         return;
       }
 
@@ -95,7 +77,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
         const newEnd = new Date(deleteDate);
         newEnd.setDate(newEnd.getDate() - 1);
         await updateAffectation(affectationId, dateToString(affStart), dateToString(newEnd), aff.tache, "Actif");
-        setIsLoadingDeleteDay(false);
+        setDeletingDays(prev => ({ ...prev, [affectationId]: undefined }));
         return;
       }
 
@@ -115,8 +97,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
       );
       
       if (!res1.success) {
-        console.error("Erreur création affectation 1");
-        setIsLoadingDeleteDay(false);
+        setDeletingDays(prev => ({ ...prev, [affectationId]: undefined }));
         return;
       }
 
@@ -129,17 +110,16 @@ export const GanttPage = ({ onGanttControlsReady }) => {
       );
       
       if (!res2.success) {
-        console.error("Erreur création affectation 2");
         await deleteAffectation(res1.data.id);
-        setIsLoadingDeleteDay(false);
+        setDeletingDays(prev => ({ ...prev, [affectationId]: undefined }));
         return;
       }
 
       await deleteAffectation(affectationId);
-      setIsLoadingDeleteDay(false);
+      setDeletingDays(prev => ({ ...prev, [affectationId]: undefined }));
     } catch (error) {
       console.error("Erreur suppression jour:", error);
-      setIsLoadingDeleteDay(false);
+      setDeletingDays(prev => ({ ...prev, [affectationId]: undefined }));
     }
   };
 
@@ -217,19 +197,6 @@ export const GanttPage = ({ onGanttControlsReady }) => {
           />
         )}
       </Modal>
-
-      {/* MODAL CONFIRMATION - Supprimer un jour */}
-      <ConfirmModal
-        isOpen={!!showDeleteDayConfirm}
-        title="Supprimer ce jour ?"
-        message={`Êtes-vous sûr de vouloir supprimer le ${showDeleteDayConfirm?.dayString} ?`}
-        onConfirm={confirmDeleteDay}
-        onCancel={() => !isLoadingDeleteDay && setShowDeleteDayConfirm(null)}
-        confirmText="Supprimer"
-        cancelText="Annuler"
-        isDangerous={true}
-        isLoading={isLoadingDeleteDay}
-      />
     </div>
   );
 };
