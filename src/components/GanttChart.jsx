@@ -82,7 +82,6 @@ export const GanttChart = ({
 
   const getAffectationColor = (aff, chantier) => {
     if (isHorsGantt(aff)) {
-      // Gris suffisamment soutenu pour rester lisible
       return "#9ca3af";
     }
 
@@ -90,23 +89,18 @@ export const GanttChart = ({
   };
 
   const getAffectationTextColor = (aff) => {
-    if (isHorsGantt(aff)) {
-      return "#111827";
-    }
-
-    return "white";
+    return isHorsGantt(aff) ? "#111827" : "white";
   };
 
-  const getAffectationLabel = (aff, chantier) => {
-    // ND = aucun texte sous le cube
-    if (
-      !aff.tache ||
-      String(aff.tache).trim().toUpperCase() === "ND"
-    ) {
+  const getAffectationLabel = (aff) => {
+    const tache = String(aff.tache || "").trim();
+
+    // NE JAMAIS AFFICHER ND
+    if (!tache || tache.toUpperCase() === "ND") {
       return "";
     }
 
-    return aff.tache;
+    return tache;
   };
 
   // ==================================================
@@ -295,7 +289,6 @@ export const GanttChart = ({
         flexDirection: "column"
       }}
     >
-
       {/* LÉGENDE CHANTIERS */}
       <div
         style={{
@@ -329,12 +322,7 @@ export const GanttChart = ({
               }}
             />
 
-            <span
-              style={{
-                color: "#4b5563",
-                fontWeight: 500
-              }}
-            >
+            <span style={{ color: "#4b5563", fontWeight: 500 }}>
               {chantier.nom}
             </span>
           </div>
@@ -354,7 +342,6 @@ export const GanttChart = ({
           overflowX: "auto"
         }}
       >
-
         {/* HEADER */}
         <div
           style={{
@@ -439,7 +426,6 @@ export const GanttChart = ({
                   background: rowBackground
                 }}
               >
-
                 {/* NOM OUVRIER */}
                 <div
                   style={{
@@ -484,10 +470,7 @@ export const GanttChart = ({
                     <div
                       key={dayIdx}
                       onClick={(e) => {
-                        if (e.target.closest("button")) {
-                          return;
-                        }
-
+                        if (e.target.closest("button")) return;
                         onAddAffectation(ouvrier.id, date);
                       }}
                       style={{
@@ -514,42 +497,29 @@ export const GanttChart = ({
                         (e.currentTarget.style.background = "transparent")
                       }
                     >
-
                       {affectsByOuvrier.map(aff => {
                         const chantier = chantiers.find(
                           c => c.id === aff.chantierId
                         );
 
-                        const posInDay =
-                          getBarPositionInDay(aff, date);
+                        const posInDay = getBarPositionInDay(aff, date);
 
-                        if (!posInDay.isVisible) {
-                          return null;
-                        }
+                        if (!posInDay.isVisible) return null;
 
-                        const lettres =
-                          getAffectationLetters(aff, chantier);
+                        const lettres = getAffectationLetters(aff, chantier);
+                        const couleur = getAffectationColor(aff, chantier);
+                        const couleurTexte = getAffectationTextColor(aff);
+                        const label = getAffectationLabel(aff);
 
-                        const couleur =
-                          getAffectationColor(aff, chantier);
-
-                        const couleurTexte =
-                          getAffectationTextColor(aff);
-
-                        const label =
-                          getAffectationLabel(aff, chantier);
-
-                        const rank =
-                          getAffectationRankOnDay(
-                            aff,
-                            date,
-                            affectsByOuvrier
-                          );
+                        const rank = getAffectationRankOnDay(
+                          aff,
+                          date,
+                          affectsByOuvrier
+                        );
 
                         const barHeight = 18;
                         const gap = 2;
-                        const topOffset =
-                          rank * (barHeight + gap) + 1;
+                        const topOffset = rank * (barHeight + gap) + 1;
 
                         return (
                           <div
@@ -583,7 +553,6 @@ export const GanttChart = ({
                                   : "none"
                             }}
                           >
-
                             {/* CUBE */}
                             <div
                               title={
@@ -612,7 +581,7 @@ export const GanttChart = ({
                               {lettres}
                             </div>
 
-                            {/* LABEL : ND N'EST PLUS AFFICHÉ */}
+                            {/* ND MASQUÉ */}
                             {label && (
                               <div
                                 style={{
@@ -641,10 +610,7 @@ export const GanttChart = ({
                                   e.stopPropagation();
 
                                   if (onDeleteAffectationDay) {
-                                    onDeleteAffectationDay(
-                                      aff.id,
-                                      date
-                                    );
+                                    onDeleteAffectationDay(aff.id, date);
                                   }
                                 }}
                                 onMouseDown={(e) => {
@@ -669,8 +635,7 @@ export const GanttChart = ({
                                   justifyContent: "center",
                                   padding: 0,
                                   lineHeight: 1,
-                                  boxShadow:
-                                    "0 2px 4px rgba(0,0,0,0.2)",
+                                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
                                   pointerEvents: "auto",
                                   zIndex: 1000
                                 }}
