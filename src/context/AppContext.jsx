@@ -30,7 +30,18 @@ export const AppProvider = ({ children }) => {
       setLoading(false);
     }
   };
+  // Rafraîchissement automatique des données
+  useEffect(() => {
 
+    loadData();
+
+    const interval = setInterval(() => {
+      loadData();
+    }, 30000); // toutes les 30 secondes
+
+    return () => clearInterval(interval);
+
+  }, []);
   // OUVRIERS
   const addOuvrier = async (nom, type, metier) => {
     const result = await api.createOuvrier(nom, type, metier);
