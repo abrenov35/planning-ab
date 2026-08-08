@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 export const GanttChart = ({
-  ouvriers,
+  OUVRIER TEST 123s,
   chantiers,
   affectations,
   onAffectationClick,
@@ -264,7 +264,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
   const getAffectationRankOnDay = (
     aff,
     dayDate,
-    affectationsForOuvrier
+    affectationsForOUVRIER TEST 123
   ) => {
     const dayStart = new Date(dayDate);
     dayStart.setHours(0, 0, 0, 0);
@@ -272,7 +272,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
     const dayEnd = new Date(dayDate);
     dayEnd.setHours(23, 59, 59, 999);
 
-    const overlappingAff = affectationsForOuvrier
+    const overlappingAff = affectationsForOUVRIER TEST 123
       .filter(a => {
         const aStart = parseDate(a.dateDebut);
         const aEnd = parseDate(a.dateFin);
@@ -294,7 +294,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
   const weekEnd = new Date(allDates[allDates.length - 1]);
   weekEnd.setHours(23, 59, 59, 999);
 
-  const ouvrierActifs = ouvriers.filter(o => o.statut === "Actif");
+  const OUVRIER TEST 123Actifs = OUVRIER TEST 123s.filter(o => o.statut === "Actif");
 
   const gridTemplate = "repeat(20, minmax(50px, 1fr))";
 
@@ -384,7 +384,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
               flexShrink: 0
             }}
           >
-            OUVRIER
+            OUVRIER TEST 123
           </div>
 
           <div
@@ -424,11 +424,11 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
           </div>
         </div>
 
-        {/* OUVRIERS */}
-        {ouvrierActifs.map((ouvrier, idx) => {
-          const affectsByOuvrier = affectations.filter(
+        {/* OUVRIER TEST 123S */}
+        {OUVRIER TEST 123Actifs.map((OUVRIER TEST 123, idx) => {
+          const affectsByOUVRIER TEST 123 = affectations.filter(
             a =>
-              Number(a.ouvrierID) === Number(ouvrier.id) &&
+              Number(a.OUVRIER TEST 123ID) === Number(OUVRIER TEST 123.id) &&
               isAffectationInWeek(a, weekStart, weekEnd)
           );
 
@@ -436,7 +436,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
             idx % 2 === 0 ? "white" : "#f3f4f6";
 
           return (
-            <div key={ouvrier.id}>
+            <div key={OUVRIER TEST 123.id}>
               <div
                 style={{
                   display: "flex",
@@ -444,7 +444,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
                   background: rowBackground
                 }}
               >
-                {/* NOM OUVRIER */}
+                {/* NOM OUVRIER TEST 123 */}
                 <div
                   style={{
                     width: 150,
@@ -460,7 +460,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
                     flexShrink: 0
                   }}
                 >
-                  <div>{ouvrier.nom}</div>
+                  <div>{OUVRIER TEST 123.nom}</div>
 
                   <div
                     style={{
@@ -468,7 +468,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
                       color: "#9ca3af"
                     }}
                   >
-                    {ouvrier.metier}
+                    {OUVRIER TEST 123.metier}
                   </div>
                 </div>
 
@@ -489,7 +489,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
                       key={dayIdx}
                       onClick={(e) => {
                         if (e.target.closest("button")) return;
-                        onAddAffectation(ouvrier.id, date);
+                        onAddAffectation(OUVRIER TEST 123.id, date);
                       }}
                       style={{
                         borderRight:
@@ -515,7 +515,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
                         (e.currentTarget.style.background = "transparent")
                       }
                     >
-                      {affectsByOuvrier.map(aff => {
+                      {affectsByOUVRIER TEST 123.map(aff => {
                         const chantier = chantiers.find(
                           c => Number(c.id) === Number(aff.chantierId)
                         );
@@ -532,7 +532,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
                         const rank = getAffectationRankOnDay(
                           aff,
                           date,
-                          affectsByOuvrier
+                          affectsByOUVRIER TEST 123
                         );
 
                         const barHeight = 18;
