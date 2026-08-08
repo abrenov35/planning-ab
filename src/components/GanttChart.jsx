@@ -55,8 +55,7 @@ export const GanttChart = ({
     const colors = Object.values(colorMap);
 
     if (!chantierId) {
-      return "#7D8590";
-    }
+return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
 
     return colors[chantierId % colors.length];
   };
@@ -99,7 +98,7 @@ export const GanttChart = ({
   const getAffectationColor = (aff, chantier) => {
     if (isHorsGantt(aff, chantier)) {
       // Gris soutenu lisible
-      return "#7D8590";
+      return nom ? nom.substring(0, 2).toUpperCase() : "HG";
     }
 
     return getChantierColor(chantier?.id);
