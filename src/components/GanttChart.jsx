@@ -55,7 +55,7 @@ export const GanttChart = ({
     const colors = Object.values(colorMap);
 
     if (!chantierId) {
-      return "#9ca3af";
+      return "#7D8590";
     }
 
     return colors[chantierId % colors.length];
@@ -99,7 +99,7 @@ export const GanttChart = ({
   const getAffectationColor = (aff, chantier) => {
     if (isHorsGantt(aff, chantier)) {
       // Gris soutenu lisible
-      return "#9CA3AF";
+      return "#7D8590";
     }
 
     return getChantierColor(chantier?.id);
@@ -585,8 +585,8 @@ export const GanttChart = ({
                                 background: couleur,
                                 borderRadius: 2,
                                 border: isHorsGantt(aff, chantier)
-                                  ? "1px solid #6B7280"
-                                  : "1px solid rgba(0,0,0,0.2)",
+  ? "1px solid #5B6470"
+  : "1px solid rgba(0,0,0,0.2)",
                                 boxSizing: "border-box",
                                 display: "flex",
                                 alignItems: "center",
