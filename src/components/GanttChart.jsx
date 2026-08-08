@@ -5,7 +5,7 @@ export const GanttChart = ({
   chantiers,
   affectations,
   onAffectationClick,
-  onAddAffectation,
+  onAddAffectation, 
   onDeleteAffectationDay,
   onControlsReady
 }) => {
