@@ -43,7 +43,8 @@ export const GanttChart = ({
   };
 
   const getChantierId2Lettres = (chantier) => {
-    return chantier?.nom?.substring(0, 2).toUpperCase() || "??";
+    const nom = String(chantier?.nom || "").trim();
+    return nom ? nom.substring(0, 2).toUpperCase() : "";
   };
 
   const getChantierColor = (chantierId) => {
@@ -64,38 +65,56 @@ export const GanttChart = ({
   // HORS GANTT
   // ==================================================
 
-  const isHorsGantt = (aff) => {
-    return aff.typeAffectation === "HORS_GANTT";
+  const normalizeType = (value) =>
+    String(value || "")
+      .trim()
+      .toUpperCase();
+
+  const isHorsGantt = (aff, chantier) => {
+    const type = normalizeType(aff?.typeAffectation);
+    const source = normalizeType(aff?.source);
+    const nomExterne = String(aff?.nomExterne || "").trim();
+
+    return (
+      type === "HORS_GANTT" ||
+      (!!nomExterne && !chantier) ||
+      (source === "GOOGLE" && !chantier)
+    );
   };
 
   const getAffectationLetters = (aff, chantier) => {
-    if (isHorsGantt(aff)) {
-      const nom = String(aff.nomExterne || "").trim();
+    if (isHorsGantt(aff, chantier)) {
+      const nom = String(aff?.nomExterne || "").trim();
 
-      if (!nom) return "HG";
-
-      return nom.substring(0, 2).toUpperCase();
+      // Si le nom externe n'est pas encore remonté,
+      // on affiche HG plutôt que ??.
+      return nom
+        ? nom.substring(0, 2).toUpperCase()
+        : "HG";
     }
 
     return getChantierId2Lettres(chantier);
   };
 
   const getAffectationColor = (aff, chantier) => {
-    if (isHorsGantt(aff)) {
-      return "#9ca3af";
+    if (isHorsGantt(aff, chantier)) {
+      // Gris soutenu lisible
+      return "#9CA3AF";
     }
 
     return getChantierColor(chantier?.id);
   };
 
-  const getAffectationTextColor = (aff) => {
-    return isHorsGantt(aff) ? "#111827" : "white";
+  const getAffectationTextColor = (aff, chantier) => {
+    return isHorsGantt(aff, chantier)
+      ? "#111827"
+      : "white";
   };
 
   const getAffectationLabel = (aff) => {
-    const tache = String(aff.tache || "").trim();
+    const tache = String(aff?.tache || "").trim();
 
-    // NE JAMAIS AFFICHER ND
+    // ND / vide = rien du tout sous le cube
     if (!tache || tache.toUpperCase() === "ND") {
       return "";
     }
@@ -410,7 +429,7 @@ export const GanttChart = ({
         {ouvrierActifs.map((ouvrier, idx) => {
           const affectsByOuvrier = affectations.filter(
             a =>
-              a.ouvrierID === ouvrier.id &&
+              Number(a.ouvrierID) === Number(ouvrier.id) &&
               isAffectationInWeek(a, weekStart, weekEnd)
           );
 
@@ -499,7 +518,7 @@ export const GanttChart = ({
                     >
                       {affectsByOuvrier.map(aff => {
                         const chantier = chantiers.find(
-                          c => c.id === aff.chantierId
+                          c => Number(c.id) === Number(aff.chantierId)
                         );
 
                         const posInDay = getBarPositionInDay(aff, date);
@@ -508,7 +527,7 @@ export const GanttChart = ({
 
                         const lettres = getAffectationLetters(aff, chantier);
                         const couleur = getAffectationColor(aff, chantier);
-                        const couleurTexte = getAffectationTextColor(aff);
+                        const couleurTexte = getAffectationTextColor(aff, chantier);
                         const label = getAffectationLabel(aff);
 
                         const rank = getAffectationRankOnDay(
@@ -556,8 +575,8 @@ export const GanttChart = ({
                             {/* CUBE */}
                             <div
                               title={
-                                isHorsGantt(aff)
-                                  ? aff.nomExterne || ""
+                                isHorsGantt(aff, chantier)
+                                  ? aff.nomExterne || "Événement Google"
                                   : chantier?.nom || ""
                               }
                               style={{
@@ -565,8 +584,8 @@ export const GanttChart = ({
                                 height: "18px",
                                 background: couleur,
                                 borderRadius: 2,
-                                border: isHorsGantt(aff)
-                                  ? "1px solid #6b7280"
+                                border: isHorsGantt(aff, chantier)
+                                  ? "1px solid #6B7280"
                                   : "1px solid rgba(0,0,0,0.2)",
                                 boxSizing: "border-box",
                                 display: "flex",
