@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 export const GanttChart = ({
-  OUVRIER TEST 123s,
+  ouvriers,
   chantiers,
   affectations,
   onAffectationClick,
@@ -55,7 +55,8 @@ export const GanttChart = ({
     const colors = Object.values(colorMap);
 
     if (!chantierId) {
-return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
+      return colors[0];
+    }
 
     return colors[chantierId % colors.length];
   };
@@ -97,8 +98,8 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
 
   const getAffectationColor = (aff, chantier) => {
     if (isHorsGantt(aff, chantier)) {
-      // Gris soutenu lisible
-      return nom ? nom.substring(0, 2).toUpperCase() : "HG";
+      // ✅ CORRIGÉ : retourner la couleur gris soutenu
+      return "#7D8590";
     }
 
     return getChantierColor(chantier?.id);
@@ -264,7 +265,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
   const getAffectationRankOnDay = (
     aff,
     dayDate,
-    affectationsForOUVRIER TEST 123
+    affectationsForOuvrier
   ) => {
     const dayStart = new Date(dayDate);
     dayStart.setHours(0, 0, 0, 0);
@@ -272,7 +273,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
     const dayEnd = new Date(dayDate);
     dayEnd.setHours(23, 59, 59, 999);
 
-    const overlappingAff = affectationsForOUVRIER TEST 123
+    const overlappingAff = affectationsForOuvrier
       .filter(a => {
         const aStart = parseDate(a.dateDebut);
         const aEnd = parseDate(a.dateFin);
@@ -294,7 +295,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
   const weekEnd = new Date(allDates[allDates.length - 1]);
   weekEnd.setHours(23, 59, 59, 999);
 
-  const OUVRIER TEST 123Actifs = OUVRIER TEST 123s.filter(o => o.statut === "Actif");
+  const ouvriersActifs = ouvriers.filter(o => o.statut === "Actif");
 
   const gridTemplate = "repeat(20, minmax(50px, 1fr))";
 
@@ -384,7 +385,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
               flexShrink: 0
             }}
           >
-            OUVRIER TEST 123
+            OUVRIER
           </div>
 
           <div
@@ -424,11 +425,11 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
           </div>
         </div>
 
-        {/* OUVRIER TEST 123S */}
-        {OUVRIER TEST 123Actifs.map((OUVRIER TEST 123, idx) => {
-          const affectsByOUVRIER TEST 123 = affectations.filter(
+        {/* OUVRIERS */}
+        {ouvriersActifs.map((ouvrier, idx) => {
+          const affectsByOuvrier = affectations.filter(
             a =>
-              Number(a.OUVRIER TEST 123ID) === Number(OUVRIER TEST 123.id) &&
+              Number(a.ouvrierID) === Number(ouvrier.id) &&
               isAffectationInWeek(a, weekStart, weekEnd)
           );
 
@@ -436,7 +437,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
             idx % 2 === 0 ? "white" : "#f3f4f6";
 
           return (
-            <div key={OUVRIER TEST 123.id}>
+            <div key={ouvrier.id}>
               <div
                 style={{
                   display: "flex",
@@ -444,7 +445,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
                   background: rowBackground
                 }}
               >
-                {/* NOM OUVRIER TEST 123 */}
+                {/* NOM OUVRIER */}
                 <div
                   style={{
                     width: 150,
@@ -460,7 +461,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
                     flexShrink: 0
                   }}
                 >
-                  <div>{OUVRIER TEST 123.nom}</div>
+                  <div>{ouvrier.nom}</div>
 
                   <div
                     style={{
@@ -468,7 +469,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
                       color: "#9ca3af"
                     }}
                   >
-                    {OUVRIER TEST 123.metier}
+                    {ouvrier.metier}
                   </div>
                 </div>
 
@@ -489,7 +490,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
                       key={dayIdx}
                       onClick={(e) => {
                         if (e.target.closest("button")) return;
-                        onAddAffectation(OUVRIER TEST 123.id, date);
+                        onAddAffectation(ouvrier.id, date);
                       }}
                       style={{
                         borderRight:
@@ -515,7 +516,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
                         (e.currentTarget.style.background = "transparent")
                       }
                     >
-                      {affectsByOUVRIER TEST 123.map(aff => {
+                      {affectsByOuvrier.map(aff => {
                         const chantier = chantiers.find(
                           c => Number(c.id) === Number(aff.chantierId)
                         );
@@ -532,7 +533,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
                         const rank = getAffectationRankOnDay(
                           aff,
                           date,
-                          affectsByOUVRIER TEST 123
+                          affectsByOuvrier
                         );
 
                         const barHeight = 18;
@@ -584,8 +585,8 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
                                 background: couleur,
                                 borderRadius: 2,
                                 border: isHorsGantt(aff, chantier)
-  ? "1px solid #5B6470"
-  : "1px solid rgba(0,0,0,0.2)",
+                                  ? "1px solid #5B6470"
+                                  : "1px solid rgba(0,0,0,0.2)",
                                 boxSizing: "border-box",
                                 display: "flex",
                                 alignItems: "center",
@@ -599,7 +600,7 @@ return nom ? nom.substring(0, 2).toUpperCase() : "HG";    }
                               {lettres}
                             </div>
 
-                            {/* ND MASQUÉ */}
+                            {/* LABEL TÂCHE */}
                             {label && (
                               <div
                                 style={{
