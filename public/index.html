@@ -7,6 +7,14 @@
   <title>AB Planning - Gantt</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>📅</text></svg>" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Blocs Google hors Gantt : gris visible, sans texte */
+    #root div[title]:empty {
+      background-color: #9CA3AF !important;
+      background-image: none !important;
+      opacity: 1 !important;
+    }
+  </style>
 </head>
 <body>
   <noscript>Tu dois activer JavaScript pour utiliser cette app.</noscript>
