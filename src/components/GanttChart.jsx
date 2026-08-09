@@ -1,22 +1,27 @@
 import React, { useState } from "react";
 
 export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationClick, onAddAffectation, onControlsReady }) => {
+  const mobileMediaQuery = "(max-width: 1100px) and (pointer: coarse)";
   const [currentDate, setCurrentDate] = useState(() => {
     const saved = localStorage.getItem("ganttCurrentDate");
     return saved ? new Date(saved) : new Date();
   });
-  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.matchMedia(mobileMediaQuery).matches);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
-    const media = window.matchMedia("(max-width: 768px)");
+    const media = window.matchMedia(mobileMediaQuery);
     const update = () => setIsMobile(media.matches);
     update();
     if (media.addEventListener) media.addEventListener("change", update);
     else media.addListener(update);
+    window.addEventListener("orientationchange", update);
+    window.addEventListener("resize", update);
     return () => {
       if (media.removeEventListener) media.removeEventListener("change", update);
       else media.removeListener(update);
+      window.removeEventListener("orientationchange", update);
+      window.removeEventListener("resize", update);
     };
   }, []);
 
