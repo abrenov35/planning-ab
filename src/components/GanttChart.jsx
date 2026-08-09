@@ -65,7 +65,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const ordreOuvriers=["KEVIN","JIMMY","ALEXANDRE","KEVIN #2","ALEXIS","MOMO","MOHAMED","ABOUL","MORVAN","BRAHIM","MARTIN","STEPHANE","EQUIPE UMAR","NORDINE"];
   const ouvriersActifs=ouvriers.filter(o=>o.statut==="Actif").sort((a,b)=>{let ia=ordreOuvriers.indexOf(normaliserNomOuvrier(a.nom)),ib=ordreOuvriers.indexOf(normaliserNomOuvrier(b.nom));if(ia===-1)ia=ordreOuvriers.length-1;if(ib===-1)ib=ordreOuvriers.length-1;return ia-ib;});
   const chantiersActifs=chantiers.filter(c=>c.statut==="Actif"), gridTemplate="repeat(20, minmax(50px, 1fr))", affectationSlotHeight=29;
-  const separateursApres=new Set(["KEVIN #2","ABOUL","MORVAN"]);
+  const separateursApres=new Set(["KEVIN #2","ABOUL","MORVAN","NORDINE"]);
   const separationStyle={height:"3px",background:"#94a3b8",width:"100%"};
 
   return <div style={{padding:"1rem",flex:1,display:"flex",flexDirection:"column"}}>
