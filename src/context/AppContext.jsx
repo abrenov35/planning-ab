@@ -9,6 +9,7 @@ export const AppProvider = ({ children }) => {
   const [affectations, setAffectations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   const loadData = useCallback(async (showLoader = false) => {
     if (showLoader) setLoading(true);
@@ -24,6 +25,7 @@ export const AppProvider = ({ children }) => {
       setChantiers(Array.isArray(data?.chantiers) ? data.chantiers : []);
       setAffectations(Array.isArray(data?.affectations) ? data.affectations : []);
       setError(null);
+      setLastUpdated(new Date());
     } catch (err) {
       console.error("Error loading data:", err);
       setError(err.message);
@@ -134,6 +136,7 @@ export const AppProvider = ({ children }) => {
     affectations,
     loading,
     error,
+    lastUpdated,
     addOuvrier,
     updateOuvrier,
     addChantier,
