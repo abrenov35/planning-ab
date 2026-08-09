@@ -5,12 +5,10 @@ export const GanttChart = ({
   chantiers,
   affectations,
   onAffectationClick,
-  onAddAffectation, 
+  onAddAffectation,
   onDeleteAffectationDay,
   onControlsReady
 }) => {
-  const [viewMode, setViewMode] = useState("semaine");
-
   const [currentDate, setCurrentDate] = useState(() => {
     const saved = localStorage.getItem("ganttCurrentDate");
     return saved ? new Date(saved) : new Date();
@@ -22,12 +20,6 @@ export const GanttChart = ({
     localStorage.setItem("ganttCurrentDate", date.toISOString());
     setCurrentDate(date);
   };
-
-  // ==================================================
-  // COULEURS CHANTIERS
-  // ==================================================
-
-  const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
 
   const colorMap = {
     1: "#3b82f6",
@@ -42,92 +34,93 @@ export const GanttChart = ({
     10: "#14b8a6"
   };
 
-  const getChantierId2Lettres = (chantier) => {
-    const nom = String(chantier?.nom || "").trim();
-    return nom ? nom.substring(0, 2).toUpperCase() : "";
-  };
-
-  const getChantierColor = (chantierId) => {
-    if (colorMap[chantierId]) {
-      return colorMap[chantierId];
-    }
-
-    const colors = Object.values(colorMap);
-
-    if (!chantierId) {
-      return colors[0];
-    }
-
-    return colors[chantierId % colors.length];
-  };
-
-  // ==================================================
-  // HORS GANTT
-  // ==================================================
-
-  const normalizeType = (value) =>
-    String(value || "")
+  const normalize = (value) =>
+    String(value ?? "")
       .trim()
       .toUpperCase();
 
+  const isValidChantier = (chantier) => {
+    if (!chantier) return false;
+    const nom = String(chantier.nom ?? "").trim();
+    return nom !== "" && nom !== "??";
+  };
+
   const isHorsGantt = (aff, chantier) => {
-    const type = normalizeType(aff?.typeAffectation);
-    const source = normalizeType(aff?.source);
-    const nomExterne = String(aff?.nomExterne || "").trim();
+    const type = normalize(aff?.typeAffectation);
+    const source = normalize(aff?.source);
 
-    return (
-      type === "HORS_GANTT" ||
-      (!!nomExterne && !chantier) ||
-      (source === "GOOGLE" && !chantier)
-    );
+    // Règle forte : une affectation qui ne pointe pas vers un vrai chantier
+    // est affichée comme événement externe. Cela couvre aussi les anciennes
+    // lignes Google/SYNC mal renseignées (chantier vide ou chantier "??").
+    if (!isValidChantier(chantier)) return true;
+
+    if (type === "HORS_GANTT") return true;
+
+    // Une ligne Google explicitement externe reste externe même si des données
+    // historiques sont incohérentes.
+    if (source === "GOOGLE" && type === "HORS_GANTT") return true;
+
+    return false;
   };
 
-  const getAffectationLetters = (aff, chantier) => {
-    // Événement Google hors Gantt : bloc gris clair sans texte.
-    if (isHorsGantt(aff, chantier)) {
-      return "";
-    }
+  const getChantierColor = (chantierId) => {
+    if (colorMap[chantierId]) return colorMap[chantierId];
 
-    return getChantierId2Lettres(chantier);
+    const colors = Object.values(colorMap);
+    const numericId = Number(chantierId);
+
+    if (!numericId || Number.isNaN(numericId)) return colors[0];
+    return colors[numericId % colors.length];
   };
 
-  const getAffectationColor = (aff, chantier) => {
-    if (isHorsGantt(aff, chantier)) {
-      return "#D1D5DB";
-    }
+  const getLetters = (aff, chantier) => {
+    if (isHorsGantt(aff, chantier)) return "";
 
-    return getChantierColor(chantier?.id);
+    const nom = String(chantier?.nom ?? "").trim();
+    return nom.substring(0, 2).toUpperCase();
   };
 
-  const getAffectationTextColor = (aff, chantier) => {
-    return isHorsGantt(aff, chantier)
-      ? "#111827"
-      : "white";
-  };
+  const getLabel = (aff, chantier) => {
+    if (isHorsGantt(aff, chantier)) return "";
 
-  const getAffectationLabel = (aff, chantier) => {
-    // Événement Google hors Gantt : rien sous le bloc.
-    if (isHorsGantt(aff, chantier)) {
-      return "";
-    }
-
-    const tache = String(aff?.tache || "").trim();
-
-    // ND / vide = rien du tout sous le cube
-    if (!tache || tache.toUpperCase() === "ND") {
-      return "";
-    }
-
+    const tache = String(aff?.tache ?? "").trim();
+    if (!tache || normalize(tache) === "ND") return "";
     return tache;
   };
 
-  // ==================================================
-  // DATES
-  // ==================================================
+  const parseDate = (dateStr) => {
+    if (!dateStr) return null;
+
+    if (dateStr instanceof Date) {
+      const d = new Date(dateStr);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    const str = String(dateStr);
+
+    if (str.includes("T")) {
+      const d = new Date(str);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    if (str.includes("-")) {
+      const [y, m, d] = str.split("-");
+      const date = new Date(Number(y), Number(m) - 1, Number(d));
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    if (str.includes("/")) {
+      const [d, m, y] = str.split("/");
+      const date = new Date(Number(y), Number(m) - 1, Number(d));
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    const date = new Date(str);
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
 
   const getFourWeeksDates = (startDate) => {
     const d = new Date(startDate);
-
     const dayOfWeek = d.getDay();
     const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
 
@@ -149,153 +142,81 @@ export const GanttChart = ({
   };
 
   const allDates = getFourWeeksDates(currentDate);
+  const weekStart = allDates[0];
+  const weekEnd = new Date(allDates[allDates.length - 1]);
+  weekEnd.setHours(23, 59, 59, 999);
 
   React.useEffect(() => {
-    if (onControlsReady) {
-      onControlsReady({
-        onPrevWeek: () => {
-          const d = new Date(currentDate);
-          d.setDate(d.getDate() - 7);
-          handleSetCurrentDate(d);
-        },
+    if (!onControlsReady) return;
 
-        onNextWeek: () => {
-          const d = new Date(currentDate);
-          d.setDate(d.getDate() + 7);
-          handleSetCurrentDate(d);
-        },
-
-        onToday: () => handleSetCurrentDate(new Date()),
-
-        weekText:
-          `Semaine du ${allDates[0].toLocaleDateString("fr-FR", {
-            day: "numeric",
-            month: "short"
-          })} au ${allDates[19].toLocaleDateString("fr-FR", {
-            day: "numeric",
-            month: "short"
-          })}`
-      });
-    }
+    onControlsReady({
+      onPrevWeek: () => {
+        const d = new Date(currentDate);
+        d.setDate(d.getDate() - 7);
+        handleSetCurrentDate(d);
+      },
+      onNextWeek: () => {
+        const d = new Date(currentDate);
+        d.setDate(d.getDate() + 7);
+        handleSetCurrentDate(d);
+      },
+      onToday: () => handleSetCurrentDate(new Date()),
+      weekText: `Semaine du ${allDates[0].toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "short"
+      })} au ${allDates[19].toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "short"
+      })}`
+    });
   }, [currentDate, onControlsReady]);
-
-  const parseDate = (dateStr) => {
-    if (!dateStr) return null;
-
-    if (dateStr.includes("T")) {
-      return new Date(dateStr);
-    }
-
-    if (dateStr.includes("-")) {
-      const [y, m, d] = dateStr.split("-");
-      return new Date(Number(y), Number(m) - 1, Number(d));
-    }
-
-    const [d, m, y] = dateStr.split("/");
-    return new Date(Number(y), Number(m) - 1, Number(d));
-  };
 
   const formatShortDate = (date) => {
     const days = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
     const d = String(date.getDate()).padStart(2, "0");
-
     return `${days[date.getDay()]} ${d}`;
   };
 
-  const isAffectationInWeek = (aff, weekStart, weekEnd) => {
+  const isAffectationInWeek = (aff) => {
     const affStart = parseDate(aff.dateDebut);
     const affEnd = parseDate(aff.dateFin);
 
     if (!affStart || !affEnd) return false;
 
-    const affEndPlus = new Date(affEnd);
-    affEndPlus.setDate(affEndPlus.getDate() + 1);
+    affStart.setHours(0, 0, 0, 0);
+    affEnd.setHours(23, 59, 59, 999);
 
-    return affStart <= weekEnd && affEndPlus >= weekStart;
+    return affStart <= weekEnd && affEnd >= weekStart;
   };
 
-  const getBarPositionInDay = (aff, dayDate) => {
+  const isVisibleOnDay = (aff, date) => {
     const affStart = parseDate(aff.dateDebut);
     const affEnd = parseDate(aff.dateFin);
 
-    if (!affStart || !affEnd) {
-      return {
-        left: 0,
-        width: 0,
-        isVisible: false
-      };
-    }
+    if (!affStart || !affEnd) return false;
 
-    const dayStart = new Date(dayDate);
-    dayStart.setHours(0, 0, 0, 0);
+    affStart.setHours(0, 0, 0, 0);
+    affEnd.setHours(23, 59, 59, 999);
 
-    const dayEnd = new Date(dayDate);
-    dayEnd.setHours(23, 59, 59, 999);
+    const day = new Date(date);
+    day.setHours(12, 0, 0, 0);
 
-    const affEndPlus = new Date(affEnd);
-    affEndPlus.setDate(affEndPlus.getDate() + 1);
-
-    if (!(affStart <= dayEnd && affEndPlus > dayStart)) {
-      return {
-        left: 0,
-        width: 0,
-        isVisible: false
-      };
-    }
-
-    const clippedStart = affStart > dayStart ? affStart : dayStart;
-    const clippedEnd = affEndPlus < dayEnd ? affEndPlus : dayEnd;
-
-    const startOffset = Math.floor(
-      ((clippedStart - dayStart) / (1000 * 60 * 60 * 24)) * 100
-    );
-
-    const endOffset = Math.floor(
-      ((clippedEnd - dayStart) / (1000 * 60 * 60 * 24)) * 100
-    );
-
-    return {
-      left: startOffset,
-      width: endOffset - startOffset,
-      isVisible: true
-    };
+    return day >= affStart && day <= affEnd;
   };
 
-  const getAffectationRankOnDay = (
-    aff,
-    dayDate,
-    affectationsForOuvrier
-  ) => {
-    const dayStart = new Date(dayDate);
-    dayStart.setHours(0, 0, 0, 0);
+  const getRankOnDay = (aff, date, list) => {
+    const overlapping = list
+      .filter((item) => isVisibleOnDay(item, date))
+      .sort((a, b) => Number(a.id) - Number(b.id));
 
-    const dayEnd = new Date(dayDate);
-    dayEnd.setHours(23, 59, 59, 999);
-
-    const overlappingAff = affectationsForOuvrier
-      .filter(a => {
-        const aStart = parseDate(a.dateDebut);
-        const aEnd = parseDate(a.dateFin);
-
-        if (!aStart || !aEnd) return false;
-
-        const aEndPlus = new Date(aEnd);
-        aEndPlus.setDate(aEndPlus.getDate() + 1);
-
-        return aStart <= dayEnd && aEndPlus > dayStart;
-      })
-      .sort((a, b) => a.id - b.id);
-
-    return overlappingAff.findIndex(a => a.id === aff.id);
+    return Math.max(
+      0,
+      overlapping.findIndex((item) => String(item.id) === String(aff.id))
+    );
   };
 
-  const weekStart = allDates[0];
-
-  const weekEnd = new Date(allDates[allDates.length - 1]);
-  weekEnd.setHours(23, 59, 59, 999);
-
-  const ouvriersActifs = ouvriers.filter(o => o.statut === "Actif");
-
+  const ouvriersActifs = ouvriers.filter((o) => o.statut === "Actif");
+  const chantiersActifs = chantiers.filter((c) => c.statut === "Actif");
   const gridTemplate = "repeat(20, minmax(50px, 1fr))";
 
   return (
@@ -307,7 +228,6 @@ export const GanttChart = ({
         flexDirection: "column"
       }}
     >
-      {/* LÉGENDE CHANTIERS */}
       <div
         style={{
           display: "flex",
@@ -321,25 +241,20 @@ export const GanttChart = ({
           fontSize: "11px"
         }}
       >
-        {chantiersActifs.map(chantier => (
+        {chantiersActifs.map((chantier) => (
           <div
             key={chantier.id}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px"
-            }}
+            style={{ display: "flex", alignItems: "center", gap: "6px" }}
           >
             <div
               style={{
                 width: "10px",
                 height: "10px",
-                background: getChantierColor(chantier.id),
+                backgroundColor: getChantierColor(chantier.id),
                 borderRadius: "2px",
                 flexShrink: 0
               }}
             />
-
             <span style={{ color: "#4b5563", fontWeight: 500 }}>
               {chantier.nom}
             </span>
@@ -347,7 +262,6 @@ export const GanttChart = ({
         ))}
       </div>
 
-      {/* GANTT */}
       <div
         style={{
           background: "white",
@@ -360,7 +274,6 @@ export const GanttChart = ({
           overflowX: "auto"
         }}
       >
-        {/* HEADER */}
         <div
           style={{
             display: "flex",
@@ -402,7 +315,6 @@ export const GanttChart = ({
                 key={idx}
                 style={{
                   padding: "0.5rem 0.75rem",
-                  background: "transparent",
                   borderRight:
                     (idx + 1) % 5 === 0 && idx < 19
                       ? "3px solid #1e3a8a"
@@ -424,16 +336,14 @@ export const GanttChart = ({
           </div>
         </div>
 
-        {/* OUVRIERS */}
         {ouvriersActifs.map((ouvrier, idx) => {
           const affectsByOuvrier = affectations.filter(
-            a =>
+            (a) =>
               Number(a.ouvrierID) === Number(ouvrier.id) &&
-              isAffectationInWeek(a, weekStart, weekEnd)
+              isAffectationInWeek(a)
           );
 
-          const rowBackground =
-            idx % 2 === 0 ? "white" : "#f3f4f6";
+          const rowBackground = idx % 2 === 0 ? "white" : "#f3f4f6";
 
           return (
             <div key={ouvrier.id}>
@@ -444,7 +354,6 @@ export const GanttChart = ({
                   background: rowBackground
                 }}
               >
-                {/* NOM OUVRIER */}
                 <div
                   style={{
                     width: 150,
@@ -461,18 +370,11 @@ export const GanttChart = ({
                   }}
                 >
                   <div>{ouvrier.nom}</div>
-
-                  <div
-                    style={{
-                      fontSize: 8,
-                      color: "#9ca3af"
-                    }}
-                  >
+                  <div style={{ fontSize: 8, color: "#9ca3af" }}>
                     {ouvrier.metier}
                   </div>
                 </div>
 
-                {/* TIMELINE */}
                 <div
                   style={{
                     display: "grid",
@@ -499,45 +401,23 @@ export const GanttChart = ({
                             ? "1px solid #d1d5db"
                             : "none",
                         position: "relative",
-                        background: "transparent",
                         cursor: "pointer",
-                        transition: "background 0.2s",
                         padding: "1px",
-                        display: "flex",
-                        alignItems: "flex-start",
-                        justifyContent: "flex-start",
                         overflow: "hidden"
                       }}
-                      onMouseEnter={e =>
-                        (e.currentTarget.style.background = "#e5e7eb")
-                      }
-                      onMouseLeave={e =>
-                        (e.currentTarget.style.background = "transparent")
-                      }
                     >
-                      {affectsByOuvrier.map(aff => {
+                      {affectsByOuvrier.map((aff) => {
+                        if (!isVisibleOnDay(aff, date)) return null;
+
                         const chantier = chantiers.find(
-                          c => Number(c.id) === Number(aff.chantierId)
+                          (c) => Number(c.id) === Number(aff.chantierId)
                         );
 
-                        const posInDay = getBarPositionInDay(aff, date);
-
-                        if (!posInDay.isVisible) return null;
-
-                        const lettres = getAffectationLetters(aff, chantier);
-                        const couleur = getAffectationColor(aff, chantier);
-                        const couleurTexte = getAffectationTextColor(aff, chantier);
-                        const label = getAffectationLabel(aff, chantier);
-
-                        const rank = getAffectationRankOnDay(
-                          aff,
-                          date,
-                          affectsByOuvrier
-                        );
-
-                        const barHeight = 18;
-                        const gap = 2;
-                        const topOffset = rank * (barHeight + gap) + 1;
+                        const horsGantt = isHorsGantt(aff, chantier);
+                        const lettres = getLetters(aff, chantier);
+                        const label = getLabel(aff, chantier);
+                        const rank = getRankOnDay(aff, date, affectsByOuvrier);
+                        const topOffset = rank * 20 + 1;
 
                         return (
                           <div
@@ -546,61 +426,46 @@ export const GanttChart = ({
                               e.stopPropagation();
                               onAffectationClick(aff);
                             }}
-                            onMouseEnter={() =>
-                              setHoveredAffectationId(aff.id)
-                            }
-                            onMouseLeave={() =>
-                              setHoveredAffectationId(null)
-                            }
+                            onMouseEnter={() => setHoveredAffectationId(aff.id)}
+                            onMouseLeave={() => setHoveredAffectationId(null)}
                             style={{
                               position: "absolute",
-                              left: `${posInDay.left}%`,
-                              width: `${posInDay.width}%`,
+                              left: 1,
+                              right: 1,
                               top: `${topOffset}px`,
-                              display: "flex",
-                              flexDirection: "column",
-                              alignItems: "center",
-                              gap: "1px",
                               cursor: "pointer",
-                              transition: "all 0.2s",
-                              padding: "0 2px",
-                              borderRadius: 3,
-                              border:
-                                hoveredAffectationId === aff.id
-                                  ? "2px solid rgba(0,0,0,0.3)"
-                                  : "none"
+                              zIndex: 2
                             }}
                           >
-                            {/* CUBE */}
                             <div
                               title={
-                                isHorsGantt(aff, chantier)
+                                horsGantt
                                   ? aff.nomExterne || "Événement Google"
                                   : chantier?.nom || ""
                               }
                               style={{
                                 width: "100%",
                                 height: "18px",
-                                background: couleur,
-                                borderRadius: 2,
-                                border: isHorsGantt(aff, chantier)
+                                backgroundColor: horsGantt
+                                  ? "#D1D5DB"
+                                  : getChantierColor(chantier?.id),
+                                border: horsGantt
                                   ? "1px solid #9CA3AF"
                                   : "1px solid rgba(0,0,0,0.2)",
+                                borderRadius: 2,
                                 boxSizing: "border-box",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                color: couleurTexte,
+                                color: horsGantt ? "transparent" : "white",
                                 fontWeight: 800,
-                                fontSize: 10,
-                                flexShrink: 0
+                                fontSize: 10
                               }}
                             >
-                              {lettres}
+                              {horsGantt ? "" : lettres}
                             </div>
 
-                            {/* LABEL TÂCHE */}
-                            {label && (
+                            {!horsGantt && label && (
                               <div
                                 style={{
                                   fontSize: 7,
@@ -610,26 +475,19 @@ export const GanttChart = ({
                                   overflow: "hidden",
                                   textOverflow: "ellipsis",
                                   whiteSpace: "nowrap",
-                                  maxWidth: "100%",
-                                  width: "100%",
-                                  lineHeight: 1,
-                                  padding: "0 2px"
+                                  lineHeight: 1
                                 }}
                               >
                                 {label}
                               </div>
                             )}
 
-                            {/* SUPPRESSION */}
                             {hoveredAffectationId === aff.id && (
                               <button
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-
-                                  if (onDeleteAffectationDay) {
-                                    onDeleteAffectationDay(aff.id, date);
-                                  }
+                                  onDeleteAffectationDay?.(aff.id, date);
                                 }}
                                 onMouseDown={(e) => {
                                   e.preventDefault();
@@ -654,7 +512,6 @@ export const GanttChart = ({
                                   padding: 0,
                                   lineHeight: 1,
                                   boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                                  pointerEvents: "auto",
                                   zIndex: 1000
                                 }}
                                 title="Supprimer ce jour"
