@@ -67,7 +67,7 @@ export const GanttChart = ({
     if (isHorsGantt(aff, chantier)) return "";
 
     const nom = String(chantier?.nom ?? "").trim();
-    return nom.substring(0, 2).toUpperCase();
+    return nom.substring(0, 3).toUpperCase();
   };
 
   const getLabel = (aff) => {
@@ -390,7 +390,6 @@ export const GanttChart = ({
                   }}
                 >
                   <div>{ouvrier.nom}</div>
-                  <div style={{ fontSize: 8, color: "#9ca3af" }}>{ouvrier.metier}</div>
                 </div>
 
                 <div
