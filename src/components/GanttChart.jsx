@@ -70,9 +70,7 @@ export const GanttChart = ({
     return nom.substring(0, 2).toUpperCase();
   };
 
-  const getLabel = (aff, chantier) => {
-    if (isHorsGantt(aff, chantier)) return "";
-
+  const getLabel = (aff) => {
     const tache = String(aff?.tache ?? "").trim();
     if (!tache || normalize(tache) === "ND") return "";
     return tache;
@@ -422,7 +420,7 @@ export const GanttChart = ({
 
                         const horsGantt = isHorsGantt(aff, chantier);
                         const lettres = getLetters(aff, chantier);
-                        const label = getLabel(aff, chantier);
+                        const label = getLabel(aff);
                         const nomHorsGantt = horsGantt ? getHorsGanttName(aff, date) : "";
                         const rank = getRankOnDay(aff, date, affectsByOuvrier);
                         const topOffset = rank * 20 + 1;
@@ -475,8 +473,9 @@ export const GanttChart = ({
                               {horsGantt ? nomHorsGantt : lettres}
                             </div>
 
-                            {!horsGantt && label && (
+                            {label && (
                               <div
+                                title={label}
                                 style={{
                                   fontSize: 7,
                                   fontWeight: 600,
