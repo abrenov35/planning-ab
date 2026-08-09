@@ -205,6 +205,21 @@ export const GanttChart = ({
     );
   };
 
+  const canShowHorsGanttName = (date) => {
+    const seuil = new Date(2026, 7, 3);
+    seuil.setHours(0, 0, 0, 0);
+
+    const jour = new Date(date);
+    jour.setHours(0, 0, 0, 0);
+
+    return jour >= seuil;
+  };
+
+  const getHorsGanttName = (aff, date) => {
+    if (!canShowHorsGanttName(date)) return "";
+    return String(aff?.nomExterne || "").trim();
+  };
+
   const normaliserNomOuvrier = (nom) =>
     String(nom || "")
       .normalize("NFD")
@@ -408,6 +423,7 @@ export const GanttChart = ({
                         const horsGantt = isHorsGantt(aff, chantier);
                         const lettres = getLetters(aff, chantier);
                         const label = getLabel(aff, chantier);
+                        const nomHorsGantt = horsGantt ? getHorsGanttName(aff, date) : "";
                         const rank = getRankOnDay(aff, date, affectsByOuvrier);
                         const topOffset = rank * 20 + 1;
 
@@ -447,12 +463,16 @@ export const GanttChart = ({
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                color: horsGantt ? "transparent" : "white",
-                                fontWeight: 800,
-                                fontSize: 10
+                                padding: horsGantt ? "0 3px" : 0,
+                                color: horsGantt ? "#374151" : "white",
+                                fontWeight: horsGantt ? 700 : 800,
+                                fontSize: horsGantt ? 7 : 10,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap"
                               }}
                             >
-                              {horsGantt ? "" : lettres}
+                              {horsGantt ? nomHorsGantt : lettres}
                             </div>
 
                             {!horsGantt && label && (
