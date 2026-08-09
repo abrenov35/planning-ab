@@ -1,12 +1,5 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbxOE2bAsnGKn1TvOlxBK1qJpe2nblhC4l8YWmAxTUe3VM383YaNrPmH3i1U2g-Sp7LJxA/exec";
 
-// =====================================================
-// JSONP BRIDGE
-// Apps Script ContentService est appelé depuis GitHub Pages.
-// JSONP évite le blocage CORS des fetch() inter-domaines.
-// Toutes les actions de cette API utilisent déjà des paramètres GET.
-// =====================================================
-
 const jsonp = (params = {}) => {
   return new Promise((resolve, reject) => {
     const callbackName = `abPlanningJsonp_${Date.now()}_${Math.random()
@@ -23,9 +16,7 @@ const jsonp = (params = {}) => {
     let termine = false;
 
     const nettoyer = () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
+      if (script.parentNode) script.parentNode.removeChild(script);
       try {
         delete window[callbackName];
       } catch (_) {
@@ -40,7 +31,7 @@ const jsonp = (params = {}) => {
       reject(new Error("Délai API dépassé"));
     }, 20000);
 
-    window[callbackName] = (data) => {
+    window[callbackName] = data => {
       if (termine) return;
       termine = true;
       window.clearTimeout(timeout);
@@ -74,9 +65,7 @@ const appeler = async (params, fallback = { error: "Erreur API" }) => {
   }
 };
 
-// GET ALL DATA
-export const getAll = async () =>
-  appeler({ action: "getAll" });
+export const getAll = async () => appeler({ action: "getAll" });
 
 export const getOuvriers = async () => {
   const result = await appeler({ action: "getOuvriers" }, { error: "Erreur ouvriers" });
@@ -93,14 +82,8 @@ export const getAffectations = async () => {
   return Array.isArray(result) ? result : [];
 };
 
-// CREATE
 export const createOuvrier = async (nom, type, metier) =>
-  appeler({
-    action: "createOuvrier",
-    nom,
-    type,
-    metier
-  });
+  appeler({ action: "createOuvrier", nom, type, metier });
 
 export const createChantier = async (nom, dateDebut, dateFin, description) =>
   appeler({
@@ -111,7 +94,6 @@ export const createChantier = async (nom, dateDebut, dateFin, description) =>
     description: description || ""
   });
 
-// UPDATE
 export const updateOuvrier = async (id, nom, type, metier, statut) =>
   appeler({
     action: "updateOuvrier",
@@ -140,7 +122,6 @@ export const updateChantier = async (
     statut: statut || ""
   });
 
-// AFFECTATIONS
 export const createAffectation = async (
   ouvrierID,
   chantierId,
@@ -162,7 +143,9 @@ export const updateAffectation = async (
   dateDebut,
   dateFin,
   tache,
-  statut
+  statut,
+  nomAffectation = "",
+  chantierId = ""
 ) =>
   appeler({
     action: "updateAffectation",
@@ -170,11 +153,10 @@ export const updateAffectation = async (
     dateDebut: dateDebut || "",
     dateFin: dateFin || "",
     tache: tache || "",
-    statut: statut || ""
+    statut: statut || "",
+    nomAffectation: nomAffectation || "",
+    chantierId: chantierId || ""
   });
 
-export const deleteAffectation = async (id) =>
-  appeler({
-    action: "deleteAffectation",
-    id
-  });
+export const deleteAffectation = async id =>
+  appeler({ action: "deleteAffectation", id });
