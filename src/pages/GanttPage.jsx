@@ -30,7 +30,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleteStep, setDeleteStep] = useState(false);
 
-  const parseDate = (dateStr) => {
+  const parseDate = dateStr => {
     if (!dateStr) return null;
     if (typeof dateStr === "string" && dateStr.includes("/")) {
       const [d, m, y] = dateStr.split("/");
@@ -43,19 +43,19 @@ export const GanttPage = ({ onGanttControlsReady }) => {
     return new Date(dateStr);
   };
 
-  const toInputDate = (dateValue) => {
+  const toInputDate = dateValue => {
     const d = parseDate(dateValue);
     if (!d || Number.isNaN(d.getTime())) return "";
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   };
 
-  const toApiDate = (isoDate) => {
+  const toApiDate = isoDate => {
     if (!isoDate) return "";
     const [y, m, d] = isoDate.split("-");
     return `${d}/${m}/${y}`;
   };
 
-  const formatDateLongue = (dateValue) => {
+  const formatDateLongue = dateValue => {
     const date = parseDate(dateValue);
     if (!date || Number.isNaN(date.getTime())) return "Date inconnue";
     return date.toLocaleDateString("fr-FR", {
@@ -72,8 +72,9 @@ export const GanttPage = ({ onGanttControlsReady }) => {
     setShowCreateModal(true);
   };
 
-  const handleSubmitAffectation = async (formData) => {
+  const handleSubmitAffectation = async formData => {
     if (!selectedOuvrier) return;
+
     const result = await addAffectation(
       selectedOuvrier.id,
       formData.chantierId,
@@ -81,6 +82,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
       formData.dateFin,
       formData.tache
     );
+
     if (result.success) {
       setShowCreateModal(false);
       setSelectedOuvrier(null);
@@ -101,8 +103,10 @@ export const GanttPage = ({ onGanttControlsReady }) => {
 
   const handleAffectationClick = affectation => {
     if (!affectation) return;
+
     const chantier = getChantier(affectation);
     const horsGantt = isHorsGantt(affectation);
+
     setEditAffectation(affectation);
     setEditForm({
       dateDebut: toInputDate(affectation.dateDebut),
@@ -122,26 +126,31 @@ export const GanttPage = ({ onGanttControlsReady }) => {
 
   const handleSaveEdit = async () => {
     if (!editAffectation || savingEdit) return;
+
     if (!editForm.dateDebut || !editForm.dateFin) {
       alert("Les dates de début et de fin sont obligatoires.");
       return;
     }
+
     if (editForm.dateFin < editForm.dateDebut) {
       alert("La date de fin ne peut pas être avant la date de début.");
       return;
     }
 
     const horsGantt = isHorsGantt(editAffectation);
+
     if (horsGantt && !editForm.affectationNom.trim()) {
       alert("Le nom de l'affectation est obligatoire.");
       return;
     }
+
     if (!horsGantt && !editForm.chantierId) {
       alert("Sélectionnez une affectation / un chantier.");
       return;
     }
 
     setSavingEdit(true);
+
     try {
       const result = await updateAffectation(
         editAffectation.id,
@@ -152,7 +161,9 @@ export const GanttPage = ({ onGanttControlsReady }) => {
         horsGantt ? editForm.affectationNom.trim() : "",
         horsGantt ? "" : editForm.chantierId
       );
+
       if (result?.error) throw new Error(result.error);
+
       setEditAffectation(null);
       setDeleteStep(false);
     } catch (error) {
@@ -165,11 +176,14 @@ export const GanttPage = ({ onGanttControlsReady }) => {
 
   const handleDeleteEdit = async () => {
     if (!editAffectation || savingEdit) return;
+
     if (!deleteStep) {
       setDeleteStep(true);
       return;
     }
+
     setSavingEdit(true);
+
     try {
       const result = await deleteAffectation(editAffectation.id);
       if (result?.error) throw new Error(result.error);
@@ -252,17 +266,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                       disabled={savingEdit}
                       placeholder="Écrire l'affectation..."
                       autoFocus
-                      style={{
-                        width: "100%",
-                        marginTop: 4,
-                        padding: "9px 10px",
-                        borderRadius: 6,
-                        background: "#fff",
-                        border: "2px solid #2563eb",
-                        fontSize: 12,
-                        boxSizing: "border-box",
-                        outline: "none"
-                      }}
+                      style={{ width: "100%", marginTop: 4, padding: "9px 10px", borderRadius: 6, background: "#fff", border: "2px solid #2563eb", fontSize: 12, boxSizing: "border-box", outline: "none" }}
                     />
                     <div style={{ marginTop: 3, fontSize: 9, color: "#2563eb" }}>
                       Cliquez dans le champ et écrivez le nouveau texte.
@@ -281,16 +285,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                         }));
                       }}
                       disabled={savingEdit}
-                      style={{
-                        width: "100%",
-                        marginTop: 4,
-                        padding: "9px 10px",
-                        borderRadius: 6,
-                        background: "white",
-                        border: "2px solid #2563eb",
-                        fontSize: 12,
-                        boxSizing: "border-box"
-                      }}
+                      style={{ width: "100%", marginTop: 4, padding: "9px 10px", borderRadius: 6, background: "white", border: "2px solid #2563eb", fontSize: 12, boxSizing: "border-box" }}
                     >
                       {chantiersActifs.map(chantier => (
                         <option key={chantier.id} value={chantier.id}>{chantier.nom}</option>
@@ -307,24 +302,55 @@ export const GanttPage = ({ onGanttControlsReady }) => {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>Date début</label>
-                <input type="date" value={editForm.dateDebut} onChange={e => setEditForm(prev => ({ ...prev, dateDebut: e.target.value }))} disabled={savingEdit} style={{ width: "100%", marginTop: 4, padding: 8, border: "1px solid #d1d5db", borderRadius: 6, boxSizing: "border-box" }} />
+                <input
+                  type="date"
+                  value={editForm.dateDebut}
+                  onChange={e => setEditForm(prev => ({ ...prev, dateDebut: e.target.value }))}
+                  disabled={savingEdit}
+                  style={{ width: "100%", marginTop: 4, padding: 8, border: "1px solid #d1d5db", borderRadius: 6, boxSizing: "border-box" }}
+                />
               </div>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>Date fin</label>
-                <input type="date" value={editForm.dateFin} onChange={e => setEditForm(prev => ({ ...prev, dateFin: e.target.value }))} disabled={savingEdit} style={{ width: "100%", marginTop: 4, padding: 8, border: "1px solid #d1d5db", borderRadius: 6, boxSizing: "border-box" }} />
+                <input
+                  type="date"
+                  value={editForm.dateFin}
+                  onChange={e => setEditForm(prev => ({ ...prev, dateFin: e.target.value }))}
+                  disabled={savingEdit}
+                  style={{ width: "100%", marginTop: 4, padding: 8, border: "1px solid #d1d5db", borderRadius: 6, boxSizing: "border-box" }}
+                />
               </div>
             </div>
 
-            {!editHorsGantt && (
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>Tâche / description</label>
-                <input type="text" value={editForm.tache} onChange={e => setEditForm(prev => ({ ...prev, tache: e.target.value }))} disabled={savingEdit} style={{ width: "100%", marginTop: 4, padding: 8, border: "1px solid #d1d5db", borderRadius: 6, boxSizing: "border-box" }} />
-              </div>
-            )}
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>
+                Tâche / description
+              </label>
+              <textarea
+                value={editForm.tache}
+                onChange={e => setEditForm(prev => ({ ...prev, tache: e.target.value }))}
+                disabled={savingEdit}
+                placeholder="Ex : préparation, peinture, SAV, congé, réunion..."
+                rows={2}
+                style={{
+                  width: "100%",
+                  marginTop: 4,
+                  padding: "8px 10px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: 6,
+                  boxSizing: "border-box",
+                  resize: "vertical",
+                  fontFamily: "inherit",
+                  fontSize: 12
+                }}
+              />
+            </div>
 
             <div style={{ padding: "9px 10px", borderRadius: 6, background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1e40af", fontSize: 11, lineHeight: 1.4 }}>
               Période actuelle : {formatDateLongue(editAffectation.dateDebut)}
-              {String(editAffectation.dateDebut) !== String(editAffectation.dateFin) ? ` → ${formatDateLongue(editAffectation.dateFin)}` : ""}
+              {String(editAffectation.dateDebut) !== String(editAffectation.dateFin)
+                ? ` → ${formatDateLongue(editAffectation.dateFin)}`
+                : ""}
             </div>
 
             {deleteStep && (
@@ -334,15 +360,30 @@ export const GanttPage = ({ onGanttControlsReady }) => {
             )}
 
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginTop: 4 }}>
-              <button type="button" onClick={handleDeleteEdit} disabled={savingEdit} style={{ padding: "9px 14px", borderRadius: 6, border: "1px solid #dc2626", background: deleteStep ? "#991b1b" : "#dc2626", color: "white", fontWeight: 700, cursor: savingEdit ? "not-allowed" : "pointer" }}>
+              <button
+                type="button"
+                onClick={handleDeleteEdit}
+                disabled={savingEdit}
+                style={{ padding: "9px 14px", borderRadius: 6, border: "1px solid #dc2626", background: deleteStep ? "#991b1b" : "#dc2626", color: "white", fontWeight: 700, cursor: savingEdit ? "not-allowed" : "pointer" }}
+              >
                 {savingEdit && deleteStep ? "Suppression..." : deleteStep ? "Confirmer la suppression" : "Supprimer"}
               </button>
 
               <div style={{ display: "flex", gap: 8 }}>
-                <button type="button" onClick={closeEditModal} disabled={savingEdit} style={{ padding: "9px 14px", borderRadius: 6, border: "1px solid #d1d5db", background: "white", color: "#374151", fontWeight: 600, cursor: savingEdit ? "not-allowed" : "pointer" }}>
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  disabled={savingEdit}
+                  style={{ padding: "9px 14px", borderRadius: 6, border: "1px solid #d1d5db", background: "white", color: "#374151", fontWeight: 600, cursor: savingEdit ? "not-allowed" : "pointer" }}
+                >
                   Annuler
                 </button>
-                <button type="button" onClick={handleSaveEdit} disabled={savingEdit || deleteStep} style={{ padding: "9px 14px", borderRadius: 6, border: "none", background: savingEdit || deleteStep ? "#9ca3af" : "#1e3a8a", color: "white", fontWeight: 700, cursor: savingEdit || deleteStep ? "not-allowed" : "pointer" }}>
+                <button
+                  type="button"
+                  onClick={handleSaveEdit}
+                  disabled={savingEdit || deleteStep}
+                  style={{ padding: "9px 14px", borderRadius: 6, border: "none", background: savingEdit || deleteStep ? "#9ca3af" : "#1e3a8a", color: "white", fontWeight: 700, cursor: savingEdit || deleteStep ? "not-allowed" : "pointer" }}
+                >
                   {savingEdit && !deleteStep ? "Enregistrement..." : "Enregistrer"}
                 </button>
               </div>
