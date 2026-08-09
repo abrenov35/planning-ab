@@ -19,186 +19,55 @@ export const GanttPage = ({ onGanttControlsReady }) => {
   const [selectedOuvrier, setSelectedOuvrier] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
 
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [deleting, setDeleting] = useState(false);
+  const [editAffectation, setEditAffectation] = useState(null);
+  const [editForm, setEditForm] = useState({
+    dateDebut: "",
+    dateFin: "",
+    tache: ""
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deleteStep, setDeleteStep] = useState(false);
 
   const parseDate = (dateStr) => {
+    if (!dateStr) return null;
+
     if (typeof dateStr === "string" && dateStr.includes("/")) {
       const [d, m, y] = dateStr.split("/");
+      return new Date(Number(y), Number(m) - 1, Number(d));
+    }
+
+    if (typeof dateStr === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      const [y, m, d] = dateStr.split("-");
       return new Date(Number(y), Number(m) - 1, Number(d));
     }
 
     return new Date(dateStr);
   };
 
-  const dateToString = (d) =>
-    `${String(d.getDate()).padStart(2, "0")}/${String(
-      d.getMonth() + 1
-    ).padStart(2, "0")}/${d.getFullYear()}`;
+  const toInputDate = (dateValue) => {
+    const d = parseDate(dateValue);
+    if (!d || Number.isNaN(d.getTime())) return "";
+
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+      d.getDate()
+    ).padStart(2, "0")}`;
+  };
+
+  const toApiDate = (isoDate) => {
+    if (!isoDate) return "";
+    const [y, m, d] = isoDate.split("-");
+    return `${d}/${m}/${y}`;
+  };
 
   const formatDateLongue = (dateValue) => {
     const date = parseDate(dateValue);
-    if (Number.isNaN(date.getTime())) return "Date inconnue";
+    if (!date || Number.isNaN(date.getTime())) return "Date inconnue";
 
     return date.toLocaleDateString("fr-FR", {
       weekday: "long",
       day: "numeric",
       month: "long",
       year: "numeric"
-    });
-  };
-
-  const getDeleteDetails = (aff, date = null) => {
-    const ouvrier = ouvriers.find(
-      o => Number(o.id) === Number(aff?.ouvrierID)
-    );
-
-    const chantier = chantiers.find(
-      c => Number(c.id) === Number(aff?.chantierId)
-    );
-
-    const horsGantt =
-      String(aff?.typeAffectation || "").toUpperCase() === "HORS_GANTT" ||
-      !chantier;
-
-    return {
-      ouvrierNom: ouvrier?.nom || "Ouvrier inconnu",
-      cibleNom: horsGantt
-        ? aff?.nomExterne || "Événement Google"
-        : chantier?.nom || "Affectation",
-      dateTexte: date
-        ? formatDateLongue(date)
-        : aff?.dateDebut === aff?.dateFin
-        ? formatDateLongue(aff?.dateDebut)
-        : `${formatDateLongue(aff?.dateDebut)} → ${formatDateLongue(aff?.dateFin)}`,
-      horsGantt
-    };
-  };
-
-  const executeDeleteAffectationDay = async (affectationId, dayToDelete) => {
-    const aff = affectations.find(
-      a => Number(a.id) === Number(affectationId)
-    );
-
-    if (!aff) return;
-
-    const affStart = parseDate(aff.dateDebut);
-    const affEnd = parseDate(aff.dateFin);
-    const deleteDate = new Date(dayToDelete);
-
-    if (
-      Number.isNaN(affStart.getTime()) ||
-      Number.isNaN(affEnd.getTime()) ||
-      Number.isNaN(deleteDate.getTime())
-    ) {
-      console.error("Date invalide pour suppression", aff);
-      return;
-    }
-
-    affStart.setHours(0, 0, 0, 0);
-    affEnd.setHours(0, 0, 0, 0);
-    deleteDate.setHours(0, 0, 0, 0);
-
-    if (deleteDate < affStart || deleteDate > affEnd) return;
-
-    // SEUL JOUR
-    if (
-      affStart.getTime() === affEnd.getTime() &&
-      affStart.getTime() === deleteDate.getTime()
-    ) {
-      await deleteAffectation(affectationId);
-      return;
-    }
-
-    // PREMIER JOUR
-    if (affStart.getTime() === deleteDate.getTime()) {
-      const newStart = new Date(deleteDate);
-      newStart.setDate(newStart.getDate() + 1);
-
-      await updateAffectation(
-        affectationId,
-        dateToString(newStart),
-        dateToString(affEnd),
-        aff.tache || "",
-        "Actif"
-      );
-      return;
-    }
-
-    // DERNIER JOUR
-    if (affEnd.getTime() === deleteDate.getTime()) {
-      const newEnd = new Date(deleteDate);
-      newEnd.setDate(newEnd.getDate() - 1);
-
-      await updateAffectation(
-        affectationId,
-        dateToString(affStart),
-        dateToString(newEnd),
-        aff.tache || "",
-        "Actif"
-      );
-      return;
-    }
-
-    // HORS_GANTT : la scission en deux nécessiterait une création
-    // spéciale sans chantier. On ne la fait pas silencieusement.
-    if (
-      String(aff.typeAffectation || "").toUpperCase() === "HORS_GANTT"
-    ) {
-      console.warn(
-        "Scission HORS_GANTT non exécutée : supprimer/modifier depuis Google Agenda."
-      );
-      return;
-    }
-
-    // AU MILIEU - SCINDER
-    const part1End = new Date(deleteDate);
-    part1End.setDate(part1End.getDate() - 1);
-
-    const part2Start = new Date(deleteDate);
-    part2Start.setDate(part2Start.getDate() + 1);
-
-    const res1 = await addAffectation(
-      aff.ouvrierID,
-      aff.chantierId,
-      dateToString(affStart),
-      dateToString(part1End),
-      aff.tache || "ND"
-    );
-
-    if (!res1.success) return;
-
-    const res2 = await addAffectation(
-      aff.ouvrierID,
-      aff.chantierId,
-      dateToString(part2Start),
-      dateToString(affEnd),
-      aff.tache || "ND"
-    );
-
-    if (!res2.success) {
-      if (res1.id) {
-        await deleteAffectation(res1.id);
-      }
-      return;
-    }
-
-    await deleteAffectation(affectationId);
-  };
-
-  // ===== CROIX : demander confirmation avant suppression d'un jour =====
-  const handleDeleteAffectationDay = (affectationId, dayToDelete) => {
-    const aff = affectations.find(
-      a => Number(a.id) === Number(affectationId)
-    );
-
-    if (!aff) return;
-
-    setDeleteConfirm({
-      mode: "day",
-      affectation: aff,
-      date: dayToDelete,
-      details: getDeleteDetails(aff, dayToDelete)
     });
   };
 
@@ -233,46 +102,101 @@ export const GanttPage = ({ onGanttControlsReady }) => {
     }
   };
 
-  // ===== CLIC SUR AFFECTATION : demander confirmation avant suppression =====
   const handleAffectationClick = (affectation) => {
     if (!affectation) return;
 
-    setDeleteConfirm({
-      mode: "full",
-      affectation,
-      date: null,
-      details: getDeleteDetails(affectation)
+    setEditAffectation(affectation);
+    setEditForm({
+      dateDebut: toInputDate(affectation.dateDebut),
+      dateFin: toInputDate(affectation.dateFin),
+      tache: affectation.tache || ""
     });
+    setDeleteStep(false);
   };
 
-  const closeDeleteConfirm = () => {
-    if (deleting) return;
-    setDeleteConfirm(null);
+  const closeEditModal = () => {
+    if (savingEdit) return;
+    setEditAffectation(null);
+    setDeleteStep(false);
   };
 
-  const confirmDelete = async () => {
-    if (!deleteConfirm || deleting) return;
+  const handleSaveEdit = async () => {
+    if (!editAffectation || savingEdit) return;
 
-    setDeleting(true);
+    if (!editForm.dateDebut || !editForm.dateFin) {
+      alert("Les dates de début et de fin sont obligatoires.");
+      return;
+    }
+
+    if (editForm.dateFin < editForm.dateDebut) {
+      alert("La date de fin ne peut pas être avant la date de début.");
+      return;
+    }
+
+    setSavingEdit(true);
 
     try {
-      if (deleteConfirm.mode === "day") {
-        await executeDeleteAffectationDay(
-          deleteConfirm.affectation.id,
-          deleteConfirm.date
-        );
-      } else {
-        await deleteAffectation(deleteConfirm.affectation.id);
+      const result = await updateAffectation(
+        editAffectation.id,
+        toApiDate(editForm.dateDebut),
+        toApiDate(editForm.dateFin),
+        editForm.tache || "ND",
+        "Actif"
+      );
+
+      if (result?.error) {
+        throw new Error(result.error);
       }
 
-      setDeleteConfirm(null);
+      setEditAffectation(null);
+      setDeleteStep(false);
+    } catch (error) {
+      console.error("Erreur modification affectation:", error);
+      alert("La modification n'a pas pu être enregistrée.");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDeleteEdit = async () => {
+    if (!editAffectation || savingEdit) return;
+
+    if (!deleteStep) {
+      setDeleteStep(true);
+      return;
+    }
+
+    setSavingEdit(true);
+
+    try {
+      const result = await deleteAffectation(editAffectation.id);
+
+      if (result?.error) {
+        throw new Error(result.error);
+      }
+
+      setEditAffectation(null);
+      setDeleteStep(false);
     } catch (error) {
       console.error("Erreur suppression affectation:", error);
       alert("La suppression n'a pas pu être effectuée.");
     } finally {
-      setDeleting(false);
+      setSavingEdit(false);
     }
   };
+
+  const editOuvrier = editAffectation
+    ? ouvriers.find(o => Number(o.id) === Number(editAffectation.ouvrierID))
+    : null;
+
+  const editChantier = editAffectation
+    ? chantiers.find(c => Number(c.id) === Number(editAffectation.chantierId))
+    : null;
+
+  const editHorsGantt =
+    editAffectation &&
+    (String(editAffectation.typeAffectation || "").toUpperCase() === "HORS_GANTT" ||
+      !editChantier);
 
   if (loading) {
     return <div style={{ padding: "1rem" }}>Chargement...</div>;
@@ -293,7 +217,6 @@ export const GanttPage = ({ onGanttControlsReady }) => {
         affectations={affectations}
         onAddAffectation={handleAddAffectation}
         onAffectationClick={handleAffectationClick}
-        onDeleteAffectationDay={handleDeleteAffectationDay}
         onControlsReady={onGanttControlsReady}
       />
 
@@ -322,90 +245,231 @@ export const GanttPage = ({ onGanttControlsReady }) => {
       </Modal>
 
       <Modal
-        isOpen={Boolean(deleteConfirm)}
-        title={
-          deleteConfirm?.mode === "day"
-            ? "Supprimer ce jour ?"
-            : "Supprimer cette affectation ?"
-        }
-        onClose={closeDeleteConfirm}
+        isOpen={Boolean(editAffectation)}
+        title="Modifier l'affectation"
+        onClose={closeEditModal}
       >
-        {deleteConfirm && (
-          <div style={{ minWidth: 320, maxWidth: 440 }}>
+        {editAffectation && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div
               style={{
-                background: "#f9fafb",
-                border: "1px solid #e5e7eb",
-                borderRadius: 8,
-                padding: "12px 14px",
-                marginBottom: 14
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 10
               }}
             >
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#111827" }}>
-                {deleteConfirm.details.ouvrierNom} — {deleteConfirm.details.cibleNom}
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>
+                  Ouvrier
+                </label>
+                <div
+                  style={{
+                    marginTop: 4,
+                    padding: "8px 10px",
+                    borderRadius: 6,
+                    background: "#f3f4f6",
+                    border: "1px solid #e5e7eb",
+                    fontSize: 12
+                  }}
+                >
+                  {editOuvrier?.nom || "Ouvrier inconnu"}
+                </div>
               </div>
-              <div style={{ marginTop: 6, fontSize: 12, color: "#4b5563" }}>
-                {deleteConfirm.details.dateTexte}
+
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>
+                  Affectation
+                </label>
+                <div
+                  style={{
+                    marginTop: 4,
+                    padding: "8px 10px",
+                    borderRadius: 6,
+                    background: "#f3f4f6",
+                    border: "1px solid #e5e7eb",
+                    fontSize: 12
+                  }}
+                >
+                  {editHorsGantt
+                    ? editAffectation.nomExterne || "Événement Google"
+                    : editChantier?.nom || "Chantier inconnu"}
+                </div>
               </div>
             </div>
 
             <div
               style={{
-                fontSize: 12,
-                color: "#991b1b",
-                background: "#fef2f2",
-                border: "1px solid #fecaca",
-                borderRadius: 8,
-                padding: "10px 12px",
-                marginBottom: 16,
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 10
+              }}
+            >
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>
+                  Date début
+                </label>
+                <input
+                  type="date"
+                  value={editForm.dateDebut}
+                  onChange={e =>
+                    setEditForm(prev => ({ ...prev, dateDebut: e.target.value }))
+                  }
+                  disabled={savingEdit}
+                  style={{
+                    width: "100%",
+                    marginTop: 4,
+                    padding: 8,
+                    border: "1px solid #d1d5db",
+                    borderRadius: 6,
+                    boxSizing: "border-box"
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>
+                  Date fin
+                </label>
+                <input
+                  type="date"
+                  value={editForm.dateFin}
+                  onChange={e =>
+                    setEditForm(prev => ({ ...prev, dateFin: e.target.value }))
+                  }
+                  disabled={savingEdit}
+                  style={{
+                    width: "100%",
+                    marginTop: 4,
+                    padding: 8,
+                    border: "1px solid #d1d5db",
+                    borderRadius: 6,
+                    boxSizing: "border-box"
+                  }}
+                />
+              </div>
+            </div>
+
+            {!editHorsGantt && (
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>
+                  Tâche / description
+                </label>
+                <input
+                  type="text"
+                  value={editForm.tache}
+                  onChange={e =>
+                    setEditForm(prev => ({ ...prev, tache: e.target.value }))
+                  }
+                  disabled={savingEdit}
+                  style={{
+                    width: "100%",
+                    marginTop: 4,
+                    padding: 8,
+                    border: "1px solid #d1d5db",
+                    borderRadius: 6,
+                    boxSizing: "border-box"
+                  }}
+                />
+              </div>
+            )}
+
+            <div
+              style={{
+                padding: "9px 10px",
+                borderRadius: 6,
+                background: "#eff6ff",
+                border: "1px solid #bfdbfe",
+                color: "#1e40af",
+                fontSize: 11,
                 lineHeight: 1.4
               }}
             >
-              {deleteConfirm.mode === "day"
-                ? "Ce jour sera retiré de l'affectation. La synchronisation Google sera mise à jour automatiquement."
-                : "Cette affectation sera supprimée du Gantt et de Google Calendar lorsqu'elle est synchronisée."}
+              Période actuelle : {formatDateLongue(editAffectation.dateDebut)}
+              {String(editAffectation.dateDebut) !== String(editAffectation.dateFin)
+                ? ` → ${formatDateLongue(editAffectation.dateFin)}`
+                : ""}
             </div>
+
+            {deleteStep && (
+              <div
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: 6,
+                  background: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  color: "#991b1b",
+                  fontSize: 12,
+                  fontWeight: 600
+                }}
+              >
+                Confirmer la suppression de cette affectation ? Elle sera également supprimée de Google Calendar.
+              </div>
+            )}
 
             <div
               style={{
                 display: "flex",
-                justifyContent: "flex-end",
-                gap: 8
+                justifyContent: "space-between",
+                gap: 8,
+                marginTop: 4
               }}
             >
               <button
                 type="button"
-                onClick={closeDeleteConfirm}
-                disabled={deleting}
+                onClick={handleDeleteEdit}
+                disabled={savingEdit}
                 style={{
-                  padding: "8px 14px",
-                  border: "1px solid #d1d5db",
-                  background: "white",
-                  color: "#374151",
+                  padding: "9px 14px",
                   borderRadius: 6,
-                  cursor: deleting ? "not-allowed" : "pointer",
-                  fontWeight: 600
+                  border: "1px solid #dc2626",
+                  background: deleteStep ? "#991b1b" : "#dc2626",
+                  color: "white",
+                  fontWeight: 700,
+                  cursor: savingEdit ? "not-allowed" : "pointer"
                 }}
               >
-                Annuler
+                {savingEdit && deleteStep
+                  ? "Suppression..."
+                  : deleteStep
+                  ? "Confirmer la suppression"
+                  : "Supprimer"}
               </button>
 
-              <button
-                type="button"
-                onClick={confirmDelete}
-                disabled={deleting}
-                style={{
-                  padding: "8px 14px",
-                  border: "1px solid #dc2626",
-                  background: deleting ? "#fca5a5" : "#dc2626",
-                  color: "white",
-                  borderRadius: 6,
-                  cursor: deleting ? "not-allowed" : "pointer",
-                  fontWeight: 700
-                }}
-              >
-                {deleting ? "Suppression..." : "Supprimer"}
-              </button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  disabled={savingEdit}
+                  style={{
+                    padding: "9px 14px",
+                    borderRadius: 6,
+                    border: "1px solid #d1d5db",
+                    background: "white",
+                    color: "#374151",
+                    fontWeight: 600,
+                    cursor: savingEdit ? "not-allowed" : "pointer"
+                  }}
+                >
+                  Annuler
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSaveEdit}
+                  disabled={savingEdit || deleteStep}
+                  style={{
+                    padding: "9px 14px",
+                    borderRadius: 6,
+                    border: "none",
+                    background: savingEdit || deleteStep ? "#9ca3af" : "#1e3a8a",
+                    color: "white",
+                    fontWeight: 700,
+                    cursor: savingEdit || deleteStep ? "not-allowed" : "pointer"
+                  }}
+                >
+                  {savingEdit && !deleteStep ? "Enregistrement..." : "Enregistrer"}
+                </button>
+              </div>
             </div>
           </div>
         )}
