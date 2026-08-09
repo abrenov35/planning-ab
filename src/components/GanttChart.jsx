@@ -260,6 +260,7 @@ export const GanttChart = ({
     "KEVIN",
     "JIMMY",
     "ALEXANDRE",
+    "KEVIN #2",
     "ALEXIS",
     "MOMO",
     "MOHAMED",
