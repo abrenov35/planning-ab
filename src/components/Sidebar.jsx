@@ -2,19 +2,11 @@ import React, { useContext } from "react";
 import { VERSION } from "../version.js";
 import { AppContext } from "../context/AppContext";
 
-export const Sidebar = ({ 
-  currentPage, 
-  setCurrentPage,
-  ganttControls 
-}) => {
-
+export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
   const { loadData, loading } = useContext(AppContext);
 
-  const pages = [
-    { id: "gantt", label: "📅 Vue Gantt" }
-  ];
-
-  const sideButtons = [
+  const navButtons = [
+    { id: "gantt", label: "📅 Gantt" },
     { id: "chantiers", label: "🏗️ Chantiers" },
     { id: "ouvriers", label: "👷 Ouvriers" }
   ];
@@ -23,196 +15,93 @@ export const Sidebar = ({
     await loadData(true);
   };
 
+  const navStyle = active => ({
+    padding: "5px 10px",
+    cursor: "pointer",
+    fontSize: 11,
+    fontWeight: active ? 700 : 500,
+    border: "none",
+    background: active ? "rgba(255,255,255,0.18)" : "transparent",
+    color: "white",
+    borderRadius: 5,
+    borderBottom: active ? "2px solid #f59e0b" : "2px solid transparent",
+    flexShrink: 0,
+    whiteSpace: "nowrap"
+  });
+
   return (
     <div style={{
       background: "#1e3a8a",
       color: "white",
       display: "flex",
       alignItems: "center",
-      padding: "0.5rem 1rem",
-      borderBottom: "1px solid rgba(255,255,255,0.1)",
-      gap: "1rem",
+      justifyContent: "flex-start",
+      padding: "7px 12px",
+      borderBottom: "1px solid rgba(255,255,255,0.12)",
+      gap: 8,
       whiteSpace: "nowrap",
       position: "sticky",
       top: 0,
       zIndex: 100,
-      overflow: "auto"
+      overflowX: "auto"
     }}>
-      {/* LOGO */}
-      <div style={{ fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
+      <div style={{ fontSize: 13, fontWeight: 800, flexShrink: 0, marginRight: 4 }}>
         AB PLANNING
       </div>
 
-      {/* ONGLETS */}
-      <div style={{ display: "flex", gap: "0.25rem", flexShrink: 0 }}>
-        {pages.map(page => (
-          <button
-            key={page.id}
-            onClick={() => setCurrentPage(page.id)}
-            style={{
-              padding: "4px 12px",
-              cursor: "pointer",
-              fontSize: 12,
-              fontWeight: currentPage === page.id ? 600 : 400,
-              border: "none",
-              background: currentPage === page.id ? "rgba(255,255,255,0.2)" : "transparent",
-              color: "white",
-              borderRadius: "4px",
-              transition: "all 0.2s",
-              borderBottom: currentPage === page.id ? "2px solid #f59e0b" : "2px solid transparent",
-              flexShrink: 0
-            }}
-          >
-            {page.label}
+      <div style={{ width: 1, height: 24, background: "rgba(255,255,255,0.25)", flexShrink: 0 }} />
+
+      <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
+        {navButtons.map(btn => (
+          <button key={btn.id} onClick={() => setCurrentPage(btn.id)} style={navStyle(currentPage === btn.id)}>
+            {btn.label}
           </button>
         ))}
       </div>
 
-      {/* CONTRÔLES GANTT - AFFICHÉS SEULEMENT SUR LA PAGE GANTT */}
+      <div style={{ width: 1, height: 24, background: "rgba(255,255,255,0.25)", flexShrink: 0 }} />
+
+      <button
+        onClick={handleReload}
+        disabled={loading}
+        title="Recharger immédiatement les données du planning"
+        style={{
+          padding: "5px 9px",
+          background: loading ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.16)",
+          color: "white",
+          border: "1px solid rgba(255,255,255,0.30)",
+          borderRadius: 5,
+          fontSize: 10,
+          cursor: loading ? "default" : "pointer",
+          fontWeight: 700,
+          whiteSpace: "nowrap",
+          flexShrink: 0
+        }}
+      >
+        {loading ? "↻ ..." : "↻ Recharger"}
+      </button>
+
+      <div style={{ fontSize: 9, opacity: 0.65, fontWeight: 700, flexShrink: 0, padding: "0 3px" }}>
+        v{VERSION}
+      </div>
+
       {currentPage === "gantt" && ganttControls && (
         <>
-          <div style={{
-            width: "1px",
-            height: "24px",
-            background: "rgba(255,255,255,0.2)",
-            flexShrink: 0
-          }} />
+          <div style={{ width: 1, height: 24, background: "rgba(255,255,255,0.25)", flexShrink: 0, marginLeft: 3 }} />
 
-          <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
-            <button
-              onClick={ganttControls.onPrevWeek}
-              style={{
-                padding: "4px 10px",
-                background: "#1e3a8a",
-                color: "white",
-                border: "1px solid rgba(255,255,255,0.3)",
-                borderRadius: 4,
-                fontSize: 10,
-                cursor: "pointer",
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-                transition: "all 0.2s"
-              }}
-            >
-              ← 4 Sem
-            </button>
-            <button
-              onClick={ganttControls.onNextWeek}
-              style={{
-                padding: "4px 10px",
-                background: "#1e3a8a",
-                color: "white",
-                border: "1px solid rgba(255,255,255,0.3)",
-                borderRadius: 4,
-                fontSize: 10,
-                cursor: "pointer",
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-                transition: "all 0.2s"
-              }}
-            >
-              4 Sem →
-            </button>
-            <button
-              onClick={ganttControls.onToday}
-              style={{
-                padding: "4px 10px",
-                background: "#10b981",
-                color: "white",
-                border: "1px solid rgba(255,255,255,0.3)",
-                borderRadius: 4,
-                fontSize: 10,
-                cursor: "pointer",
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-                transition: "all 0.2s"
-              }}
-            >
-              Auj.
-            </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+            <button onClick={ganttControls.onPrevWeek} style={{ padding:"5px 8px", background:"transparent", color:"white", border:"1px solid rgba(255,255,255,0.28)", borderRadius:5, fontSize:10, cursor:"pointer", fontWeight:600 }}>← 4 Sem</button>
+            <button onClick={ganttControls.onToday} style={{ padding:"5px 9px", background:"#10b981", color:"white", border:"none", borderRadius:5, fontSize:10, cursor:"pointer", fontWeight:700 }}>Auj.</button>
+            <button onClick={ganttControls.onNextWeek} style={{ padding:"5px 8px", background:"transparent", color:"white", border:"1px solid rgba(255,255,255,0.28)", borderRadius:5, fontSize:10, cursor:"pointer", fontWeight:600 }}>4 Sem →</button>
           </div>
 
           {ganttControls.weekText && (
-            <div style={{
-              fontSize: 11,
-              color: "rgba(255,255,255,0.9)",
-              flexShrink: 0,
-              whiteSpace: "nowrap"
-            }}>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.82)", flexShrink: 0, marginLeft: 3 }}>
               {ganttControls.weekText}
             </div>
           )}
         </>
       )}
-
-      {/* BOUTONS DROITE + RECHARGER + VERSION */}
-      <div style={{ 
-        display: "flex",
-        alignItems: "center",
-        gap: "0.5rem",
-        marginLeft: "auto",
-        flexShrink: 0
-      }}>
-        <div style={{ display: "flex", gap: "0.25rem", flexShrink: 0 }}>
-          {sideButtons.map(btn => (
-            <button
-              key={btn.id}
-              onClick={() => setCurrentPage(btn.id)}
-              style={{
-                padding: "4px 12px",
-                cursor: "pointer",
-                fontSize: 12,
-                fontWeight: currentPage === btn.id ? 600 : 400,
-                border: "none",
-                background: currentPage === btn.id ? "rgba(255,255,255,0.2)" : "transparent",
-                color: "white",
-                borderRadius: "4px",
-                transition: "all 0.2s",
-                borderBottom: currentPage === btn.id ? "2px solid #f59e0b" : "2px solid transparent",
-                flexShrink: 0
-              }}
-            >
-              {btn.label}
-            </button>
-          ))}
-        </div>
-
-        <button
-          onClick={handleReload}
-          disabled={loading}
-          title="Recharger immédiatement les données du planning"
-          style={{
-            padding: "4px 8px",
-            background: loading ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.18)",
-            color: "white",
-            border: "1px solid rgba(255,255,255,0.35)",
-            borderRadius: 4,
-            fontSize: 10,
-            cursor: loading ? "default" : "pointer",
-            fontWeight: 600,
-            whiteSpace: "nowrap"
-          }}
-        >
-          {loading ? "↻ ..." : "↻ Recharger"}
-        </button>
-
-        <div style={{
-          width: "1px",
-          height: "24px",
-          background: "rgba(255,255,255,0.3)",
-          flexShrink: 0
-        }} />
-
-        <div style={{ 
-          fontSize: 10, 
-          opacity: 0.7,
-          flexShrink: 0,
-          fontWeight: 600,
-          letterSpacing: "0.5px"
-        }}>
-          v{VERSION}
-        </div>
-      </div>
     </div>
   );
 };
