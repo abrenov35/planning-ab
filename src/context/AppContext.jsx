@@ -9,7 +9,7 @@ export const AppProvider=({children})=>{
  const updateOuvrier=async(id,nom,type,metier,statut)=>{const r=await api.updateOuvrier(id,nom,type,metier,statut);if(r.success)await loadData(false);return r;};
  const addChantier=async(nom,dateDebut,dateFin,description)=>{const r=await api.createChantier(nom,dateDebut,dateFin,description);if(r.success)await loadData(false);return r;};
  const updateChantier=async(id,nom,dateDebut,dateFin,description,statut)=>{const r=await api.updateChantier(id,nom,dateDebut,dateFin,description,statut);if(r.success)await loadData(false);return r;};
- const addAffectation=async(ouvrierID,chantierId,dateDebut,dateFin,tache,nomAffectation="",typeAffectation="CHANTIER")=>{const r=await api.createAffectation(ouvrierID,chantierId,dateDebut,dateFin,tache,nomAffectation,typeAffectation);if(r.success)await loadData(false);return r;};
+ const addAffectation=async(ouvrierID,chantierId,dateDebut,dateFin,tache,nomAffectation="",typeAffectation="CHANTIER")=>{let cid=chantierId||"",nom=nomAffectation||"",type=typeAffectation||"CHANTIER";if(String(cid).startsWith("__LIBRE__:")){nom=String(cid).slice(10).trim();cid="";type="HORS_GANTT";}const r=await api.createAffectation(ouvrierID,cid,dateDebut,dateFin,tache,nom,type);if(r.success)await loadData(false);return r;};
  const updateAffectation=async(id,dateDebut,dateFin,tache,statut,nomAffectation="",chantierId="")=>{const r=await api.updateAffectation(id,dateDebut,dateFin,tache,statut,nomAffectation,chantierId);if(r.success)await loadData(false);return r;};
  const deleteAffectation=async id=>{const r=await api.deleteAffectation(id);if(r.success)await loadData(false);return r;};
  const getOuvrierById=id=>ouvriers.find(o=>Number(o.id)===Number(id));
