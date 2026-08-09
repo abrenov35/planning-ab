@@ -83,14 +83,9 @@ export const GanttChart = ({
   };
 
   const getAffectationLetters = (aff, chantier) => {
+    // Événement Google hors Gantt : bloc gris clair sans texte.
     if (isHorsGantt(aff, chantier)) {
-      const nom = String(aff?.nomExterne || "").trim();
-
-      // Si le nom externe n'est pas encore remonté,
-      // on affiche HG plutôt que ??.
-      return nom
-        ? nom.substring(0, 2).toUpperCase()
-        : "HG";
+      return "";
     }
 
     return getChantierId2Lettres(chantier);
@@ -98,8 +93,7 @@ export const GanttChart = ({
 
   const getAffectationColor = (aff, chantier) => {
     if (isHorsGantt(aff, chantier)) {
-      // ✅ CORRIGÉ : retourner la couleur gris soutenu
-      return "#7D8590";
+      return "#D1D5DB";
     }
 
     return getChantierColor(chantier?.id);
@@ -111,7 +105,12 @@ export const GanttChart = ({
       : "white";
   };
 
-  const getAffectationLabel = (aff) => {
+  const getAffectationLabel = (aff, chantier) => {
+    // Événement Google hors Gantt : rien sous le bloc.
+    if (isHorsGantt(aff, chantier)) {
+      return "";
+    }
+
     const tache = String(aff?.tache || "").trim();
 
     // ND / vide = rien du tout sous le cube
@@ -528,7 +527,7 @@ export const GanttChart = ({
                         const lettres = getAffectationLetters(aff, chantier);
                         const couleur = getAffectationColor(aff, chantier);
                         const couleurTexte = getAffectationTextColor(aff, chantier);
-                        const label = getAffectationLabel(aff);
+                        const label = getAffectationLabel(aff, chantier);
 
                         const rank = getAffectationRankOnDay(
                           aff,
@@ -585,7 +584,7 @@ export const GanttChart = ({
                                 background: couleur,
                                 borderRadius: 2,
                                 border: isHorsGantt(aff, chantier)
-                                  ? "1px solid #5B6470"
+                                  ? "1px solid #9CA3AF"
                                   : "1px solid rgba(0,0,0,0.2)",
                                 boxSizing: "border-box",
                                 display: "flex",
