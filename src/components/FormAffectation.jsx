@@ -1,392 +1,63 @@
 import React, { useState, useEffect } from "react";
 
-export const FormAffectation = ({ 
-  ouvrier,
-  chantiers, 
-  onSubmit, 
-  onCancel,
-  selectedDate = null
-}) => {
+export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, selectedDate = null }) => {
   const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notice, setNotice] = useState(null);
-  
-  const [days, setDays] = useState({
-    lundi: false,
-    mardi: false,
-    mercredi: false,
-    jeudi: false,
-    vendredi: false
-  });
-
-  const [formData, setFormData] = useState({
-    chantierId: "",
-    tache: ""
-  });
-
+  const [mode, setMode] = useState("chantier");
+  const [days, setDays] = useState({ lundi:false, mardi:false, mercredi:false, jeudi:false, vendredi:false });
+  const [formData, setFormData] = useState({ chantierId:"", nomLibre:"", tache:"" });
   const [tacheHistory, setTacheHistory] = useState([]);
 
   useEffect(() => {
     const saved = localStorage.getItem("tacheHistory");
-    if (saved) {
-      try {
-        setTacheHistory(JSON.parse(saved));
-      } catch (e) {
-        console.error("Erreur chargement historique", e);
-      }
-    }
+    if (saved) try { setTacheHistory(JSON.parse(saved)); } catch (e) { console.error(e); }
   }, []);
 
-  const showNotice = (title, message) => {
-    setNotice({ title, message });
-  };
-
   const getDateRange = () => {
-    const dayOrder = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi'];
-    const checkedDays = dayOrder.filter(day => days[day]);
-
-    if (checkedDays.length === 0) {
-      showNotice("Jour manquant", "Sélectionnez au moins un jour dans la semaine.");
-      return null;
-    }
-
-    const clickedDate = selectedDate ? new Date(selectedDate) : new Date();
-    clickedDate.setHours(0,0,0,0);
-
-    const dayOfWeek = clickedDate.getDay();
-    const daysToMonday = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 0 : dayOfWeek - 1;
-    const monday = new Date(clickedDate);
-    monday.setDate(monday.getDate() - daysToMonday);
-    monday.setHours(0,0,0,0);
-
-    const dayIndices = checkedDays.map(day => dayOrder.indexOf(day));
-    const minDay = Math.min(...dayIndices);
-    const maxDay = Math.max(...dayIndices);
-
-    const dateDebut = new Date(monday);
-    dateDebut.setDate(dateDebut.getDate() + minDay);
-
-    const dateFin = new Date(monday);
-    dateFin.setDate(dateFin.getDate() + maxDay);
-
-    const dateToString = (d) => 
-      `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-
-    return {
-      dateDebut: dateToString(dateDebut),
-      dateFin: dateToString(dateFin)
-    };
+    const order=["lundi","mardi","mercredi","jeudi","vendredi"];
+    const checked=order.filter(d=>days[d]);
+    if (!checked.length) { setNotice({title:"Jour manquant",message:"Sélectionnez au moins un jour dans la semaine."}); return null; }
+    const clicked=selectedDate?new Date(selectedDate):new Date(); clicked.setHours(0,0,0,0);
+    const dow=clicked.getDay(); const monday=new Date(clicked); monday.setDate(monday.getDate()-(dow===0?6:dow-1));
+    const indexes=checked.map(d=>order.indexOf(d));
+    const debut=new Date(monday); debut.setDate(debut.getDate()+Math.min(...indexes));
+    const fin=new Date(monday); fin.setDate(fin.getDate()+Math.max(...indexes));
+    const fmt=d=>`${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
+    return {dateDebut:fmt(debut),dateFin:fmt(fin)};
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (isSubmitting) return;
-
-    if (!formData.chantierId && !formData.tache.trim()) {
-      showNotice("Informations manquantes", "Choisissez une affectation et renseignez la tâche / description.");
-      return;
-    }
-
-    if (!formData.chantierId) {
-      showNotice("Affectation manquante", "Choisissez le chantier ou l’affectation à planifier.");
-      return;
-    }
-
-    if (!formData.tache.trim()) {
-      showNotice("Description manquante", "Renseignez la tâche / description avant d’enregistrer.");
-      return;
-    }
-
-    const dateRange = getDateRange();
-    if (!dateRange) return;
-
+  const handleSubmit=async e=>{
+    e.preventDefault(); if(isSubmitting)return;
+    if(mode==="chantier"&&!formData.chantierId){setNotice({title:"Chantier manquant",message:"Choisissez le chantier à planifier."});return;}
+    if(mode==="libre"&&!formData.nomLibre.trim()){setNotice({title:"Nom manquant",message:"Donnez un nom à l’affectation : congé, formation, SAV Dupont, dépôt…"});return;}
+    const range=getDateRange(); if(!range)return;
     setIsSubmitting(true);
-
-    if (formData.tache.trim()) {
-      const updated = [formData.tache, ...tacheHistory.filter(t => t !== formData.tache)].slice(0, 10);
-      setTacheHistory(updated);
-      localStorage.setItem("tacheHistory", JSON.stringify(updated));
+    if(formData.tache.trim()){
+      const h=[formData.tache,...tacheHistory.filter(t=>t!==formData.tache)].slice(0,10); setTacheHistory(h); localStorage.setItem("tacheHistory",JSON.stringify(h));
     }
-
-    await onSubmit({
-      chantierId: formData.chantierId,
-      dateDebut: dateRange.dateDebut,
-      dateFin: dateRange.dateFin,
-      tache: formData.tache
-    });
-
+    await onSubmit({chantierId:mode==="chantier"?formData.chantierId:"",nomLibre:mode==="libre"?formData.nomLibre.trim():"",typeAffectation:mode==="libre"?"HORS_GANTT":"CHANTIER",dateDebut:range.dateDebut,dateFin:range.dateFin,tache:formData.tache.trim()});
     setIsSubmitting(false);
   };
 
-  return (
-    <>
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-        {/* OUVRIER */}
-        <div>
-          <label style={{ fontSize: 11, fontWeight: 600, color: "#1f2937", display: "block", marginBottom: 4 }}>
-            Ouvrier
-          </label>
-          <div style={{
-            padding: "8px",
-            background: "#f9fafb",
-            borderRadius: 4,
-            border: "1px solid #e5e7eb",
-            fontSize: 12,
-            color: "#374151",
-            fontWeight: 600
-          }}>
-            {ouvrier.nom}
-          </div>
-        </div>
+  const label={fontSize:11,fontWeight:700,color:"#374151",display:"block",marginBottom:5};
+  const input={width:"100%",padding:"9px 10px",borderRadius:6,border:"1px solid #d1d5db",fontSize:12,fontFamily:"inherit",boxSizing:"border-box"};
+  const dayList=[{key:"lundi",label:"Lun"},{key:"mardi",label:"Mar"},{key:"mercredi",label:"Mer"},{key:"jeudi",label:"Jeu"},{key:"vendredi",label:"Ven"}];
 
-        {/* CHANTIER */}
-        <div>
-          <label style={{ fontSize: 11, fontWeight: 600, color: "#1f2937", display: "block", marginBottom: 4 }}>
-            Chantier *
-          </label>
-          <select
-            value={formData.chantierId}
-            onChange={(e) => setFormData({ ...formData, chantierId: e.target.value })}
-            style={{
-              width: "100%",
-              padding: "8px",
-              borderRadius: 4,
-              border: "1px solid #d1d5db",
-              fontSize: 12,
-              fontFamily: "inherit",
-              boxSizing: "border-box"
-            }}
-          >
-            <option value="">-- Sélectionner --</option>
-            {chantiersActifs.map(c => (
-              <option key={c.id} value={c.id}>
-                {c.nom}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* JOURS */}
-        <div>
-          <label style={{ fontSize: 11, fontWeight: 600, color: "#1f2937", display: "block", marginBottom: 8 }}>
-            Jours de la semaine *
-          </label>
-          <div style={{ display: "flex", gap: "12px" }}>
-            {[
-              { key: 'lundi', label: 'Lun' },
-              { key: 'mardi', label: 'Mar' },
-              { key: 'mercredi', label: 'Mer' },
-              { key: 'jeudi', label: 'Jeu' },
-              { key: 'vendredi', label: 'Ven' }
-            ].map(day => (
-              <button
-                key={day.key}
-                type="button"
-                onClick={() => setDays(prev => ({ ...prev, [day.key]: !prev[day.key] }))}
-                style={{
-                  flex: 1,
-                  padding: "8px",
-                  borderRadius: 4,
-                  border: "2px solid #d1d5db",
-                  background: days[day.key] ? "#1e3a8a" : "white",
-                  color: days[day.key] ? "white" : "#1f2937",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  transition: "all 0.2s"
-                }}
-              >
-                {day.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* TÂCHE */}
-        <div>
-          <label style={{ fontSize: 11, fontWeight: 600, color: "#1f2937", display: "block", marginBottom: 4 }}>
-            Tâche / Description *
-          </label>
-          <input
-            type="text"
-            placeholder="Ex: Démolition, Gros œuvre..."
-            value={formData.tache}
-            onChange={(e) => setFormData({ ...formData, tache: e.target.value })}
-            style={{
-              width: "100%",
-              padding: "8px",
-              borderRadius: 4,
-              border: "1px solid #d1d5db",
-              fontSize: 12,
-              fontFamily: "inherit",
-              boxSizing: "border-box"
-            }}
-          />
-        </div>
-
-        {/* HISTORIQUE */}
-        {tacheHistory.length > 0 && (
-          <div style={{
-            background: "#f9fafb",
-            padding: "8px",
-            borderRadius: 4,
-            border: "1px solid #e5e7eb"
-          }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: "#6b7280", marginBottom: 6 }}>
-              Tâches récentes :
-            </div>
-            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-              {tacheHistory.map((tache, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, tache })}
-                  style={{
-                    background: formData.tache === tache ? "#1e3a8a" : "white",
-                    border: formData.tache === tache ? "1px solid #1e3a8a" : "1px solid #d1d5db",
-                    borderRadius: 3,
-                    padding: "4px 8px",
-                    fontSize: 10,
-                    color: formData.tache === tache ? "white" : "#374151",
-                    cursor: "pointer",
-                    transition: "all 0.2s"
-                  }}
-                >
-                  {tache}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* BOUTONS */}
-        <div style={{ display: "flex", gap: "8px", marginTop: "0.5rem" }}>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            style={{
-              flex: 1,
-              padding: "8px",
-              background: isSubmitting ? "#9ca3af" : "#1e3a8a",
-              color: "white",
-              border: "none",
-              borderRadius: 4,
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: isSubmitting ? "not-allowed" : "pointer",
-              opacity: isSubmitting ? 0.6 : 1
-            }}
-          >
-            {isSubmitting ? "Enregistrement..." : "Ajouter"}
-          </button>
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isSubmitting}
-            style={{
-              flex: 1,
-              padding: "8px",
-              background: "#e5e7eb",
-              color: "#374151",
-              border: "none",
-              borderRadius: 4,
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: isSubmitting ? "not-allowed" : "pointer",
-              opacity: isSubmitting ? 0.6 : 1
-            }}
-          >
-            Annuler
-          </button>
-        </div>
-      </form>
-
-      {notice && (
-        <div
-          onClick={() => setNotice(null)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 9999,
-            background: "rgba(15,23,42,0.42)",
-            backdropFilter: "blur(2px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 20
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: "min(420px, 92vw)",
-              background: "white",
-              borderRadius: 14,
-              boxShadow: "0 24px 70px rgba(15,23,42,0.28)",
-              border: "1px solid #e5e7eb",
-              overflow: "hidden"
-            }}
-          >
-            <div style={{
-              padding: "18px 20px 10px",
-              display: "flex",
-              alignItems: "center",
-              gap: 12
-            }}>
-              <div style={{
-                width: 34,
-                height: 34,
-                borderRadius: "50%",
-                background: "#eff6ff",
-                color: "#1e40af",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 18,
-                fontWeight: 800,
-                flexShrink: 0
-              }}>
-                !
-              </div>
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "#111827" }}>
-                  {notice.title}
-                </div>
-                <div style={{ marginTop: 4, fontSize: 12, color: "#6b7280", lineHeight: 1.45 }}>
-                  {notice.message}
-                </div>
-              </div>
-            </div>
-
-            <div style={{
-              padding: "12px 20px 18px",
-              display: "flex",
-              justifyContent: "flex-end"
-            }}>
-              <button
-                type="button"
-                onClick={() => setNotice(null)}
-                autoFocus
-                style={{
-                  minWidth: 92,
-                  padding: "9px 16px",
-                  borderRadius: 8,
-                  border: "none",
-                  background: "#1e3a8a",
-                  color: "white",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  boxShadow: "0 4px 12px rgba(30,58,138,0.25)"
-                }}
-              >
-                Compris
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
+  return <>
+    <form onSubmit={handleSubmit} style={{display:"flex",flexDirection:"column",gap:14}}>
+      <div><label style={label}>Ouvrier</label><div style={{padding:"9px 10px",background:"#f3f4f6",borderRadius:6,border:"1px solid #e5e7eb",fontSize:12,fontWeight:700}}>{ouvrier.nom}</div></div>
+      <div><label style={label}>Type d’affectation</label><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+        <button type="button" onClick={()=>setMode("chantier")} style={{padding:10,borderRadius:8,border:mode==="chantier"?"2px solid #1e3a8a":"1px solid #d1d5db",background:mode==="chantier"?"#eff6ff":"white",color:"#1e3a8a",fontWeight:700,cursor:"pointer"}}>🏗️ Chantier principal</button>
+        <button type="button" onClick={()=>setMode("libre")} style={{padding:10,borderRadius:8,border:mode==="libre"?"2px solid #6b7280":"1px solid #d1d5db",background:mode==="libre"?"#f3f4f6":"white",color:"#374151",fontWeight:700,cursor:"pointer"}}>Autre affectation</button>
+      </div></div>
+      {mode==="chantier"?<div><label style={label}>Chantier *</label><select value={formData.chantierId} onChange={e=>setFormData({...formData,chantierId:e.target.value})} style={input}><option value="">-- Sélectionner --</option>{chantiersActifs.map(c=><option key={c.id} value={c.id}>{c.nom}</option>)}</select></div>:
+      <div><label style={label}>Nom de l’affectation *</label><input autoFocus value={formData.nomLibre} onChange={e=>setFormData({...formData,nomLibre:e.target.value})} placeholder="Ex : SAV Dupont, Congé, Formation, Dépôt…" style={{...input,border:"2px solid #9ca3af"}}/><div style={{fontSize:10,color:"#6b7280",marginTop:4}}>Affectation secondaire affichée en gris, sans créer de chantier principal.</div></div>}
+      <div><label style={label}>Jours de la semaine *</label><div style={{display:"flex",gap:8}}>{dayList.map(day=><button key={day.key} type="button" onClick={()=>setDays(p=>({...p,[day.key]:!p[day.key]}))} style={{flex:1,padding:"9px 4px",borderRadius:6,border:days[day.key]?"2px solid #1e3a8a":"1px solid #d1d5db",background:days[day.key]?"#1e3a8a":"white",color:days[day.key]?"white":"#374151",fontSize:11,fontWeight:700,cursor:"pointer"}}>{day.label}</button>)}</div></div>
+      <div><label style={label}>Tâche / description</label><textarea rows={2} value={formData.tache} onChange={e=>setFormData({...formData,tache:e.target.value})} placeholder="Ex : peinture chambre, reprise plafond, formation habilitation…" style={{...input,resize:"vertical"}}/></div>
+      {tacheHistory.length>0&&<div style={{background:"#f9fafb",padding:8,borderRadius:6,border:"1px solid #e5e7eb"}}><div style={{fontSize:10,fontWeight:700,color:"#6b7280",marginBottom:6}}>Tâches récentes :</div><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{tacheHistory.map((t,i)=><button key={i} type="button" onClick={()=>setFormData({...formData,tache:t})} style={{background:"white",border:"1px solid #d1d5db",borderRadius:4,padding:"4px 7px",fontSize:10,cursor:"pointer"}}>{t}</button>)}</div></div>}
+      <div style={{display:"flex",gap:8,marginTop:4}}><button type="submit" disabled={isSubmitting} style={{flex:1,padding:10,background:isSubmitting?"#9ca3af":"#1e3a8a",color:"white",border:0,borderRadius:7,fontWeight:700,cursor:"pointer"}}>{isSubmitting?"Enregistrement...":"Ajouter"}</button><button type="button" onClick={onCancel} disabled={isSubmitting} style={{flex:1,padding:10,background:"#e5e7eb",color:"#374151",border:0,borderRadius:7,fontWeight:700,cursor:"pointer"}}>Annuler</button></div>
+    </form>
+    {notice&&<div onClick={()=>setNotice(null)} style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(15,23,42,.45)",backdropFilter:"blur(2px)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}><div onClick={e=>e.stopPropagation()} style={{width:"min(420px,92vw)",background:"white",borderRadius:14,boxShadow:"0 24px 70px rgba(15,23,42,.28)",padding:20}}><div style={{fontSize:15,fontWeight:800,color:"#111827"}}>{notice.title}</div><div style={{marginTop:6,fontSize:12,color:"#6b7280"}}>{notice.message}</div><div style={{display:"flex",justifyContent:"flex-end",marginTop:16}}><button type="button" onClick={()=>setNotice(null)} style={{padding:"9px 16px",borderRadius:8,border:0,background:"#1e3a8a",color:"white",fontWeight:700,cursor:"pointer"}}>Compris</button></div></div></div>}
+  </>;
 };
