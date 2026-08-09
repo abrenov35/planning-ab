@@ -72,6 +72,15 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   },[currentDate,onControlsReady]);
 
   const formatShortDate=(date)=>`${["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"][date.getDay()]} ${String(date.getDate()).padStart(2,"0")}`;
+  const monthNames=["JANVIER","FÉVRIER","MARS","AVRIL","MAI","JUIN","JUILLET","AOÛT","SEPTEMBRE","OCTOBRE","NOVEMBRE","DÉCEMBRE"];
+  const monthGroups=allDates.reduce((groups,date,index)=>{
+    const key=`${date.getFullYear()}-${date.getMonth()}`;
+    const last=groups[groups.length-1];
+    if(last&&last.key===key){last.count+=1;}else{groups.push({key,start:index,count:1,label:monthNames[date.getMonth()]});}
+    return groups;
+  },[]);
+  const isMonthEnd=(idx)=>idx<allDates.length-1&&allDates[idx].getMonth()!==allDates[idx+1].getMonth();
+  const getDayRightBorder=(idx)=>isMonthEnd(idx)?"3px solid #475569":(idx+1)%5===0&&idx<19?"3px solid #1e3a8a":idx<19?"1px solid #d1d5db":"none";
   const isAffectationInWeek=(aff)=>{const s=parseDate(aff.dateDebut),e=parseDate(aff.dateFin);if(!s||!e)return false;s.setHours(0,0,0,0);e.setHours(23,59,59,999);return s<=weekEnd&&e>=weekStart;};
   const isVisibleOnDay=(aff,date)=>{const s=parseDate(aff.dateDebut),e=parseDate(aff.dateFin);if(!s||!e)return false;s.setHours(0,0,0,0);e.setHours(23,59,59,999);const d=new Date(date);d.setHours(12,0,0,0);return d>=s&&d<=e;};
   const getAffectationKey=(aff)=>Number(aff?.chantierId)?`CHANTIER:${Number(aff.chantierId)}`:`LIBRE:${normalize(aff?.nomExterne||aff?.affectationNom||"")}`;
@@ -99,10 +108,15 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
       {chantiersActifs.map(chantier=><div key={chantier.id} style={{display:"flex",alignItems:"center",gap:"6px"}}><div style={{width:"10px",height:"10px",backgroundColor:getChantierColor(chantier.id),borderRadius:"2px",flexShrink:0}}/><span style={{color:"#4b5563",fontWeight:500}}>{chantier.nom}</span></div>)}
     </div>
     <div style={{background:"white",borderRadius:6,border:"1px solid #e5e7eb",display:"flex",flexDirection:"column",flex:1,overflowY:"auto",overflowX:"auto",WebkitOverflowScrolling:"touch",touchAction:"pan-x pan-y",overscrollBehaviorX:"contain",minWidth:0}}>
-      <div style={{display:"flex",height:"40px",flexShrink:0,...rowWidthStyle}}>
+      <div style={{display:"flex",height:"60px",flexShrink:0,...rowWidthStyle}}>
         <div style={{width:workerColumnWidth,background:"#e5e7eb",borderRight:"1px solid #9ca3af",flexShrink:0,...stickyHeaderStyle}} />
-        <div style={{display:"grid",gridTemplateColumns:gridTemplate,borderRight:"1px solid #9ca3af",height:"40px",background:"#e5e7eb",...timelineFlexStyle}}>
-          {allDates.map((date,idx)=><div key={idx} style={{padding:"0.5rem 0.75rem",borderRight:(idx+1)%5===0&&idx<19?"3px solid #1e3a8a":idx<19?"1px solid #d1d5db":"none",textAlign:"center",fontSize:9,fontWeight:600,color:"#1f2937",display:"flex",alignItems:"center",justifyContent:"center"}}>{formatShortDate(date)}</div>)}
+        <div style={{height:"60px",background:"#e5e7eb",borderRight:"1px solid #9ca3af",...timelineFlexStyle}}>
+          <div style={{display:"grid",gridTemplateColumns:gridTemplate,height:"22px",borderBottom:"1px solid #cbd5e1",background:"#eef2f7"}}>
+            {monthGroups.map(group=><div key={group.key} style={{gridColumn:`${group.start+1} / span ${group.count}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,letterSpacing:"0.04em",color:"#334155",borderRight:group.start+group.count<20?"3px solid #475569":"none"}}>{group.label}</div>)}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:gridTemplate,height:"38px",background:"#e5e7eb"}}>
+            {allDates.map((date,idx)=><div key={idx} style={{padding:"0.45rem 0.55rem",borderRight:getDayRightBorder(idx),textAlign:"center",fontSize:9,fontWeight:600,color:"#1f2937",display:"flex",alignItems:"center",justifyContent:"center"}}>{formatShortDate(date)}</div>)}
+          </div>
         </div>
       </div>
       <div style={{...separationStyle,...(isMobile?{width:mobileTotalWidth,flexShrink:0}:{})}} />
@@ -114,7 +128,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
           <div style={{display:"flex",height:`${rowHeight}px`,background:rowBackground,...rowWidthStyle}}>
             <div style={{width:workerColumnWidth,padding:isMobile?"0.5rem 0.45rem":"0.5rem 0.75rem",background:rowBackground,borderRight:"1px solid #9ca3af",fontSize:10,fontWeight:600,color:"#1f2937",display:"flex",flexDirection:"column",justifyContent:"center",flexShrink:0,...stickyWorkerStyle}}><div>{ouvrier.nom}</div></div>
             <div style={{display:"grid",gridTemplateColumns:gridTemplate,background:rowBackground,borderRight:"1px solid #9ca3af",position:"relative",height:`${rowHeight}px`,...timelineFlexStyle}}>
-              {allDates.map((date,dayIdx)=><div key={dayIdx} onClick={()=>onAddAffectation(ouvrier.id,date)} style={{borderRight:(dayIdx+1)%5===0&&dayIdx<19?"3px solid #1e3a8a":dayIdx<19?"1px solid #d1d5db":"none",position:"relative",cursor:"pointer",padding:"1px",overflow:"hidden"}}>
+              {allDates.map((date,dayIdx)=><div key={dayIdx} onClick={()=>onAddAffectation(ouvrier.id,date)} style={{borderRight:getDayRightBorder(dayIdx),position:"relative",cursor:"pointer",padding:"1px",overflow:"hidden"}}>
                 {affectsByOuvrier.map(aff=>{
                   if(!isVisibleOnDay(aff,date))return null;
                   const chantier=chantiers.find(c=>Number(c.id)===Number(aff.chantierId)),horsGantt=isHorsGantt(aff,chantier),lettres=getLetters(aff,chantier),label=getLabel(aff),nomHorsGantt=horsGantt?getHorsGanttName(aff,date):"",rank=getRankOnDay(aff,date,affectsByOuvrier),topOffset=rank*affectationSlotHeight+2;
