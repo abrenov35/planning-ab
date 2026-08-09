@@ -23,7 +23,9 @@ export const GanttPage = ({ onGanttControlsReady }) => {
   const [editForm, setEditForm] = useState({
     dateDebut: "",
     dateFin: "",
-    tache: ""
+    tache: "",
+    affectationNom: "",
+    chantierId: ""
   });
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleteStep, setDeleteStep] = useState(false);
@@ -102,14 +104,33 @@ export const GanttPage = ({ onGanttControlsReady }) => {
     }
   };
 
-  const handleAffectationClick = (affectation) => {
+  const getChantier = affectation =>
+    chantiers.find(c => Number(c.id) === Number(affectation?.chantierId)) || null;
+
+  const isHorsGantt = affectation => {
+    if (!affectation) return false;
+    const chantier = getChantier(affectation);
+    return (
+      String(affectation.typeAffectation || "").toUpperCase() === "HORS_GANTT" ||
+      !chantier
+    );
+  };
+
+  const handleAffectationClick = affectation => {
     if (!affectation) return;
+
+    const chantier = getChantier(affectation);
+    const horsGantt = isHorsGantt(affectation);
 
     setEditAffectation(affectation);
     setEditForm({
       dateDebut: toInputDate(affectation.dateDebut),
       dateFin: toInputDate(affectation.dateFin),
-      tache: affectation.tache || ""
+      tache: affectation.tache || "",
+      affectationNom: horsGantt
+        ? affectation.nomExterne || ""
+        : chantier?.nom || "",
+      chantierId: horsGantt ? "" : String(affectation.chantierId || "")
     });
     setDeleteStep(false);
   };
@@ -133,6 +154,18 @@ export const GanttPage = ({ onGanttControlsReady }) => {
       return;
     }
 
+    const horsGantt = isHorsGantt(editAffectation);
+
+    if (horsGantt && !editForm.affectationNom.trim()) {
+      alert("Le nom de l'affectation est obligatoire.");
+      return;
+    }
+
+    if (!horsGantt && !editForm.chantierId) {
+      alert("Sélectionnez une affectation / un chantier.");
+      return;
+    }
+
     setSavingEdit(true);
 
     try {
@@ -141,7 +174,9 @@ export const GanttPage = ({ onGanttControlsReady }) => {
         toApiDate(editForm.dateDebut),
         toApiDate(editForm.dateFin),
         editForm.tache || "ND",
-        "Actif"
+        "Actif",
+        horsGantt ? editForm.affectationNom.trim() : "",
+        horsGantt ? "" : editForm.chantierId
       );
 
       if (result?.error) {
@@ -189,14 +224,9 @@ export const GanttPage = ({ onGanttControlsReady }) => {
     ? ouvriers.find(o => Number(o.id) === Number(editAffectation.ouvrierID))
     : null;
 
-  const editChantier = editAffectation
-    ? chantiers.find(c => Number(c.id) === Number(editAffectation.chantierId))
-    : null;
-
-  const editHorsGantt =
-    editAffectation &&
-    (String(editAffectation.typeAffectation || "").toUpperCase() === "HORS_GANTT" ||
-      !editChantier);
+  const editChantier = editAffectation ? getChantier(editAffectation) : null;
+  const editHorsGantt = editAffectation ? isHorsGantt(editAffectation) : false;
+  const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
 
   if (loading) {
     return <div style={{ padding: "1rem" }}>Chargement...</div>;
@@ -280,20 +310,62 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                 <label style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>
                   Affectation
                 </label>
-                <div
-                  style={{
-                    marginTop: 4,
-                    padding: "8px 10px",
-                    borderRadius: 6,
-                    background: "#f3f4f6",
-                    border: "1px solid #e5e7eb",
-                    fontSize: 12
-                  }}
-                >
-                  {editHorsGantt
-                    ? editAffectation.nomExterne || "Événement Google"
-                    : editChantier?.nom || "Chantier inconnu"}
-                </div>
+
+                {editHorsGantt ? (
+                  <input
+                    type="text"
+                    value={editForm.affectationNom}
+                    onChange={e =>
+                      setEditForm(prev => ({
+                        ...prev,
+                        affectationNom: e.target.value
+                      }))
+                    }
+                    disabled={savingEdit}
+                    placeholder="Ex : CP ETE, Formation, Réunion..."
+                    style={{
+                      width: "100%",
+                      marginTop: 4,
+                      padding: "8px 10px",
+                      borderRadius: 6,
+                      background: "white",
+                      border: "1px solid #d1d5db",
+                      fontSize: 12,
+                      boxSizing: "border-box"
+                    }}
+                  />
+                ) : (
+                  <select
+                    value={editForm.chantierId}
+                    onChange={e => {
+                      const chantier = chantiers.find(
+                        c => Number(c.id) === Number(e.target.value)
+                      );
+                      setEditForm(prev => ({
+                        ...prev,
+                        chantierId: e.target.value,
+                        affectationNom: chantier?.nom || ""
+                      }));
+                    }}
+                    disabled={savingEdit}
+                    style={{
+                      width: "100%",
+                      marginTop: 4,
+                      padding: "8px 10px",
+                      borderRadius: 6,
+                      background: "white",
+                      border: "1px solid #d1d5db",
+                      fontSize: 12,
+                      boxSizing: "border-box"
+                    }}
+                  >
+                    {chantiersActifs.map(chantier => (
+                      <option key={chantier.id} value={chantier.id}>
+                        {chantier.nom}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
 
