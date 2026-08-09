@@ -5,6 +5,20 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     const saved = localStorage.getItem("ganttCurrentDate");
     return saved ? new Date(saved) : new Date();
   });
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(max-width: 768px)");
+    const update = () => setIsMobile(media.matches);
+    update();
+    if (media.addEventListener) media.addEventListener("change", update);
+    else media.addListener(update);
+    return () => {
+      if (media.removeEventListener) media.removeEventListener("change", update);
+      else media.removeListener(update);
+    };
+  }, []);
 
   const handleSetCurrentDate = (date) => {
     localStorage.setItem("ganttCurrentDate", date.toISOString());
@@ -67,27 +81,34 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const chantiersActifs=chantiers.filter(c=>c.statut==="Actif"), gridTemplate="repeat(20, minmax(50px, 1fr))", affectationSlotHeight=29;
   const separateursApres=new Set(["KEVIN #2","ABOUL","MORVAN","NORDINE"]);
   const separationStyle={height:"3px",background:"#94a3b8",width:"100%"};
+  const workerColumnWidth=isMobile?92:150;
+  const mobileTimelineWidth=1120;
+  const mobileTotalWidth=workerColumnWidth+mobileTimelineWidth;
+  const timelineFlexStyle=isMobile?{width:mobileTimelineWidth,flex:`0 0 ${mobileTimelineWidth}px`}:{flex:1};
+  const rowWidthStyle=isMobile?{minWidth:mobileTotalWidth}:{};
+  const stickyWorkerStyle=isMobile?{position:"sticky",left:0,zIndex:8,boxShadow:"3px 0 5px rgba(15,23,42,0.08)"}:{};
+  const stickyHeaderStyle=isMobile?{position:"sticky",left:0,zIndex:20,boxShadow:"3px 0 5px rgba(15,23,42,0.10)"}:{};
 
-  return <div style={{padding:"1rem",flex:1,display:"flex",flexDirection:"column"}}>
+  return <div style={{padding:isMobile?"0.35rem":"1rem",flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
     <div style={{display:"flex",gap:"1rem",alignItems:"center",flexWrap:"wrap",padding:"0.75rem 0.5rem",marginBottom:"0.5rem",background:"rgba(255,255,255,0.5)",borderRadius:"4px",fontSize:"11px"}}>
       {chantiersActifs.map(chantier=><div key={chantier.id} style={{display:"flex",alignItems:"center",gap:"6px"}}><div style={{width:"10px",height:"10px",backgroundColor:getChantierColor(chantier.id),borderRadius:"2px",flexShrink:0}}/><span style={{color:"#4b5563",fontWeight:500}}>{chantier.nom}</span></div>)}
     </div>
-    <div style={{background:"white",borderRadius:6,border:"1px solid #e5e7eb",display:"flex",flexDirection:"column",flex:1,overflowY:"auto",overflowX:"auto"}}>
-      <div style={{display:"flex",height:"40px",flexShrink:0}}>
-        <div style={{width:150,background:"#e5e7eb",borderRight:"1px solid #9ca3af",flexShrink:0}} />
-        <div style={{display:"grid",gridTemplateColumns:gridTemplate,borderRight:"1px solid #9ca3af",height:"40px",flex:1,background:"#e5e7eb"}}>
+    <div style={{background:"white",borderRadius:6,border:"1px solid #e5e7eb",display:"flex",flexDirection:"column",flex:1,overflowY:"auto",overflowX:"auto",WebkitOverflowScrolling:"touch",touchAction:"pan-x pan-y",overscrollBehaviorX:"contain",minWidth:0}}>
+      <div style={{display:"flex",height:"40px",flexShrink:0,...rowWidthStyle}}>
+        <div style={{width:workerColumnWidth,background:"#e5e7eb",borderRight:"1px solid #9ca3af",flexShrink:0,...stickyHeaderStyle}} />
+        <div style={{display:"grid",gridTemplateColumns:gridTemplate,borderRight:"1px solid #9ca3af",height:"40px",background:"#e5e7eb",...timelineFlexStyle}}>
           {allDates.map((date,idx)=><div key={idx} style={{padding:"0.5rem 0.75rem",borderRight:(idx+1)%5===0&&idx<19?"3px solid #1e3a8a":idx<19?"1px solid #d1d5db":"none",textAlign:"center",fontSize:9,fontWeight:600,color:"#1f2937",display:"flex",alignItems:"center",justifyContent:"center"}}>{formatShortDate(date)}</div>)}
         </div>
       </div>
-      <div style={separationStyle} />
+      <div style={{...separationStyle,...(isMobile?{width:mobileTotalWidth,flexShrink:0}:{})}} />
       {ouvriersActifs.map((ouvrier,idx)=>{
         const affectsByOuvrier=affectations.filter(a=>Number(a.ouvrierID)===Number(ouvrier.id)&&isAffectationInWeek(a));
         const rowBackground=idx%2===0?"white":"#f3f4f6",maxOverlap=getMaxOverlap(affectsByOuvrier),rowHeight=Math.max(45,maxOverlap*affectationSlotHeight+4);
         const separation=separateursApres.has(normaliserNomOuvrier(ouvrier.nom));
-        return <div key={ouvrier.id}>
-          <div style={{display:"flex",height:`${rowHeight}px`,background:rowBackground}}>
-            <div style={{width:150,padding:"0.5rem 0.75rem",background:rowBackground,borderRight:"1px solid #9ca3af",fontSize:10,fontWeight:500,color:"#1f2937",display:"flex",flexDirection:"column",justifyContent:"center",flexShrink:0}}><div>{ouvrier.nom}</div></div>
-            <div style={{display:"grid",gridTemplateColumns:gridTemplate,background:rowBackground,borderRight:"1px solid #9ca3af",position:"relative",height:`${rowHeight}px`,flex:1}}>
+        return <div key={ouvrier.id} style={rowWidthStyle}>
+          <div style={{display:"flex",height:`${rowHeight}px`,background:rowBackground,...rowWidthStyle}}>
+            <div style={{width:workerColumnWidth,padding:isMobile?"0.5rem 0.45rem":"0.5rem 0.75rem",background:rowBackground,borderRight:"1px solid #9ca3af",fontSize:10,fontWeight:600,color:"#1f2937",display:"flex",flexDirection:"column",justifyContent:"center",flexShrink:0,...stickyWorkerStyle}}><div>{ouvrier.nom}</div></div>
+            <div style={{display:"grid",gridTemplateColumns:gridTemplate,background:rowBackground,borderRight:"1px solid #9ca3af",position:"relative",height:`${rowHeight}px`,...timelineFlexStyle}}>
               {allDates.map((date,dayIdx)=><div key={dayIdx} onClick={()=>onAddAffectation(ouvrier.id,date)} style={{borderRight:(dayIdx+1)%5===0&&dayIdx<19?"3px solid #1e3a8a":dayIdx<19?"1px solid #d1d5db":"none",position:"relative",cursor:"pointer",padding:"1px",overflow:"hidden"}}>
                 {affectsByOuvrier.map(aff=>{
                   if(!isVisibleOnDay(aff,date))return null;
@@ -100,7 +121,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
               </div>)}
             </div>
           </div>
-          <div style={separation?separationStyle:{height:"1px",background:"#d1d5db",width:"100%"}} />
+          <div style={separation?{...separationStyle,...(isMobile?{width:mobileTotalWidth}:{})}:{height:"1px",background:"#d1d5db",width:isMobile?mobileTotalWidth:"100%"}} />
         </div>;
       })}
     </div>
