@@ -8,7 +8,7 @@ export const Sidebar = ({
   ganttControls 
 }) => {
 
-  const { loadData, lastUpdated, loading, error } = useContext(AppContext);
+  const { loadData, loading } = useContext(AppContext);
 
   const pages = [
     { id: "gantt", label: "📅 Vue Gantt" }
@@ -22,14 +22,6 @@ export const Sidebar = ({
   const handleReload = async () => {
     await loadData(true);
   };
-
-  const lastUpdatedText = lastUpdated
-    ? lastUpdated.toLocaleTimeString("fr-FR", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit"
-      })
-    : "--:--:--";
 
   return (
     <div style={{
@@ -150,49 +142,10 @@ export const Sidebar = ({
               {ganttControls.weekText}
             </div>
           )}
-
-          {/* ÉTAT DE RAFRAÎCHISSEMENT */}
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            flexShrink: 0,
-            marginLeft: "4px"
-          }}>
-            <span
-              title={error ? `Erreur API : ${error}` : "Dernier chargement réussi des données"}
-              style={{
-                fontSize: 10,
-                color: error ? "#fecaca" : "rgba(255,255,255,0.85)",
-                fontWeight: 600
-              }}
-            >
-              {error ? "⚠ API" : "MAJ"} {lastUpdatedText}
-            </span>
-
-            <button
-              onClick={handleReload}
-              disabled={loading}
-              title="Recharger immédiatement les données du planning"
-              style={{
-                padding: "4px 8px",
-                background: loading ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.18)",
-                color: "white",
-                border: "1px solid rgba(255,255,255,0.35)",
-                borderRadius: 4,
-                fontSize: 10,
-                cursor: loading ? "default" : "pointer",
-                fontWeight: 600,
-                whiteSpace: "nowrap"
-              }}
-            >
-              {loading ? "↻ ..." : "↻ Recharger"}
-            </button>
-          </div>
         </>
       )}
 
-      {/* BOUTONS DROITE + VERSION */}
+      {/* BOUTONS DROITE + RECHARGER + VERSION */}
       <div style={{ 
         display: "flex",
         alignItems: "center",
@@ -223,6 +176,25 @@ export const Sidebar = ({
             </button>
           ))}
         </div>
+
+        <button
+          onClick={handleReload}
+          disabled={loading}
+          title="Recharger immédiatement les données du planning"
+          style={{
+            padding: "4px 8px",
+            background: loading ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.18)",
+            color: "white",
+            border: "1px solid rgba(255,255,255,0.35)",
+            borderRadius: 4,
+            fontSize: 10,
+            cursor: loading ? "default" : "pointer",
+            fontWeight: 600,
+            whiteSpace: "nowrap"
+          }}
+        >
+          {loading ? "↻ ..." : "↻ Recharger"}
+        </button>
 
         <div style={{
           width: "1px",
