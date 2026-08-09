@@ -6,15 +6,12 @@ export const GanttChart = ({
   affectations,
   onAffectationClick,
   onAddAffectation,
-  onDeleteAffectationDay,
   onControlsReady
 }) => {
   const [currentDate, setCurrentDate] = useState(() => {
     const saved = localStorage.getItem("ganttCurrentDate");
     return saved ? new Date(saved) : new Date();
   });
-
-  const [hoveredAffectationId, setHoveredAffectationId] = useState(null);
 
   const handleSetCurrentDate = (date) => {
     localStorage.setItem("ganttCurrentDate", date.toISOString());
@@ -247,14 +244,7 @@ export const GanttChart = ({
   const gridTemplate = "repeat(20, minmax(50px, 1fr))";
 
   return (
-    <div
-      style={{
-        padding: "1rem",
-        flex: 1,
-        display: "flex",
-        flexDirection: "column"
-      }}
-    >
+    <div style={{ padding: "1rem", flex: 1, display: "flex", flexDirection: "column" }}>
       <div
         style={{
           display: "flex",
@@ -269,10 +259,7 @@ export const GanttChart = ({
         }}
       >
         {chantiersActifs.map((chantier) => (
-          <div
-            key={chantier.id}
-            style={{ display: "flex", alignItems: "center", gap: "6px" }}
-          >
+          <div key={chantier.id} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             <div
               style={{
                 width: "10px",
@@ -282,9 +269,7 @@ export const GanttChart = ({
                 flexShrink: 0
               }}
             />
-            <span style={{ color: "#4b5563", fontWeight: 500 }}>
-              {chantier.nom}
-            </span>
+            <span style={{ color: "#4b5563", fontWeight: 500 }}>{chantier.nom}</span>
           </div>
         ))}
       </div>
@@ -301,14 +286,7 @@ export const GanttChart = ({
           overflowX: "auto"
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            borderBottom: "1px solid #d1d5db",
-            height: "40px",
-            flexShrink: 0
-          }}
-        >
+        <div style={{ display: "flex", borderBottom: "1px solid #d1d5db", height: "40px", flexShrink: 0 }}>
           <div
             style={{
               width: 150,
@@ -365,22 +343,14 @@ export const GanttChart = ({
 
         {ouvriersActifs.map((ouvrier, idx) => {
           const affectsByOuvrier = affectations.filter(
-            (a) =>
-              Number(a.ouvrierID) === Number(ouvrier.id) &&
-              isAffectationInWeek(a)
+            (a) => Number(a.ouvrierID) === Number(ouvrier.id) && isAffectationInWeek(a)
           );
 
           const rowBackground = idx % 2 === 0 ? "white" : "#f3f4f6";
 
           return (
             <div key={ouvrier.id}>
-              <div
-                style={{
-                  display: "flex",
-                  height: "45px",
-                  background: rowBackground
-                }}
-              >
+              <div style={{ display: "flex", height: "45px", background: rowBackground }}>
                 <div
                   style={{
                     width: 150,
@@ -397,9 +367,7 @@ export const GanttChart = ({
                   }}
                 >
                   <div>{ouvrier.nom}</div>
-                  <div style={{ fontSize: 8, color: "#9ca3af" }}>
-                    {ouvrier.metier}
-                  </div>
+                  <div style={{ fontSize: 8, color: "#9ca3af" }}>{ouvrier.metier}</div>
                 </div>
 
                 <div
@@ -416,10 +384,7 @@ export const GanttChart = ({
                   {allDates.map((date, dayIdx) => (
                     <div
                       key={dayIdx}
-                      onClick={(e) => {
-                        if (e.target.closest("button")) return;
-                        onAddAffectation(ouvrier.id, date);
-                      }}
+                      onClick={() => onAddAffectation(ouvrier.id, date)}
                       style={{
                         borderRight:
                           (dayIdx + 1) % 5 === 0 && dayIdx < 19
@@ -453,8 +418,6 @@ export const GanttChart = ({
                               e.stopPropagation();
                               onAffectationClick(aff);
                             }}
-                            onMouseEnter={() => setHoveredAffectationId(aff.id)}
-                            onMouseLeave={() => setHoveredAffectationId(null)}
                             style={{
                               position: "absolute",
                               left: 1,
@@ -468,7 +431,7 @@ export const GanttChart = ({
                               title={
                                 horsGantt
                                   ? aff.nomExterne || "Événement Google"
-                                  : chantier?.nom || ""
+                                  : `${chantier?.nom || ""} — cliquer pour modifier`
                               }
                               style={{
                                 width: "100%",
@@ -508,44 +471,6 @@ export const GanttChart = ({
                                 {label}
                               </div>
                             )}
-
-                            {hoveredAffectationId === aff.id && (
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  onDeleteAffectationDay?.(aff.id, date);
-                                }}
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                }}
-                                style={{
-                                  position: "absolute",
-                                  top: "-8px",
-                                  right: "-8px",
-                                  width: "18px",
-                                  height: "18px",
-                                  borderRadius: "50%",
-                                  background: "#ef4444",
-                                  color: "white",
-                                  border: "none",
-                                  cursor: "pointer",
-                                  fontSize: "12px",
-                                  fontWeight: "bold",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  padding: 0,
-                                  lineHeight: 1,
-                                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                                  zIndex: 1000
-                                }}
-                                title="Supprimer ce jour"
-                              >
-                                ✕
-                              </button>
-                            )}
                           </div>
                         );
                       })}
@@ -554,13 +479,7 @@ export const GanttChart = ({
                 </div>
               </div>
 
-              <div
-                style={{
-                  height: "1px",
-                  background: "#d1d5db",
-                  width: "100%"
-                }}
-              />
+              <div style={{ height: "1px", background: "#d1d5db", width: "100%" }} />
             </div>
           );
         })}
