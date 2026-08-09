@@ -73,7 +73,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
 
   const formatShortDate=(date)=>`${["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"][date.getDay()]} ${String(date.getDate()).padStart(2,"0")}`;
   const monthNames=["JANVIER","FÉVRIER","MARS","AVRIL","MAI","JUIN","JUILLET","AOÛT","SEPTEMBRE","OCTOBRE","NOVEMBRE","DÉCEMBRE"];
-  const monthBandColors=["#eaf0f7","#f1f3f5"];
+  const monthBandColors=["#dbe7f3","#eef0f2"];
   const monthGroups=allDates.reduce((groups,date,index)=>{
     const key=`${date.getFullYear()}-${date.getMonth()}`;
     const last=groups[groups.length-1];
