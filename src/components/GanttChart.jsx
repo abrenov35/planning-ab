@@ -192,10 +192,34 @@ export const GanttChart = ({
     return day >= affStart && day <= affEnd;
   };
 
+  // V56 : une affectation identique garde la priorité visuelle sur plusieurs jours.
+  // Cela aligne par exemple GUI / GUI / GUI sur la même ligne avant les interventions ponctuelles.
+  const getAffectationKey = (aff) => {
+    const chantierId = Number(aff?.chantierId);
+    if (chantierId) return `CHANTIER:${chantierId}`;
+    return `LIBRE:${normalize(aff?.nomExterne || aff?.affectationNom || "")}`;
+  };
+
+  const getAffectationPriority = (aff, list) => {
+    const key = getAffectationKey(aff);
+    return list.reduce((score, item) => {
+      if (getAffectationKey(item) !== key) return score;
+      return score + allDates.filter((date) => isVisibleOnDay(item, date)).length;
+    }, 0);
+  };
+
   const getRankOnDay = (aff, date, list) => {
     const overlapping = list
       .filter((item) => isVisibleOnDay(item, date))
-      .sort((a, b) => Number(a.id) - Number(b.id));
+      .sort((a, b) => {
+        const priorityDiff = getAffectationPriority(b, list) - getAffectationPriority(a, list);
+        if (priorityDiff !== 0) return priorityDiff;
+
+        const keyDiff = getAffectationKey(a).localeCompare(getAffectationKey(b), "fr", { sensitivity: "base" });
+        if (keyDiff !== 0) return keyDiff;
+
+        return Number(a.id) - Number(b.id);
+      });
 
     return Math.max(
       0,
