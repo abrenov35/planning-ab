@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 
 export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, selectedDate = null }) => {
-  const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
+  const chantiersActifs = chantiers
+    .filter(c => c.statut === "Actif")
+    .sort((a, b) => String(a.nom || "").localeCompare(String(b.nom || ""), "fr", { sensitivity: "base" }));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notice, setNotice] = useState(null);
   const [mode, setMode] = useState("chantier");
