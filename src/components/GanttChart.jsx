@@ -49,15 +49,8 @@ export const GanttChart = ({
     const type = normalize(aff?.typeAffectation);
     const source = normalize(aff?.source);
 
-    // Règle forte : une affectation qui ne pointe pas vers un vrai chantier
-    // est affichée comme événement externe. Cela couvre aussi les anciennes
-    // lignes Google/SYNC mal renseignées (chantier vide ou chantier "??").
     if (!isValidChantier(chantier)) return true;
-
     if (type === "HORS_GANTT") return true;
-
-    // Une ligne Google explicitement externe reste externe même si des données
-    // historiques sont incohérentes.
     if (source === "GOOGLE" && type === "HORS_GANTT") return true;
 
     return false;
@@ -215,7 +208,41 @@ export const GanttChart = ({
     );
   };
 
-  const ouvriersActifs = ouvriers.filter((o) => o.statut === "Actif");
+  const normaliserNomOuvrier = (nom) =>
+    String(nom || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toUpperCase();
+
+  const ordreOuvriers = [
+    "KEVIN",
+    "JIMMY",
+    "ALEXANDRE",
+    "ALEXIS",
+    "MOMO",
+    "MOHAMED",
+    "ABOUL",
+    "MORVAN",
+    "BRAHIM",
+    "MARTIN",
+    "STEPHANE",
+    "EQUIPE UMAR",
+    "NORDINE"
+  ];
+
+  const ouvriersActifs = ouvriers
+    .filter((o) => o.statut === "Actif")
+    .sort((a, b) => {
+      const nomA = normaliserNomOuvrier(a.nom);
+      const nomB = normaliserNomOuvrier(b.nom);
+      let indexA = ordreOuvriers.indexOf(nomA);
+      let indexB = ordreOuvriers.indexOf(nomB);
+      if (indexA === -1) indexA = ordreOuvriers.length - 1;
+      if (indexB === -1) indexB = ordreOuvriers.length - 1;
+      return indexA - indexB;
+    });
+
   const chantiersActifs = chantiers.filter((c) => c.statut === "Actif");
   const gridTemplate = "repeat(20, minmax(50px, 1fr))";
 
