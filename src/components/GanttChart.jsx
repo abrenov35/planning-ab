@@ -203,6 +203,13 @@ export const GanttChart = ({
     );
   };
 
+  const getMaxOverlap = (list) => {
+    return Math.max(
+      1,
+      ...allDates.map((date) => list.filter((item) => isVisibleOnDay(item, date)).length)
+    );
+  };
+
   const canShowHorsGanttName = (date) => {
     const seuil = new Date(2026, 7, 3);
     seuil.setHours(0, 0, 0, 0);
@@ -255,6 +262,7 @@ export const GanttChart = ({
 
   const chantiersActifs = chantiers.filter((c) => c.statut === "Actif");
   const gridTemplate = "repeat(20, minmax(50px, 1fr))";
+  const affectationSlotHeight = 29;
 
   return (
     <div style={{ padding: "1rem", flex: 1, display: "flex", flexDirection: "column" }}>
@@ -360,10 +368,12 @@ export const GanttChart = ({
           );
 
           const rowBackground = idx % 2 === 0 ? "white" : "#f3f4f6";
+          const maxOverlap = getMaxOverlap(affectsByOuvrier);
+          const rowHeight = Math.max(45, maxOverlap * affectationSlotHeight + 4);
 
           return (
             <div key={ouvrier.id}>
-              <div style={{ display: "flex", height: "45px", background: rowBackground }}>
+              <div style={{ display: "flex", height: `${rowHeight}px`, background: rowBackground }}>
                 <div
                   style={{
                     width: 150,
@@ -390,7 +400,7 @@ export const GanttChart = ({
                     background: rowBackground,
                     borderRight: "1px solid #9ca3af",
                     position: "relative",
-                    height: "45px",
+                    height: `${rowHeight}px`,
                     flex: 1
                   }}
                 >
@@ -423,7 +433,7 @@ export const GanttChart = ({
                         const label = getLabel(aff);
                         const nomHorsGantt = horsGantt ? getHorsGanttName(aff, date) : "";
                         const rank = getRankOnDay(aff, date, affectsByOuvrier);
-                        const topOffset = rank * 20 + 1;
+                        const topOffset = rank * affectationSlotHeight + 2;
 
                         return (
                           <div
@@ -477,6 +487,8 @@ export const GanttChart = ({
                               <div
                                 title={label}
                                 style={{
+                                  marginTop: 1,
+                                  height: 9,
                                   fontSize: 7,
                                   fontWeight: 600,
                                   color: "#374151",
@@ -484,7 +496,7 @@ export const GanttChart = ({
                                   overflow: "hidden",
                                   textOverflow: "ellipsis",
                                   whiteSpace: "nowrap",
-                                  lineHeight: 1
+                                  lineHeight: "9px"
                                 }}
                               >
                                 {label}
