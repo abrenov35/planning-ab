@@ -34,7 +34,6 @@ export const AppProvider = ({ children }) => {
     }
   }, []);
 
-  // Un seul chargement initial + un seul rafraîchissement automatique.
   useEffect(() => {
     let actif = true;
 
@@ -100,13 +99,23 @@ export const AppProvider = ({ children }) => {
     return result;
   };
 
-  const updateAffectation = async (id, dateDebut, dateFin, tache, statut) => {
+  const updateAffectation = async (
+    id,
+    dateDebut,
+    dateFin,
+    tache,
+    statut,
+    nomAffectation = "",
+    chantierId = ""
+  ) => {
     const result = await api.updateAffectation(
       id,
       dateDebut,
       dateFin,
       tache,
-      statut
+      statut,
+      nomAffectation,
+      chantierId
     );
     if (result.success) await loadData(false);
     return result;
