@@ -1,18 +1,19 @@
 import React, { useState } from "react";
-import { getWorkerPosition, normalizeWorkerName, sortWorkersPlanning } from "../utils/planningOrder";
+import { getWorkerPosition, hasWorkerSeparator, normalizeWorkerName, sortWorkersPlanning } from "../utils/planningOrder";
 
 export const FormOuvrier = ({ ouvrier, ouvriers = [], onSubmit, onCancel, mode = "add" }) => {
   const initialPosition = ouvrier ? getWorkerPosition(ouvrier.nom) : "";
+  const initialSeparator = ouvrier ? hasWorkerSeparator(ouvrier.nom) : false;
   const [formData, setFormData] = useState(
     ouvrier
-      ? { ...ouvrier, positionApres: initialPosition }
-      : { nom: "", type: "CDI", metier: "", statut: "Actif", positionApres: "" }
+      ? { ...ouvrier, positionApres: initialPosition, separateurApres: initialSeparator }
+      : { nom: "", type: "CDI", metier: "", statut: "Actif", positionApres: "", separateurApres: false }
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
   const handleSubmit = async () => {
@@ -66,7 +67,7 @@ export const FormOuvrier = ({ ouvrier, ouvriers = [], onSubmit, onCancel, mode =
         <input type="text" name="metier" value={formData.metier} onChange={handleChange} placeholder="Ex: Peintre, Électricité" style={inputStyle} />
       </div>
 
-      <div style={{ marginBottom: mode === "edit" ? "1.25rem" : "2rem" }}>
+      <div style={{ marginBottom: "1.1rem" }}>
         <label style={labelStyle}>Position dans le planning</label>
         <select name="positionApres" value={formData.positionApres || ""} onChange={handleChange} style={inputStyle}>
           <option value="">Position automatique</option>
@@ -78,6 +79,17 @@ export const FormOuvrier = ({ ouvrier, ouvriers = [], onSubmit, onCancel, mode =
           Choisis simplement après qui placer la personne dans le Gantt.
         </div>
       </div>
+
+      <label style={{
+        display:"flex",alignItems:"center",gap:10,padding:"10px 12px",marginBottom:mode === "edit" ? "1.25rem" : "2rem",
+        border:"1px solid #cbd5e1",borderRadius:7,background:formData.separateurApres?"#f1f5f9":"white",cursor:"pointer"
+      }}>
+        <input type="checkbox" name="separateurApres" checked={!!formData.separateurApres} onChange={handleChange} />
+        <div>
+          <div style={{fontSize:12,fontWeight:700,color:"#334155"}}>Trait gris après cette personne</div>
+          <div style={{fontSize:10,color:"#64748b",marginTop:2}}>Permet de créer une séparation visuelle entre deux groupes dans le planning.</div>
+        </div>
+      </label>
 
       {mode === "edit" && (
         <div style={{ marginBottom: "2rem" }}>
