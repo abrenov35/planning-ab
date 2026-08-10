@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { normalizeWorkerName, sortWorkersPlanning } from "../utils/planningOrder";
+import { getWorkerSeparators, normalizeWorkerName, sortWorkersPlanning } from "../utils/planningOrder";
 
 export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationClick, onAddAffectation, onControlsReady }) => {
   const mobileMediaQuery = "(max-width: 1100px) and (pointer: coarse)";
@@ -92,7 +92,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const getHorsGanttName=(aff,date)=>canShowHorsGanttName(date)?String(aff?.nomExterne||"").trim():"";
   const ouvriersActifs=sortWorkersPlanning(ouvriers.filter(o=>o.statut==="Actif"));
   const chantiersActifs=chantiers.filter(c=>c.statut==="Actif"), gridTemplate="repeat(20, minmax(50px, 1fr))", affectationSlotHeight=29;
-  const separateursApres=new Set(["KEVIN #2","ABOUL","MORVAN","NORDINE"]);
+  const separateursApres=new Set(getWorkerSeparators());
   const separationStyle={height:"3px",background:"#94a3b8",width:"100%"};
   const workerColumnWidth=isMobile?92:150;
   const mobileTimelineWidth=1120;
