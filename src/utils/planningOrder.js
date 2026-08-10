@@ -1,4 +1,5 @@
 const STORAGE_KEY = "abPlanningWorkerPositions";
+const SEPARATOR_KEY = "abPlanningWorkerSeparators";
 
 const BASE_ORDER = [
   "KEVIN",
@@ -16,6 +17,8 @@ const BASE_ORDER = [
   "EQUIPE UMAR",
   "NORDINE"
 ];
+
+const DEFAULT_SEPARATORS = ["KEVIN #2", "ABOUL", "MORVAN", "NORDINE"];
 
 export const normalizeWorkerName = (name) =>
   String(name || "")
@@ -47,6 +50,27 @@ export const getWorkerPosition = (workerName) => {
   return positions[normalizeWorkerName(workerName)] || "";
 };
 
+export const getWorkerSeparators = () => {
+  try {
+    const raw = localStorage.getItem(SEPARATOR_KEY);
+    return raw ? JSON.parse(raw) : DEFAULT_SEPARATORS;
+  } catch (_) {
+    return DEFAULT_SEPARATORS;
+  }
+};
+
+export const hasWorkerSeparator = (workerName) =>
+  getWorkerSeparators().includes(normalizeWorkerName(workerName));
+
+export const saveWorkerSeparator = (workerName, enabled) => {
+  const worker = normalizeWorkerName(workerName);
+  if (!worker) return;
+  const separators = new Set(getWorkerSeparators());
+  if (enabled) separators.add(worker);
+  else separators.delete(worker);
+  localStorage.setItem(SEPARATOR_KEY, JSON.stringify([...separators]));
+};
+
 export const buildWorkerOrder = (workers = []) => {
   const positions = getWorkerPositions();
   const names = workers.map(w => normalizeWorkerName(w.nom)).filter(Boolean);
@@ -56,7 +80,6 @@ export const buildWorkerOrder = (workers = []) => {
     if (!order.includes(name)) order.push(name);
   });
 
-  // Appliquer plusieurs passes pour gérer les positions en chaîne.
   for (let pass = 0; pass < 3; pass++) {
     Object.entries(positions).forEach(([worker, after]) => {
       if (!names.includes(worker)) return;
