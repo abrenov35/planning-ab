@@ -2,7 +2,7 @@ import React, { useContext, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import { Modal } from "../components/Modal";
 import { FormOuvrier } from "../components/FormOuvrier";
-import { saveWorkerPosition, sortWorkersPlanning } from "../utils/planningOrder";
+import { saveWorkerPosition, saveWorkerSeparator, sortWorkersPlanning } from "../utils/planningOrder";
 
 export const OuvriersPage = () => {
   const { ouvriers, addOuvrier, updateOuvrier, loading } = useContext(AppContext);
@@ -13,6 +13,7 @@ export const OuvriersPage = () => {
     const result = await addOuvrier(formData.nom, formData.type, formData.metier);
     if (result.success) {
       saveWorkerPosition(formData.nom, formData.positionApres || "");
+      saveWorkerSeparator(formData.nom, !!formData.separateurApres);
       setShowAddModal(false);
     } else {
       alert("Erreur: " + (result.error || "Impossible d'ajouter l'ouvrier"));
@@ -29,8 +30,12 @@ export const OuvriersPage = () => {
       formData.statut
     );
     if (result.success) {
-      if (ancienNom !== formData.nom) saveWorkerPosition(ancienNom, "");
+      if (ancienNom !== formData.nom) {
+        saveWorkerPosition(ancienNom, "");
+        saveWorkerSeparator(ancienNom, false);
+      }
       saveWorkerPosition(formData.nom, formData.positionApres || "");
+      saveWorkerSeparator(formData.nom, !!formData.separateurApres);
       setEditingOuvrier(null);
     } else {
       alert("Erreur: " + (result.error || "Impossible de modifier l'ouvrier"));
