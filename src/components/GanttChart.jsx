@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { normalizeWorkerName, sortWorkersPlanning } from "../utils/planningOrder";
 
 export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationClick, onAddAffectation, onControlsReady }) => {
   const mobileMediaQuery = "(max-width: 1100px) and (pointer: coarse)";
@@ -89,9 +90,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const getMaxOverlap=(list)=>Math.max(1,...allDates.map(date=>list.filter(item=>isVisibleOnDay(item,date)).length));
   const canShowHorsGanttName=(date)=>{const seuil=new Date(2026,7,3);seuil.setHours(0,0,0,0);const jour=new Date(date);jour.setHours(0,0,0,0);return jour>=seuil;};
   const getHorsGanttName=(aff,date)=>canShowHorsGanttName(date)?String(aff?.nomExterne||"").trim():"";
-  const normaliserNomOuvrier=(nom)=>String(nom||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toUpperCase();
-  const ordreOuvriers=["KEVIN","JIMMY","ALEXANDRE","KEVIN #2","ALEXIS","MOMO","MOHAMED","ABOUL","MORVAN","BRAHIM","MARTIN","STEPHANE","EQUIPE UMAR","NORDINE"];
-  const ouvriersActifs=ouvriers.filter(o=>o.statut==="Actif").sort((a,b)=>{let ia=ordreOuvriers.indexOf(normaliserNomOuvrier(a.nom)),ib=ordreOuvriers.indexOf(normaliserNomOuvrier(b.nom));if(ia===-1)ia=ordreOuvriers.length-1;if(ib===-1)ib=ordreOuvriers.length-1;return ia-ib;});
+  const ouvriersActifs=sortWorkersPlanning(ouvriers.filter(o=>o.statut==="Actif"));
   const chantiersActifs=chantiers.filter(c=>c.statut==="Actif"), gridTemplate="repeat(20, minmax(50px, 1fr))", affectationSlotHeight=29;
   const separateursApres=new Set(["KEVIN #2","ABOUL","MORVAN","NORDINE"]);
   const separationStyle={height:"3px",background:"#94a3b8",width:"100%"};
@@ -123,7 +122,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
       {ouvriersActifs.map((ouvrier,idx)=>{
         const affectsByOuvrier=affectations.filter(a=>Number(a.ouvrierID)===Number(ouvrier.id)&&isAffectationInWeek(a));
         const rowBackground=idx%2===0?"white":"#f3f4f6",maxOverlap=getMaxOverlap(affectsByOuvrier),rowHeight=Math.max(45,maxOverlap*affectationSlotHeight+4);
-        const separation=separateursApres.has(normaliserNomOuvrier(ouvrier.nom));
+        const separation=separateursApres.has(normalizeWorkerName(ouvrier.nom));
         return <div key={ouvrier.id} style={rowWidthStyle}>
           <div style={{display:"flex",height:`${rowHeight}px`,background:rowBackground,...rowWidthStyle}}>
             <div style={{width:workerColumnWidth,padding:isMobile?"0.5rem 0.45rem":"0.5rem 0.75rem",background:rowBackground,borderRight:"1px solid #9ca3af",fontSize:10,fontWeight:600,color:"#1f2937",display:"flex",flexDirection:"column",justifyContent:"center",flexShrink:0,...stickyWorkerStyle}}><div>{ouvrier.nom}</div></div>
