@@ -39,6 +39,21 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const goToday=()=>{setPastWeeks(0);window.setTimeout(()=>{const el=scrollRef.current;if(el)el.scrollTo({left:0,behavior:"smooth"});},0);};
   React.useEffect(()=>{const timer=window.setTimeout(()=>scrollToToday("auto"),0);return()=>window.clearTimeout(timer);},[isMobile]);
   React.useEffect(()=>{if(!onControlsReady)return;onControlsReady({onToday:goToday,onPast:showPast,weekText:"Timeline continue"});},[onControlsReady,isMobile,pastWeeks]);
+  React.useEffect(()=>{
+    if(isMobile||typeof window==="undefined")return;
+    const onKeyDown=e=>{
+      const target=e.target;
+      const tag=target?.tagName?.toLowerCase();
+      if(tag==="input"||tag==="textarea"||tag==="select"||target?.isContentEditable)return;
+      if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;
+      const el=scrollRef.current;if(!el)return;
+      e.preventDefault();
+      const step=5*dayWidth;
+      el.scrollBy({left:e.key==="ArrowRight"?step:-step,behavior:"smooth"});
+    };
+    window.addEventListener("keydown",onKeyDown);
+    return()=>window.removeEventListener("keydown",onKeyDown);
+  },[isMobile,dayWidth]);
 
   const formatShortDate=date=>`${["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"][date.getDay()]} ${String(date.getDate()).padStart(2,"0")}`;
   const monthNames=["JANVIER","FÉVRIER","MARS","AVRIL","MAI","JUIN","JUILLET","AOÛT","SEPTEMBRE","OCTOBRE","NOVEMBRE","DÉCEMBRE"],monthBandColors=["#dbe7f3","#eef0f2"];
