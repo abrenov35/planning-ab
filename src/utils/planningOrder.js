@@ -16,10 +16,6 @@ const BASE_ORDER = [
   "NORDINE"
 ];
 
-const DEFAULT_SEPARATORS = ["KEVIN #2", "ABOUL", "MATHIEU", "NORDINE"];
-const POSITIONS_KEY = "abplanning_worker_positions_v1";
-const SEPARATORS_KEY = "abplanning_worker_separators_v1";
-
 export const normalizeWorkerName = (name) =>
   String(name || "")
     .normalize("NFD")
@@ -27,91 +23,51 @@ export const normalizeWorkerName = (name) =>
     .trim()
     .toUpperCase();
 
-const readJson = (key, fallback) => {
-  try {
-    if (typeof window === "undefined") return fallback;
-    const raw = window.localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch {
-    return fallback;
-  }
-};
+const boolValue = value =>
+  value === true || value === 1 || String(value || "").trim().toUpperCase() === "TRUE";
 
-const writeJson = (key, value) => {
-  try {
-    if (typeof window !== "undefined") window.localStorage.setItem(key, JSON.stringify(value));
-  } catch {}
-};
+export const getWorkerSeparators = (workers = []) =>
+  workers
+    .filter(worker => boolValue(worker?.separateurApres))
+    .map(worker => normalizeWorkerName(worker.nom));
 
-export const getWorkerPositions = () => readJson(POSITIONS_KEY, {});
-
-export const saveWorkerPosition = (workerName, afterWorkerName = "") => {
-  const worker = normalizeWorkerName(workerName);
-  if (!worker) return;
-  const positions = getWorkerPositions();
-  const after = normalizeWorkerName(afterWorkerName);
-  if (after && after !== worker) positions[worker] = after;
-  else delete positions[worker];
-  writeJson(POSITIONS_KEY, positions);
-};
-
-export const getWorkerPosition = (workerName) => {
-  const worker = normalizeWorkerName(workerName);
-  return getWorkerPositions()[worker] || "";
-};
-
-export const getWorkerSeparators = () => {
-  const stored = readJson(SEPARATORS_KEY, null);
-  return Array.isArray(stored) ? stored : DEFAULT_SEPARATORS;
-};
-
-export const hasWorkerSeparator = (workerName) =>
-  getWorkerSeparators().includes(normalizeWorkerName(workerName));
-
-export const saveWorkerSeparator = (workerName, enabled) => {
-  const worker = normalizeWorkerName(workerName);
-  if (!worker) return;
-  const current = new Set(getWorkerSeparators());
-  if (enabled) current.add(worker);
-  else current.delete(worker);
-  writeJson(SEPARATORS_KEY, [...current]);
+export const hasWorkerSeparator = (workerName, workers = []) => {
+  const worker = workers.find(w => normalizeWorkerName(w.nom) === normalizeWorkerName(workerName));
+  return !!worker && boolValue(worker.separateurApres);
 };
 
 export const buildWorkerOrder = (workers = []) => {
-  const names = workers.map(w => normalizeWorkerName(w.nom)).filter(Boolean);
-  const order = BASE_ORDER.filter(name => names.includes(name));
-  names.forEach(name => {
-    if (!order.includes(name)) order.push(name);
-  });
-
-  const positions = getWorkerPositions();
-  const maxPasses = Math.max(1, order.length * 2);
-  for (let pass = 0; pass < maxPasses; pass++) {
-    let changed = false;
-    for (const worker of [...order]) {
-      const after = positions[worker];
-      if (!after || after === worker || !order.includes(after)) continue;
-      const currentIndex = order.indexOf(worker);
-      const afterIndex = order.indexOf(after);
-      if (currentIndex === afterIndex + 1) continue;
-      order.splice(currentIndex, 1);
-      const newAfterIndex = order.indexOf(after);
-      order.splice(newAfterIndex + 1, 0, worker);
-      changed = true;
-    }
-    if (!changed) break;
-  }
-  return order;
+  const baseIndex = new Map(BASE_ORDER.map((name, index) => [name, index]));
+  return [...workers]
+    .sort((a, b) => {
+      const oa = Number(a?.ordre);
+      const ob = Number(b?.ordre);
+      const va = Number.isFinite(oa) && oa > 0;
+      const vb = Number.isFinite(ob) && ob > 0;
+      if (va && vb && oa !== ob) return oa - ob;
+      if (va !== vb) return va ? -1 : 1;
+      const na = normalizeWorkerName(a.nom);
+      const nb = normalizeWorkerName(b.nom);
+      const ia = baseIndex.has(na) ? baseIndex.get(na) : 9999;
+      const ib = baseIndex.has(nb) ? baseIndex.get(nb) : 9999;
+      if (ia !== ib) return ia - ib;
+      return na.localeCompare(nb, "fr", { sensitivity: "base" });
+    })
+    .map(worker => normalizeWorkerName(worker.nom));
 };
 
 export const sortWorkersPlanning = (workers = []) => {
   const order = buildWorkerOrder(workers);
   return [...workers].sort((a, b) => {
-    const aName = normalizeWorkerName(a.nom);
-    const bName = normalizeWorkerName(b.nom);
-    const ia = order.indexOf(aName);
-    const ib = order.indexOf(bName);
-    if (ia !== ib) return ia - ib;
-    return aName.localeCompare(bName, "fr", { sensitivity: "base" });
+    const ia = order.indexOf(normalizeWorkerName(a.nom));
+    const ib = order.indexOf(normalizeWorkerName(b.nom));
+    return ia - ib;
   });
+};
+
+export const getWorkerPosition = (workerName, workers = []) => {
+  const sorted = sortWorkersPlanning(workers.filter(w => w.statut === "Actif"));
+  const index = sorted.findIndex(w => normalizeWorkerName(w.nom) === normalizeWorkerName(workerName));
+  if (index <= 0) return "";
+  return normalizeWorkerName(sorted[index - 1].nom);
 };
