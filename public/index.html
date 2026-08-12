@@ -13,14 +13,20 @@
     }
 
     /* PC : masquer uniquement la barre verticale et garder la barre horizontale */
+    #root div[style*="scrollbar-width: none"] {
+      scrollbar-width: auto !important;
+    }
+    #root div[style*="scrollbar-width: none"]::-webkit-scrollbar,
     .gantt-scroll-desktop::-webkit-scrollbar {
       width: 0;
       height: 12px;
     }
+    #root div[style*="scrollbar-width: none"]::-webkit-scrollbar-thumb,
     .gantt-scroll-desktop::-webkit-scrollbar-thumb {
       background: #9ca3af;
       border-radius: 999px;
     }
+    #root div[style*="scrollbar-width: none"]::-webkit-scrollbar-track,
     .gantt-scroll-desktop::-webkit-scrollbar-track {
       background: #f3f4f6;
     }
