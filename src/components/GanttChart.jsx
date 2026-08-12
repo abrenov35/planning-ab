@@ -5,6 +5,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const mobileMediaQuery = "(max-width: 1100px) and (pointer: coarse)";
   const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.matchMedia(mobileMediaQuery).matches);
   const [pastWeeks, setPastWeeks] = useState(0);
+  const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const scrollRef = useRef(null);
 
   React.useEffect(() => {
@@ -22,6 +23,18 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     };
   }, []);
 
+  React.useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(entries => {
+      const box = entries[0]?.contentRect;
+      if (!box) return;
+      setViewport({ width: box.width, height: box.height });
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const colorMap = {
     1:"#3b82f6", 2:"#10b981", 3:"#f59e0b", 4:"#ef4444", 5:"#8b5cf6",
     6:"#06b6d4", 7:"#ec4899", 8:"#f97316", 9:"#6366f1", 10:"#14b8a6"
@@ -29,21 +42,15 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const rdvColor = "#7c3aed";
   const normalize = value => String(value ?? "").trim().toUpperCase();
   const isRdvTask = aff => /^\s*RDV\b/i.test(String(aff?.tache ?? ""));
-  const isValidChantier = chantier =>
-    chantier && String(chantier.nom ?? "").trim() !== "" && String(chantier.nom ?? "").trim() !== "??";
-  const isHorsGantt = (aff, chantier) =>
-    !isValidChantier(chantier) ||
-    normalize(aff?.typeAffectation) === "HORS_GANTT" ||
-    (normalize(aff?.source) === "GOOGLE" && normalize(aff?.typeAffectation) === "HORS_GANTT");
-
+  const isValidChantier = chantier => chantier && String(chantier.nom ?? "").trim() !== "" && String(chantier.nom ?? "").trim() !== "??";
+  const isHorsGantt = (aff, chantier) => !isValidChantier(chantier) || normalize(aff?.typeAffectation) === "HORS_GANTT" || (normalize(aff?.source) === "GOOGLE" && normalize(aff?.typeAffectation) === "HORS_GANTT");
   const getChantierColor = chantierId => {
     if (colorMap[chantierId]) return colorMap[chantierId];
     const colors = Object.values(colorMap);
     const numericId = Number(chantierId);
     return !numericId || Number.isNaN(numericId) ? colors[0] : colors[numericId % colors.length];
   };
-  const getLetters = (aff, chantier) =>
-    isHorsGantt(aff, chantier) ? "" : String(chantier?.nom ?? "").trim().substring(0,3).toUpperCase();
+  const getLetters = (aff, chantier) => isHorsGantt(aff, chantier) ? "" : String(chantier?.nom ?? "").trim().substring(0,3).toUpperCase();
   const getLabel = aff => {
     const tache = String(aff?.tache ?? "").trim();
     return !tache || normalize(tache) === "ND" ? "" : tache;
@@ -73,8 +80,14 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     return Number.isNaN(date.getTime()) ? null : date;
   };
 
+  const ouvriersActifs = sortWorkersPlanning(ouvriers.filter(o => o.statut === "Actif"));
+  const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
   const futureWeeks = 52;
-  const dayWidth = isMobile ? 56 : 64;
+  const visibleDays = 20;
+  const workerColumnWidth = isMobile ? 92 : 150;
+  const availableTimelineWidth = Math.max(280, (viewport.width || (typeof window !== "undefined" ? window.innerWidth : 1200)) - workerColumnWidth - 2);
+  const dayWidth = Math.max(14, availableTimelineWidth / visibleDays);
+
   const today = new Date();
   today.setHours(0,0,0,0);
   const todayDow = today.getDay();
@@ -104,28 +117,22 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   };
   const showPast = () => {
     setPastWeeks(p => p + 1);
-    window.setTimeout(() => {
-      const el = scrollRef.current;
-      if (el) el.scrollTo({ left:0, behavior:"smooth" });
-    }, 0);
+    window.setTimeout(() => scrollRef.current?.scrollTo({ left:0, behavior:"smooth" }), 0);
   };
   const goToday = () => {
     setPastWeeks(0);
-    window.setTimeout(() => {
-      const el = scrollRef.current;
-      if (el) el.scrollTo({ left:0, behavior:"smooth" });
-    }, 0);
+    window.setTimeout(() => scrollRef.current?.scrollTo({ left:0, behavior:"smooth" }), 0);
   };
 
   React.useEffect(() => {
     const timer = window.setTimeout(() => scrollToToday("auto"), 0);
     return () => window.clearTimeout(timer);
-  }, [isMobile]);
+  }, [isMobile, dayWidth]);
 
   React.useEffect(() => {
     if (!onControlsReady) return;
-    onControlsReady({ onToday:goToday, onPast:showPast, weekText:"Timeline continue" });
-  }, [onControlsReady, isMobile, pastWeeks]);
+    onControlsReady({ onToday:goToday, onPast:showPast, weekText:"4 semaines visibles" });
+  }, [onControlsReady, isMobile, pastWeeks, dayWidth]);
 
   React.useEffect(() => {
     if (isMobile || typeof window === "undefined") return;
@@ -138,7 +145,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
       if (!el) return;
       e.preventDefault();
       const horizontalStep = 5 * dayWidth;
-      const verticalStep = 120;
+      const verticalStep = 100;
       if (e.key === "ArrowRight") el.scrollBy({ left:horizontalStep, behavior:"smooth" });
       if (e.key === "ArrowLeft") el.scrollBy({ left:-horizontalStep, behavior:"smooth" });
       if (e.key === "ArrowDown") el.scrollBy({ top:verticalStep, behavior:"smooth" });
@@ -148,8 +155,10 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isMobile, dayWidth]);
 
-  const formatShortDate = date =>
-    `${["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"][date.getDay()]} ${String(date.getDate()).padStart(2,"0")}`;
+  const formatShortDate = date => {
+    const day = ["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"][date.getDay()];
+    return dayWidth < 27 ? String(date.getDate()).padStart(2,"0") : `${day} ${String(date.getDate()).padStart(2,"0")}`;
+  };
   const monthNames = ["JANVIER","FÉVRIER","MARS","AVRIL","MAI","JUIN","JUILLET","AOÛT","SEPTEMBRE","OCTOBRE","NOVEMBRE","DÉCEMBRE"];
   const monthBandColors = ["#dbe7f3","#eef0f2"];
   const monthGroups = allDates.reduce((groups,date,index) => {
@@ -159,40 +168,24 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     else groups.push({ key, start:index, count:1, label:monthNames[date.getMonth()] });
     return groups;
   }, []);
-
-  const getDayRightBorder = idx =>
-    (idx+1)%5 === 0 && idx < allDates.length-1
-      ? "3px solid #1e3a8a"
-      : idx < allDates.length-1 ? "1px solid #d1d5db" : "none";
-
+  const getDayRightBorder = idx => (idx+1)%5 === 0 && idx < allDates.length-1 ? "3px solid #1e3a8a" : idx < allDates.length-1 ? "1px solid #d1d5db" : "none";
   const isAffectationInRange = aff => {
-    const s = parseDate(aff.dateDebut);
-    const e = parseDate(aff.dateFin);
+    const s = parseDate(aff.dateDebut), e = parseDate(aff.dateFin);
     if (!s || !e) return false;
-    s.setHours(0,0,0,0);
-    e.setHours(23,59,59,999);
+    s.setHours(0,0,0,0); e.setHours(23,59,59,999);
     return s <= rangeEnd && e >= rangeStart;
   };
   const isVisibleOnDay = (aff,date) => {
-    const s = parseDate(aff.dateDebut);
-    const e = parseDate(aff.dateFin);
+    const s = parseDate(aff.dateDebut), e = parseDate(aff.dateFin);
     if (!s || !e) return false;
-    s.setHours(0,0,0,0);
-    e.setHours(23,59,59,999);
-    const d = new Date(date);
-    d.setHours(12,0,0,0);
+    s.setHours(0,0,0,0); e.setHours(23,59,59,999);
+    const d = new Date(date); d.setHours(12,0,0,0);
     return d >= s && d <= e;
   };
-  const getAffectationKey = aff =>
-    Number(aff?.chantierId)
-      ? `CHANTIER:${Number(aff.chantierId)}`
-      : `LIBRE:${normalize(aff?.nomExterne || aff?.affectationNom || "")}`;
+  const getAffectationKey = aff => Number(aff?.chantierId) ? `CHANTIER:${Number(aff.chantierId)}` : `LIBRE:${normalize(aff?.nomExterne || aff?.affectationNom || "")}`;
   const getAffectationPriority = (aff,list) => {
     const key = getAffectationKey(aff);
-    return list.reduce((score,item) =>
-      getAffectationKey(item) !== key
-        ? score
-        : score + allDates.filter(date => isVisibleOnDay(item,date)).length, 0);
+    return list.reduce((score,item) => getAffectationKey(item) !== key ? score : score + allDates.filter(date => isVisibleOnDay(item,date)).length, 0);
   };
   const getRankOnDay = (aff,date,list) => {
     const overlapping = list.filter(item => isVisibleOnDay(item,date)).sort((a,b) => {
@@ -205,26 +198,23 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   };
   const getMaxOverlap = list => Math.max(1, ...allDates.map(date => list.filter(item => isVisibleOnDay(item,date)).length));
   const canShowHorsGanttName = date => {
-    const seuil = new Date(2026,7,3);
-    seuil.setHours(0,0,0,0);
-    const jour = new Date(date);
-    jour.setHours(0,0,0,0);
+    const seuil = new Date(2026,7,3); seuil.setHours(0,0,0,0);
+    const jour = new Date(date); jour.setHours(0,0,0,0);
     return jour >= seuil;
   };
-  const getHorsGanttName = (aff,date) =>
-    canShowHorsGanttName(date) ? String(aff?.nomExterne || "").trim() : "";
+  const getHorsGanttName = (aff,date) => canShowHorsGanttName(date) ? String(aff?.nomExterne || "").trim() : "";
 
-  const ouvriersActifs = sortWorkersPlanning(ouvriers.filter(o => o.statut === "Actif"));
-  const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
-  const gridTemplate = `repeat(${allDates.length}, ${dayWidth}px)`;
-  const affectationSlotHeight = isMobile ? 28 : 29;
-  const minRowHeight = isMobile ? 34 : 45;
-  const headerHeight = isMobile ? 46 : 60;
-  const monthHeaderHeight = isMobile ? 17 : 22;
+  const headerHeight = isMobile ? 42 : 52;
+  const monthHeaderHeight = isMobile ? 15 : 19;
   const dayHeaderHeight = headerHeight - monthHeaderHeight;
+  const separatorCount = 1 + ouvriersActifs.filter(o => new Set(getWorkerSeparators()).has(normalizeWorkerName(o.nom))).length;
+  const availableRowsHeight = Math.max(180, (viewport.height || 600) - headerHeight - separatorCount*3 - Math.max(0,ouvriersActifs.length-1));
+  const fittedRowHeight = ouvriersActifs.length ? Math.floor(availableRowsHeight / ouvriersActifs.length) : 40;
+  const affectationSlotHeight = Math.max(18, Math.min(isMobile ? 25 : 27, fittedRowHeight - 2));
+  const minRowHeight = Math.max(isMobile ? 24 : 28, fittedRowHeight);
+  const gridTemplate = `repeat(${allDates.length}, ${dayWidth}px)`;
   const separateursApres = new Set(getWorkerSeparators());
   const separationStyle = { height:"3px", background:"#94a3b8", width:"100%" };
-  const workerColumnWidth = isMobile ? 92 : 150;
   const timelineWidth = allDates.length * dayWidth;
   const totalWidth = workerColumnWidth + timelineWidth;
   const timelineFlexStyle = { width:timelineWidth, flex:`0 0 ${timelineWidth}px` };
@@ -233,57 +223,31 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const stickyHeaderStyle = { position:"sticky", left:0, zIndex:20, boxShadow:"3px 0 5px rgba(15,23,42,0.10)" };
 
   return (
-    <div style={{padding:isMobile ? "0.18rem" : "1rem",flex:1,display:"flex",flexDirection:"column",minWidth:0,minHeight:0}}>
-      <style>{`.gantt-scroll::-webkit-scrollbar{width:0;height:${isMobile ? 0 : 12}px}.gantt-scroll::-webkit-scrollbar-thumb{background:#9ca3af;border-radius:999px}.gantt-scroll::-webkit-scrollbar-track{background:#f3f4f6}.gantt-scroll{scrollbar-width:${isMobile ? "none" : "auto"}}`}</style>
+    <div style={{padding:isMobile ? "0.12rem" : "0.45rem",flex:1,display:"flex",flexDirection:"column",minWidth:0,minHeight:0}}>
+      <style>{`.gantt-scroll::-webkit-scrollbar{width:0;height:${isMobile ? 0 : 10}px}.gantt-scroll::-webkit-scrollbar-thumb{background:#9ca3af;border-radius:999px}.gantt-scroll::-webkit-scrollbar-track{background:#f3f4f6}.gantt-scroll{scrollbar-width:${isMobile ? "none" : "auto"}}`}</style>
 
-      <div style={{display:"flex",gap:isMobile ? "0.55rem" : "1rem",alignItems:"center",flexWrap:"wrap",padding:isMobile ? "0.25rem 0.35rem" : "0.75rem 0.5rem",marginBottom:isMobile ? "0.18rem" : "0.5rem",background:"rgba(255,255,255,0.5)",borderRadius:"4px",fontSize:isMobile ? 10 : 11,lineHeight:1.1}}>
+      <div style={{display:"flex",gap:isMobile ? "0.45rem" : "0.8rem",alignItems:"center",flexWrap:"nowrap",overflowX:"auto",padding:isMobile ? "0.18rem 0.3rem" : "0.35rem 0.4rem",marginBottom:isMobile ? "0.12rem" : "0.3rem",background:"rgba(255,255,255,0.5)",borderRadius:4,fontSize:isMobile ? 9 : 10,lineHeight:1.1,flexShrink:0}}>
         {chantiersActifs.map(chantier => (
-          <div key={chantier.id} style={{display:"flex",alignItems:"center",gap:"5px"}}>
-            <div style={{width:isMobile ? "9px" : "10px",height:isMobile ? "9px" : "10px",backgroundColor:getChantierColor(chantier.id),borderRadius:"2px",flexShrink:0}} />
+          <div key={chantier.id} style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
+            <div style={{width:8,height:8,backgroundColor:getChantierColor(chantier.id),borderRadius:2,flexShrink:0}} />
             <span style={{color:"#4b5563",fontWeight:500}}>{chantier.nom}</span>
           </div>
         ))}
-        <div style={{display:"flex",alignItems:"center",gap:"5px"}}>
-          <div style={{width:isMobile ? "9px" : "10px",height:isMobile ? "9px" : "10px",backgroundColor:rdvColor,borderRadius:"2px",flexShrink:0}} />
+        <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
+          <div style={{width:8,height:8,backgroundColor:rdvColor,borderRadius:2,flexShrink:0}} />
           <span style={{color:"#6d28d9",fontWeight:800}}>RDV</span>
         </div>
       </div>
 
-      <div
-        ref={scrollRef}
-        className="gantt-scroll"
-        style={{
-          background:"white",
-          borderRadius:6,
-          border:"1px solid #e5e7eb",
-          display:"flex",
-          flexDirection:"column",
-          flex:1,
-          overflowY:"auto",
-          overflowX:"auto",
-          WebkitOverflowScrolling:"touch",
-          touchAction:"pan-x pan-y pinch-zoom",
-          overscrollBehaviorX:"none",
-          minWidth:0,
-          minHeight:0
-        }}
-      >
-        <div style={{display:"flex",height:`${headerHeight}px`,flexShrink:0,...rowWidthStyle}}>
+      <div ref={scrollRef} className="gantt-scroll" style={{background:"white",borderRadius:6,border:"1px solid #e5e7eb",display:"flex",flexDirection:"column",flex:1,overflowY:"auto",overflowX:"auto",WebkitOverflowScrolling:"touch",touchAction:"pan-x pan-y pinch-zoom",overscrollBehaviorX:"none",minWidth:0,minHeight:0}}>
+        <div style={{display:"flex",height:headerHeight,flexShrink:0,...rowWidthStyle}}>
           <div style={{width:workerColumnWidth,background:"#e5e7eb",borderRight:"1px solid #9ca3af",flexShrink:0,...stickyHeaderStyle}} />
-          <div style={{height:`${headerHeight}px`,background:"#e5e7eb",borderRight:"1px solid #9ca3af",...timelineFlexStyle}}>
-            <div style={{display:"grid",gridTemplateColumns:gridTemplate,height:`${monthHeaderHeight}px`,borderBottom:"1px solid #cbd5e1",background:"#eef2f7"}}>
-              {monthGroups.map((group,index) => (
-                <div key={group.key} style={{gridColumn:`${group.start+1} / span ${group.count}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:isMobile ? 9 : 10,fontWeight:800,letterSpacing:"0.04em",color:"#334155",background:monthBandColors[index%monthBandColors.length]}}>
-                  {group.label}
-                </div>
-              ))}
+          <div style={{height:headerHeight,background:"#e5e7eb",borderRight:"1px solid #9ca3af",...timelineFlexStyle}}>
+            <div style={{display:"grid",gridTemplateColumns:gridTemplate,height:monthHeaderHeight,borderBottom:"1px solid #cbd5e1",background:"#eef2f7"}}>
+              {monthGroups.map((group,index) => <div key={group.key} style={{gridColumn:`${group.start+1} / span ${group.count}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:dayWidth < 27 ? 7 : isMobile ? 8 : 9,fontWeight:800,letterSpacing:"0.03em",color:"#334155",background:monthBandColors[index%monthBandColors.length],overflow:"hidden"}}>{group.label}</div>)}
             </div>
-            <div style={{display:"grid",gridTemplateColumns:gridTemplate,height:`${dayHeaderHeight}px`,background:"#e5e7eb"}}>
-              {allDates.map((date,idx) => (
-                <div key={idx} style={{padding:isMobile ? "0.2rem 0.3rem" : "0.45rem 0.55rem",borderRight:getDayRightBorder(idx),textAlign:"center",fontSize:9,fontWeight:700,color:"#1f2937",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  {formatShortDate(date)}
-                </div>
-              ))}
+            <div style={{display:"grid",gridTemplateColumns:gridTemplate,height:dayHeaderHeight,background:"#e5e7eb"}}>
+              {allDates.map((date,idx) => <div key={idx} style={{borderRight:getDayRightBorder(idx),textAlign:"center",fontSize:dayWidth < 27 ? 7 : 8,fontWeight:700,color:"#1f2937",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",whiteSpace:"nowrap"}}>{formatShortDate(date)}</div>)}
             </div>
           </div>
         </div>
@@ -294,19 +258,17 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
           const affectsByOuvrier = affectations.filter(a => Number(a.ouvrierID) === Number(ouvrier.id) && isAffectationInRange(a));
           const rowBackground = idx%2 === 0 ? "white" : "#f3f4f6";
           const maxOverlap = getMaxOverlap(affectsByOuvrier);
-          const rowHeight = Math.max(minRowHeight, maxOverlap*affectationSlotHeight+4);
+          const rowHeight = Math.max(minRowHeight, maxOverlap*affectationSlotHeight+2);
           const separation = separateursApres.has(normalizeWorkerName(ouvrier.nom));
-
           return (
             <div key={ouvrier.id} style={rowWidthStyle}>
-              <div style={{display:"flex",height:`${rowHeight}px`,background:rowBackground,...rowWidthStyle}}>
-                <div style={{width:workerColumnWidth,padding:isMobile ? "0.22rem 0.4rem" : "0.5rem 0.75rem",background:rowBackground,borderRight:"1px solid #9ca3af",fontSize:10,fontWeight:700,color:"#1f2937",display:"flex",flexDirection:"column",justifyContent:"center",flexShrink:0,...stickyWorkerStyle}}>
-                  <div>{ouvrier.nom}</div>
+              <div style={{display:"flex",height:rowHeight,background:rowBackground,...rowWidthStyle}}>
+                <div style={{width:workerColumnWidth,padding:isMobile ? "0.12rem 0.3rem" : "0.25rem 0.55rem",background:rowBackground,borderRight:"1px solid #9ca3af",fontSize:isMobile ? 8 : 9,fontWeight:700,color:"#1f2937",display:"flex",alignItems:"center",flexShrink:0,...stickyWorkerStyle,boxSizing:"border-box",overflow:"hidden"}}>
+                  <div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ouvrier.nom}</div>
                 </div>
-
-                <div style={{display:"grid",gridTemplateColumns:gridTemplate,background:rowBackground,borderRight:"1px solid #9ca3af",position:"relative",height:`${rowHeight}px`,...timelineFlexStyle}}>
+                <div style={{display:"grid",gridTemplateColumns:gridTemplate,background:rowBackground,borderRight:"1px solid #9ca3af",position:"relative",height:rowHeight,...timelineFlexStyle}}>
                   {allDates.map((date,dayIdx) => (
-                    <div key={dayIdx} onClick={()=>onAddAffectation(ouvrier.id,date)} style={{borderRight:getDayRightBorder(dayIdx),position:"relative",cursor:"pointer",padding:"1px",overflow:"hidden"}}>
+                    <div key={dayIdx} onClick={()=>onAddAffectation(ouvrier.id,date)} style={{borderRight:getDayRightBorder(dayIdx),position:"relative",cursor:"pointer",padding:1,overflow:"hidden"}}>
                       {affectsByOuvrier.map(aff => {
                         if (!isVisibleOnDay(aff,date)) return null;
                         const chantier = chantiers.find(c => Number(c.id) === Number(aff.chantierId));
@@ -317,56 +279,16 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
                         const nomHorsGantt = horsGantt ? getHorsGanttName(aff,date) : "";
                         const rdvName = String(nomHorsGantt || chantier?.nom || "RDV").trim();
                         const rank = getRankOnDay(aff,date,affectsByOuvrier);
-                        const topOffset = rank*affectationSlotHeight+2;
+                        const topOffset = rank*affectationSlotHeight+1;
                         const barBackground = rdv ? rdvColor : horsGantt ? "#D1D5DB" : getChantierColor(chantier?.id);
                         const barColor = rdv ? "white" : horsGantt ? "#374151" : "white";
                         const barBorder = rdv ? "1px solid #6d28d9" : horsGantt ? "1px solid #9CA3AF" : "1px solid rgba(0,0,0,0.16)";
                         const barText = rdv ? rdvName : horsGantt ? nomHorsGantt : lettres;
-
+                        const barHeight = Math.max(13, affectationSlotHeight - 10);
                         return (
-                          <div key={aff.id} onClick={e=>{e.stopPropagation();onAffectationClick(aff);}} style={{position:"absolute",left:1,right:1,top:`${topOffset}px`,cursor:"pointer",zIndex:2}}>
-                            <div
-                              title={rdv ? `${rdvName} — ${label}` : horsGantt ? aff.nomExterne || "Événement Google" : `${chantier?.nom || ""} — cliquer pour modifier`}
-                              style={{
-                                width:"100%",
-                                height:"18px",
-                                backgroundColor:barBackground,
-                                border:barBorder,
-                                borderRadius:isMobile ? 4 : 2,
-                                boxSizing:"border-box",
-                                display:"flex",
-                                alignItems:"center",
-                                justifyContent:"center",
-                                padding:(horsGantt || rdv) ? "0 3px" : 0,
-                                color:barColor,
-                                fontWeight:rdv ? 800 : horsGantt ? 700 : 800,
-                                fontSize:(horsGantt || rdv) ? 7 : 10,
-                                overflow:"hidden",
-                                textOverflow:"ellipsis",
-                                whiteSpace:"nowrap"
-                              }}
-                            >
-                              {barText}
-                            </div>
-                            {label && (
-                              <div
-                                title={label}
-                                style={{
-                                  marginTop:1,
-                                  height:8,
-                                  fontSize:7,
-                                  fontWeight:rdv ? 800 : 600,
-                                  color:rdv ? "#6d28d9" : "#374151",
-                                  textAlign:"center",
-                                  overflow:"hidden",
-                                  textOverflow:"ellipsis",
-                                  whiteSpace:"nowrap",
-                                  lineHeight:"8px"
-                                }}
-                              >
-                                {label}
-                              </div>
-                            )}
+                          <div key={aff.id} onClick={e=>{e.stopPropagation();onAffectationClick(aff);}} style={{position:"absolute",left:1,right:1,top:topOffset,cursor:"pointer",zIndex:2}}>
+                            <div title={rdv ? `${rdvName} — ${label}` : horsGantt ? aff.nomExterne || "Événement Google" : `${chantier?.nom || ""} — cliquer pour modifier`} style={{width:"100%",height:barHeight,backgroundColor:barBackground,border:barBorder,borderRadius:isMobile ? 3 : 2,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center",padding:(horsGantt || rdv) ? "0 2px" : 0,color:barColor,fontWeight:800,fontSize:dayWidth < 27 ? 6 : (horsGantt || rdv) ? 7 : 9,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{barText}</div>
+                            {label && <div title={label} style={{marginTop:1,height:7,fontSize:dayWidth < 27 ? 5 : 6,fontWeight:rdv ? 800 : 600,color:rdv ? "#6d28d9" : "#374151",textAlign:"center",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:"7px"}}>{label}</div>}
                           </div>
                         );
                       })}
@@ -374,7 +296,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
                   ))}
                 </div>
               </div>
-              <div style={separation ? {...separationStyle,width:totalWidth} : {height:"1px",background:"#d1d5db",width:totalWidth}} />
+              <div style={separation ? {...separationStyle,width:totalWidth} : {height:1,background:"#d1d5db",width:totalWidth}} />
             </div>
           );
         })}
