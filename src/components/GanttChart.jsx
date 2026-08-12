@@ -7,6 +7,8 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const [pastWeeks, setPastWeeks] = useState(0);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const scrollRef = useRef(null);
+  const touchStartRef = useRef(null);
+  const lastTapRef = useRef({ key:"", time:0 });
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -122,6 +124,35 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const goToday = () => {
     setPastWeeks(0);
     window.setTimeout(() => scrollRef.current?.scrollTo({ left:0, behavior:"smooth" }), 0);
+  };
+
+  const handleEmptyCellClick = (ouvrierId,date) => {
+    if (!isMobile) onAddAffectation(ouvrierId,date);
+  };
+  const handleEmptyCellTouchStart = (e,key) => {
+    if (!isMobile || e.target !== e.currentTarget || e.touches.length !== 1) {
+      touchStartRef.current = null;
+      return;
+    }
+    const touch = e.touches[0];
+    touchStartRef.current = { x:touch.clientX, y:touch.clientY, key };
+  };
+  const handleEmptyCellTouchEnd = (e,ouvrierId,date,key) => {
+    if (!isMobile || e.target !== e.currentTarget) return;
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    const touch = e.changedTouches?.[0];
+    if (!start || !touch || start.key !== key) return;
+    if (Math.hypot(touch.clientX-start.x, touch.clientY-start.y) > 10) return;
+    const now = Date.now();
+    const last = lastTapRef.current;
+    if (last.key === key && now-last.time <= 350) {
+      lastTapRef.current = { key:"", time:0 };
+      e.preventDefault();
+      onAddAffectation(ouvrierId,date);
+    } else {
+      lastTapRef.current = { key, time:now };
+    }
   };
 
   React.useEffect(() => {
@@ -267,8 +298,10 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
                   <div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ouvrier.nom}</div>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:gridTemplate,background:rowBackground,borderRight:"1px solid #9ca3af",position:"relative",height:rowHeight,...timelineFlexStyle}}>
-                  {allDates.map((date,dayIdx) => (
-                    <div key={dayIdx} onClick={()=>onAddAffectation(ouvrier.id,date)} style={{borderRight:getDayRightBorder(dayIdx),position:"relative",cursor:"pointer",padding:1,overflow:"hidden"}}>
+                  {allDates.map((date,dayIdx) => {
+                    const cellKey = `${ouvrier.id}:${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`;
+                    return (
+                    <div key={dayIdx} onClick={()=>handleEmptyCellClick(ouvrier.id,date)} onTouchStart={e=>handleEmptyCellTouchStart(e,cellKey)} onTouchEnd={e=>handleEmptyCellTouchEnd(e,ouvrier.id,date,cellKey)} style={{borderRight:getDayRightBorder(dayIdx),position:"relative",cursor:"pointer",padding:1,overflow:"hidden"}}>
                       {affectsByOuvrier.map(aff => {
                         if (!isVisibleOnDay(aff,date)) return null;
                         const chantier = chantiers.find(c => Number(c.id) === Number(aff.chantierId));
@@ -293,7 +326,8 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
                         );
                       })}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
               <div style={separation ? {...separationStyle,width:totalWidth} : {height:1,background:"#d1d5db",width:totalWidth}} />
