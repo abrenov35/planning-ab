@@ -4,6 +4,18 @@ import { GanttChart } from "../components/GanttChart";
 import { Modal } from "../components/Modal";
 import { FormAffectation } from "../components/FormAffectation";
 
+const isRdvTask = value => /^\s*rdv\b/i.test(String(value || ""));
+const extractRdvTime = value => {
+  const match = String(value || "").match(/(\d{1,2})\s*[h:]\s*(\d{2})/i);
+  if (!match) return "";
+  return `${String(match[1]).padStart(2, "0")}:${match[2]}`;
+};
+const formatRdvTask = value => {
+  if (!value) return "RDV";
+  const [h, m] = String(value).split(":");
+  return `RDV • ${String(h || "").padStart(2, "0")}h${String(m || "00").padStart(2, "0")}`;
+};
+
 export const GanttPage = ({ onGanttControlsReady }) => {
   const {
     ouvriers,
@@ -18,14 +30,15 @@ export const GanttPage = ({ onGanttControlsReady }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedOuvrier, setSelectedOuvrier] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
-
   const [editAffectation, setEditAffectation] = useState(null);
   const [editForm, setEditForm] = useState({
     dateDebut: "",
     dateFin: "",
     tache: "",
     affectationNom: "",
-    chantierId: ""
+    chantierId: "",
+    isRdv: false,
+    rdvHeure: ""
   });
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleteStep, setDeleteStep] = useState(false);
@@ -74,7 +87,6 @@ export const GanttPage = ({ onGanttControlsReady }) => {
 
   const handleSubmitAffectation = async formData => {
     if (!selectedOuvrier) return;
-
     const result = await addAffectation(
       selectedOuvrier.id,
       formData.chantierId,
@@ -82,7 +94,6 @@ export const GanttPage = ({ onGanttControlsReady }) => {
       formData.dateFin,
       formData.tache
     );
-
     if (result.success) {
       setShowCreateModal(false);
       setSelectedOuvrier(null);
@@ -103,17 +114,19 @@ export const GanttPage = ({ onGanttControlsReady }) => {
 
   const handleAffectationClick = affectation => {
     if (!affectation) return;
-
     const chantier = getChantier(affectation);
     const horsGantt = isHorsGantt(affectation);
+    const rdv = isRdvTask(affectation.tache);
 
     setEditAffectation(affectation);
     setEditForm({
       dateDebut: toInputDate(affectation.dateDebut),
       dateFin: toInputDate(affectation.dateFin),
-      tache: affectation.tache || "",
+      tache: rdv ? "" : affectation.tache || "",
       affectationNom: horsGantt ? affectation.nomExterne || "" : chantier?.nom || "",
-      chantierId: horsGantt ? "" : String(affectation.chantierId || "")
+      chantierId: horsGantt ? "" : String(affectation.chantierId || ""),
+      isRdv: rdv,
+      rdvHeure: rdv ? extractRdvTime(affectation.tache) : ""
     });
     setDeleteStep(false);
   };
@@ -126,44 +139,45 @@ export const GanttPage = ({ onGanttControlsReady }) => {
 
   const handleSaveEdit = async () => {
     if (!editAffectation || savingEdit) return;
-
     if (!editForm.dateDebut || !editForm.dateFin) {
       alert("Les dates de début et de fin sont obligatoires.");
       return;
     }
-
     if (editForm.dateFin < editForm.dateDebut) {
       alert("La date de fin ne peut pas être avant la date de début.");
       return;
     }
+    if (editForm.isRdv && !editForm.rdvHeure) {
+      alert("Indiquez l'heure du rendez-vous.");
+      return;
+    }
 
     const horsGantt = isHorsGantt(editAffectation);
-
     if (horsGantt && !editForm.affectationNom.trim()) {
       alert("Le nom de l'affectation est obligatoire.");
       return;
     }
-
     if (!horsGantt && !editForm.chantierId) {
       alert("Sélectionnez une affectation / un chantier.");
       return;
     }
 
-    setSavingEdit(true);
+    const taskToSave = editForm.isRdv
+      ? formatRdvTask(editForm.rdvHeure)
+      : editForm.tache || "ND";
 
+    setSavingEdit(true);
     try {
       const result = await updateAffectation(
         editAffectation.id,
         toApiDate(editForm.dateDebut),
         toApiDate(editForm.dateFin),
-        editForm.tache || "ND",
+        taskToSave,
         "Actif",
         horsGantt ? editForm.affectationNom.trim() : "",
         horsGantt ? "" : editForm.chantierId
       );
-
       if (result?.error) throw new Error(result.error);
-
       setEditAffectation(null);
       setDeleteStep(false);
     } catch (error) {
@@ -176,14 +190,12 @@ export const GanttPage = ({ onGanttControlsReady }) => {
 
   const handleDeleteEdit = async () => {
     if (!editAffectation || savingEdit) return;
-
     if (!deleteStep) {
       setDeleteStep(true);
       return;
     }
 
     setSavingEdit(true);
-
     try {
       const result = await deleteAffectation(editAffectation.id);
       if (result?.error) throw new Error(result.error);
@@ -200,11 +212,21 @@ export const GanttPage = ({ onGanttControlsReady }) => {
   const editOuvrier = editAffectation
     ? ouvriers.find(o => Number(o.id) === Number(editAffectation.ouvrierID))
     : null;
-  const editChantier = editAffectation ? getChantier(editAffectation) : null;
   const editHorsGantt = editAffectation ? isHorsGantt(editAffectation) : false;
   const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
 
   if (loading) return <div style={{ padding: "1rem" }}>Chargement...</div>;
+
+  const labelStyle = { fontSize: 11, fontWeight: 700, color: "#374151" };
+  const inputStyle = {
+    width: "100%",
+    marginTop: 4,
+    padding: "9px 10px",
+    borderRadius: 6,
+    border: "1px solid #d1d5db",
+    boxSizing: "border-box",
+    fontSize: 12
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", flex: 1 }}>
@@ -246,17 +268,14 @@ export const GanttPage = ({ onGanttControlsReady }) => {
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>Ouvrier</label>
+                <label style={labelStyle}>Ouvrier</label>
                 <div style={{ marginTop: 4, padding: "8px 10px", borderRadius: 6, background: "#f3f4f6", border: "1px solid #e5e7eb", fontSize: 12 }}>
                   {editOuvrier?.nom || "Ouvrier inconnu"}
                 </div>
               </div>
 
               <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "#1e40af" }}>
-                  Affectation — modifiable ✎
-                </label>
-
+                <label style={{ ...labelStyle, color: "#1e40af" }}>Affectation — modifiable ✎</label>
                 {editHorsGantt ? (
                   <>
                     <input
@@ -266,7 +285,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                       disabled={savingEdit}
                       placeholder="Écrire l'affectation..."
                       autoFocus
-                      style={{ width: "100%", marginTop: 4, padding: "9px 10px", borderRadius: 6, background: "#fff", border: "2px solid #2563eb", fontSize: 12, boxSizing: "border-box", outline: "none" }}
+                      style={{ ...inputStyle, border: "2px solid #2563eb", outline: "none" }}
                     />
                     <div style={{ marginTop: 3, fontSize: 9, color: "#2563eb" }}>
                       Cliquez dans le champ et écrivez le nouveau texte.
@@ -285,7 +304,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                         }));
                       }}
                       disabled={savingEdit}
-                      style={{ width: "100%", marginTop: 4, padding: "9px 10px", borderRadius: 6, background: "white", border: "2px solid #2563eb", fontSize: 12, boxSizing: "border-box" }}
+                      style={{ ...inputStyle, border: "2px solid #2563eb", background: "white" }}
                     >
                       {chantiersActifs.map(chantier => (
                         <option key={chantier.id} value={chantier.id}>{chantier.nom}</option>
@@ -301,50 +320,92 @@ export const GanttPage = ({ onGanttControlsReady }) => {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>Date début</label>
+                <label style={labelStyle}>Date début</label>
                 <input
                   type="date"
                   value={editForm.dateDebut}
                   onChange={e => setEditForm(prev => ({ ...prev, dateDebut: e.target.value }))}
                   disabled={savingEdit}
-                  style={{ width: "100%", marginTop: 4, padding: 8, border: "1px solid #d1d5db", borderRadius: 6, boxSizing: "border-box" }}
+                  style={inputStyle}
                 />
               </div>
               <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>Date fin</label>
+                <label style={labelStyle}>Date fin</label>
                 <input
                   type="date"
                   value={editForm.dateFin}
                   onChange={e => setEditForm(prev => ({ ...prev, dateFin: e.target.value }))}
                   disabled={savingEdit}
-                  style={{ width: "100%", marginTop: 4, padding: 8, border: "1px solid #d1d5db", borderRadius: 6, boxSizing: "border-box" }}
+                  style={inputStyle}
                 />
               </div>
             </div>
 
             <div>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>
-                Tâche / description
-              </label>
-              <textarea
-                value={editForm.tache}
-                onChange={e => setEditForm(prev => ({ ...prev, tache: e.target.value }))}
-                disabled={savingEdit}
-                placeholder="Ex : préparation, peinture, SAV, congé, réunion..."
-                rows={2}
-                style={{
-                  width: "100%",
-                  marginTop: 4,
-                  padding: "8px 10px",
-                  border: "1px solid #d1d5db",
-                  borderRadius: 6,
-                  boxSizing: "border-box",
-                  resize: "vertical",
-                  fontFamily: "inherit",
-                  fontSize: 12
-                }}
-              />
+              <label style={labelStyle}>Type</label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 4 }}>
+                <button
+                  type="button"
+                  onClick={() => setEditForm(prev => ({ ...prev, isRdv: false }))}
+                  disabled={savingEdit}
+                  style={{
+                    padding: "9px 10px",
+                    borderRadius: 7,
+                    border: !editForm.isRdv ? "2px solid #1e3a8a" : "1px solid #d1d5db",
+                    background: !editForm.isRdv ? "#eff6ff" : "white",
+                    color: "#1e3a8a",
+                    fontWeight: 700,
+                    cursor: "pointer"
+                  }}
+                >
+                  Standard
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditForm(prev => ({ ...prev, isRdv: true }))}
+                  disabled={savingEdit}
+                  style={{
+                    padding: "9px 10px",
+                    borderRadius: 7,
+                    border: editForm.isRdv ? "2px solid #7c3aed" : "1px solid #d1d5db",
+                    background: editForm.isRdv ? "#f5f3ff" : "white",
+                    color: "#6d28d9",
+                    fontWeight: 800,
+                    cursor: "pointer"
+                  }}
+                >
+                  📅 RDV
+                </button>
+              </div>
             </div>
+
+            {editForm.isRdv ? (
+              <div>
+                <label style={{ ...labelStyle, color: "#6d28d9" }}>Heure du RDV *</label>
+                <input
+                  type="time"
+                  value={editForm.rdvHeure}
+                  onChange={e => setEditForm(prev => ({ ...prev, rdvHeure: e.target.value }))}
+                  disabled={savingEdit}
+                  style={{ ...inputStyle, border: "2px solid #7c3aed", background: "#faf5ff" }}
+                />
+                <div style={{ marginTop: 4, fontSize: 10, color: "#6d28d9" }}>
+                  Affichage planning : {formatRdvTask(editForm.rdvHeure)}
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label style={labelStyle}>Tâche / description</label>
+                <textarea
+                  value={editForm.tache}
+                  onChange={e => setEditForm(prev => ({ ...prev, tache: e.target.value }))}
+                  disabled={savingEdit}
+                  placeholder="Ex : préparation, peinture, SAV, congé, réunion..."
+                  rows={2}
+                  style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit" }}
+                />
+              </div>
+            )}
 
             <div style={{ padding: "9px 10px", borderRadius: 6, background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1e40af", fontSize: 11, lineHeight: 1.4 }}>
               Période actuelle : {formatDateLongue(editAffectation.dateDebut)}
