@@ -47,7 +47,6 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     const date = new Date(str); return Number.isNaN(date.getTime()) ? null : date;
   };
 
-  const pastWeeks = 16;
   const futureWeeks = 52;
   const dayWidth = isMobile ? 56 : 64;
   const today = new Date();
@@ -56,16 +55,14 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const currentMonday = new Date(today);
   currentMonday.setDate(today.getDate() - (todayDow === 0 ? 6 : todayDow - 1));
   const rangeMonday = new Date(currentMonday);
-  rangeMonday.setDate(currentMonday.getDate() - pastWeeks * 7);
   const allDates = [];
-  for (let week = 0; week < pastWeeks + futureWeeks; week++) {
+  for (let week = 0; week < futureWeeks; week++) {
     for (let day = 0; day < 5; day++) {
       const date = new Date(rangeMonday);
       date.setDate(rangeMonday.getDate() + week * 7 + day);
       allDates.push(date);
     }
   }
-  const todayWeekIndex = pastWeeks * 5;
   const rangeStart = allDates[0];
   const rangeEnd = new Date(allDates[allDates.length - 1]);
   rangeEnd.setHours(23,59,59,999);
@@ -73,12 +70,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const scrollToToday = behavior => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollTo({ left: todayWeekIndex * dayWidth, behavior: behavior || "smooth" });
-  };
-  const scrollOneWeek = direction => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.scrollBy({ left: direction * 5 * dayWidth, behavior: "smooth" });
+    el.scrollTo({ left: 0, behavior: behavior || "smooth" });
   };
 
   React.useEffect(() => {
@@ -89,8 +81,6 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   React.useEffect(() => {
     if (!onControlsReady) return;
     onControlsReady({
-      onPrevWeek: () => scrollOneWeek(-1),
-      onNextWeek: () => scrollOneWeek(1),
       onToday: () => scrollToToday("smooth"),
       weekText: "Timeline continue"
     });
@@ -137,7 +127,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     <div style={{display:"flex",gap:isMobile?"0.55rem":"1rem",alignItems:"center",flexWrap:"wrap",padding:isMobile?"0.25rem 0.35rem":"0.75rem 0.5rem",marginBottom:isMobile?"0.18rem":"0.5rem",background:"rgba(255,255,255,0.5)",borderRadius:"4px",fontSize:isMobile?10:11,lineHeight:1.1}}>
       {chantiersActifs.map(chantier=><div key={chantier.id} style={{display:"flex",alignItems:"center",gap:"5px"}}><div style={{width:isMobile?"9px":"10px",height:isMobile?"9px":"10px",backgroundColor:getChantierColor(chantier.id),borderRadius:"2px",flexShrink:0}}/><span style={{color:"#4b5563",fontWeight:500}}>{chantier.nom}</span></div>)}
     </div>
-    <div ref={scrollRef} style={{background:"white",borderRadius:6,border:"1px solid #e5e7eb",display:"flex",flexDirection:"column",flex:1,overflowY:"auto",overflowX:"auto",WebkitOverflowScrolling:"touch",touchAction:"pan-x pan-y pinch-zoom",overscrollBehaviorX:"contain",minWidth:0,minHeight:0}}>
+    <div ref={scrollRef} style={{background:"white",borderRadius:6,border:"1px solid #e5e7eb",display:"flex",flexDirection:"column",flex:1,overflowY:"auto",overflowX:"auto",WebkitOverflowScrolling:"touch",touchAction:"pan-x pan-y pinch-zoom",overscrollBehaviorX:"none",minWidth:0,minHeight:0,scrollbarWidth:"none",msOverflowStyle:"none"}}>
       <div style={{display:"flex",height:`${headerHeight}px`,flexShrink:0,...rowWidthStyle}}>
         <div style={{width:workerColumnWidth,background:"#e5e7eb",borderRight:"1px solid #9ca3af",flexShrink:0,...stickyHeaderStyle}} />
         <div style={{height:`${headerHeight}px`,background:"#e5e7eb",borderRight:"1px solid #9ca3af",...timelineFlexStyle}}>
