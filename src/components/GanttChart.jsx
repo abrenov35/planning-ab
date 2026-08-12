@@ -45,11 +45,15 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
       const target=e.target;
       const tag=target?.tagName?.toLowerCase();
       if(tag==="input"||tag==="textarea"||tag==="select"||target?.isContentEditable)return;
-      if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;
+      if(!["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key))return;
       const el=scrollRef.current;if(!el)return;
       e.preventDefault();
-      const step=5*dayWidth;
-      el.scrollBy({left:e.key==="ArrowRight"?step:-step,behavior:"smooth"});
+      const horizontalStep=5*dayWidth;
+      const verticalStep=120;
+      if(e.key==="ArrowRight") el.scrollBy({left:horizontalStep,behavior:"smooth"});
+      if(e.key==="ArrowLeft") el.scrollBy({left:-horizontalStep,behavior:"smooth"});
+      if(e.key==="ArrowDown") el.scrollBy({top:verticalStep,behavior:"smooth"});
+      if(e.key==="ArrowUp") el.scrollBy({top:-verticalStep,behavior:"smooth"});
     };
     window.addEventListener("keydown",onKeyDown);
     return()=>window.removeEventListener("keydown",onKeyDown);
