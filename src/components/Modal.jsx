@@ -14,23 +14,28 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      zIndex: 100
+      zIndex: 100,
+      padding: 8
     }} onClick={onClose}>
       <div style={{
         background: "white",
-        borderRadius: 12,
-        padding: "2rem",
+        borderRadius: 10,
+        padding: "1rem 1.15rem",
         width: "90%",
         maxWidth: 450,
-        boxShadow: "0 10px 40px rgba(0,0,0,0.2)"
+        maxHeight: "calc(100dvh - 16px)",
+        overflowY: "auto",
+        boxSizing: "border-box",
+        boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
+        WebkitOverflowScrolling: "touch"
       }} onClick={e => e.stopPropagation()}>
         <div style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: "1.5rem"
+          marginBottom: "0.75rem"
         }}>
-          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: "#1f2937" }}>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1f2937" }}>
             {title}
           </h2>
           <button
