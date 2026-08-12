@@ -5,14 +5,53 @@ export const AppProvider=({children})=>{
  const[ouvriers,setOuvriers]=useState([]),[chantiers,setChantiers]=useState([]),[affectations,setAffectations]=useState([]),[loading,setLoading]=useState(true),[error,setError]=useState(null),[lastUpdated,setLastUpdated]=useState(null);
  const loadData=useCallback(async(showLoader=false)=>{if(showLoader)setLoading(true);try{const data=await api.getAll();if(data?.error)throw new Error(data.error);setOuvriers(Array.isArray(data?.ouvriers)?data.ouvriers:[]);setChantiers(Array.isArray(data?.chantiers)?data.chantiers:[]);setAffectations(Array.isArray(data?.affectations)?data.affectations:[]);setError(null);setLastUpdated(new Date());}catch(err){console.error("Error loading data:",err);setError(err.message);}finally{if(showLoader)setLoading(false);}},[]);
  useEffect(()=>{let actif=true;(async()=>{if(actif)await loadData(true);})();const interval=setInterval(()=>{if(actif)loadData(false);},30000);return()=>{actif=false;clearInterval(interval);};},[loadData]);
- const refreshLater=()=>{setTimeout(()=>loadData(false),1200);};
+ const refreshLater=(delay=1200)=>{setTimeout(()=>loadData(false),delay);};
  const addOuvrier=async(nom,type,metier)=>{const r=await api.createOuvrier(nom,type,metier);if(r.success)refreshLater();return r;};
  const updateOuvrier=async(id,nom,type,metier,statut,ordre="",separateurApres=false,refresh=true)=>{const r=await api.updateOuvrier(id,nom,type,metier,statut,ordre,separateurApres);if(r.success&&refresh)refreshLater();return r;};
  const addChantier=async(nom,dateDebut,dateFin,description)=>{const r=await api.createChantier(nom,dateDebut,dateFin,description);if(r.success)refreshLater();return r;};
  const updateChantier=async(id,nom,dateDebut,dateFin,description,statut)=>{const r=await api.updateChantier(id,nom,dateDebut,dateFin,description,statut);if(r.success)refreshLater();return r;};
- const addAffectation=async(ouvrierID,chantierId,dateDebut,dateFin,tache,nomAffectation="",typeAffectation="CHANTIER")=>{let cid=chantierId||"",nom=nomAffectation||"",type=typeAffectation||"CHANTIER";if(String(cid).startsWith("__LIBRE__:")){nom=String(cid).slice(10).trim();cid="";type="HORS_GANTT";}const r=await api.createAffectation(ouvrierID,cid,dateDebut,dateFin,tache,nom,type);if(r.success)refreshLater();return r;};
- const updateAffectation=async(id,dateDebut,dateFin,tache,statut,nomAffectation="",chantierId="")=>{const r=await api.updateAffectation(id,dateDebut,dateFin,tache,statut,nomAffectation,chantierId);if(r.success)refreshLater();return r;};
- const deleteAffectation=async id=>{const r=await api.deleteAffectation(id);if(r.success){setAffectations(prev=>prev.filter(a=>String(a.id)!==String(id)));refreshLater();}return r;};
+
+ const addAffectation=(ouvrierID,chantierId,dateDebut,dateFin,tache,nomAffectation="",typeAffectation="CHANTIER")=>{
+   let cid=chantierId||"",nom=nomAffectation||"",type=typeAffectation||"CHANTIER";
+   if(String(cid).startsWith("__LIBRE__:")){nom=String(cid).slice(10).trim();cid="";type="HORS_GANTT";}
+   const tempId=`tmp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+   const optimistic={id:tempId,ouvrierID,chantierId:cid,dateDebut,dateFin,tache:tache||"",nomAffectation:nom,affectationNom:nom,nomExterne:nom,typeAffectation:type,statut:"Actif"};
+   setAffectations(prev=>[...prev,optimistic]);
+   api.createAffectation(ouvrierID,cid,dateDebut,dateFin,tache,nom,type).then(r=>{
+     if(!r?.success){setAffectations(prev=>prev.filter(a=>String(a.id)!==String(tempId)));setError(r?.error||"Impossible de créer l'affectation");return;}
+     setError(null);refreshLater(250);
+   }).catch(err=>{setAffectations(prev=>prev.filter(a=>String(a.id)!==String(tempId)));setError(err?.message||"Impossible de créer l'affectation");});
+   return {success:true,pending:true,id:tempId};
+ };
+
+ const updateAffectation=(id,dateDebut,dateFin,tache,statut,nomAffectation="",chantierId="")=>{
+   let previous=null;
+   setAffectations(prev=>prev.map(a=>{
+     if(String(a.id)!==String(id))return a;
+     previous={...a};
+     const next={...a,dateDebut:dateDebut||a.dateDebut,dateFin:dateFin||a.dateFin,tache:tache||"",statut:statut||a.statut};
+     if(chantierId!=="")next.chantierId=chantierId;
+     if(nomAffectation!==""){next.nomAffectation=nomAffectation;next.affectationNom=nomAffectation;next.nomExterne=nomAffectation;}
+     return next;
+   }));
+   api.updateAffectation(id,dateDebut,dateFin,tache,statut,nomAffectation,chantierId).then(r=>{
+     if(!r?.success){if(previous)setAffectations(prev=>prev.map(a=>String(a.id)===String(id)?previous:a));setError(r?.error||"Impossible de modifier l'affectation");return;}
+     setError(null);refreshLater(250);
+   }).catch(err=>{if(previous)setAffectations(prev=>prev.map(a=>String(a.id)===String(id)?previous:a));setError(err?.message||"Impossible de modifier l'affectation");});
+   return {success:true,pending:true};
+ };
+
+ const deleteAffectation=id=>{
+   let removed=null;
+   let removedIndex=-1;
+   setAffectations(prev=>{removedIndex=prev.findIndex(a=>String(a.id)===String(id));removed=removedIndex>=0?prev[removedIndex]:null;return prev.filter(a=>String(a.id)!==String(id));});
+   api.deleteAffectation(id).then(r=>{
+     if(!r?.success){if(removed)setAffectations(prev=>{const copy=[...prev];copy.splice(Math.max(0,Math.min(removedIndex,copy.length)),0,removed);return copy;});setError(r?.error||"Impossible de supprimer l'affectation");return;}
+     setError(null);refreshLater(250);
+   }).catch(err=>{if(removed)setAffectations(prev=>{const copy=[...prev];copy.splice(Math.max(0,Math.min(removedIndex,copy.length)),0,removed);return copy;});setError(err?.message||"Impossible de supprimer l'affectation");});
+   return {success:true,pending:true};
+ };
+
  const getOuvrierById=id=>ouvriers.find(o=>Number(o.id)===Number(id));
  const getChantierId=id=>chantiers.find(c=>Number(c.id)===Number(id));
  const getAffectationsByOuvrier=ouvrierID=>affectations.filter(a=>Number(a.ouvrierID)===Number(ouvrierID));
