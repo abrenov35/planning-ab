@@ -94,7 +94,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
       onToday: () => scrollToToday("smooth"),
       weekText: "Timeline continue"
     });
-  });
+  }, [onControlsReady, isMobile]);
 
   const formatShortDate = date => `${["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"][date.getDay()]} ${String(date.getDate()).padStart(2,"0")}`;
   const monthNames = ["JANVIER","FÉVRIER","MARS","AVRIL","MAI","JUIN","JUILLET","AOÛT","SEPTEMBRE","OCTOBRE","NOVEMBRE","DÉCEMBRE"];
