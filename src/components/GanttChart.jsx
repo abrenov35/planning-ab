@@ -35,7 +35,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const rangeStart=allDates[0],rangeEnd=new Date(allDates[allDates.length-1]);rangeEnd.setHours(23,59,59,999);
   const todayScrollLeft=pastWeeks*5*dayWidth;
   const scrollToToday=behavior=>{const el=scrollRef.current;if(!el)return;el.scrollTo({left:todayScrollLeft,behavior:behavior||"smooth"});};
-  const showPast=()=>{setPastWeeks(p=>p+4);window.setTimeout(()=>{const el=scrollRef.current;if(el)el.scrollTo({left:0,behavior:"smooth"});},0);};
+  const showPast=()=>{setPastWeeks(p=>p+1);window.setTimeout(()=>{const el=scrollRef.current;if(el)el.scrollTo({left:0,behavior:"smooth"});},0);};
   const goToday=()=>{setPastWeeks(0);window.setTimeout(()=>{const el=scrollRef.current;if(el)el.scrollTo({left:0,behavior:"smooth"});},0);};
   React.useEffect(()=>{const timer=window.setTimeout(()=>scrollToToday("auto"),0);return()=>window.clearTimeout(timer);},[isMobile]);
   React.useEffect(()=>{if(!onControlsReady)return;onControlsReady({onToday:goToday,onPast:showPast,weekText:"Timeline continue"});},[onControlsReady,isMobile,pastWeeks]);
