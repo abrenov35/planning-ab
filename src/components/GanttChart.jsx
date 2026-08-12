@@ -73,6 +73,12 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     el.scrollTo({ left: 0, behavior: behavior || "smooth" });
   };
 
+  const lockLeftBoundary = event => {
+    const el = event?.currentTarget || scrollRef.current;
+    if (!el) return;
+    if (el.scrollLeft < 0) el.scrollLeft = 0;
+  };
+
   React.useEffect(() => {
     const timer = window.setTimeout(() => scrollToToday("auto"), 0);
     return () => window.clearTimeout(timer);
@@ -124,10 +130,11 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const stickyHeaderStyle = {position:"sticky",left:0,zIndex:20,boxShadow:"3px 0 5px rgba(15,23,42,0.10)"};
 
   return <div style={{padding:isMobile?"0.18rem":"1rem",flex:1,display:"flex",flexDirection:"column",minWidth:0,minHeight:0}}>
+    <style>{`.gantt-scroll::-webkit-scrollbar{width:0!important;height:0!important;display:none!important}.gantt-scroll{scrollbar-width:none;-ms-overflow-style:none}`}</style>
     <div style={{display:"flex",gap:isMobile?"0.55rem":"1rem",alignItems:"center",flexWrap:"wrap",padding:isMobile?"0.25rem 0.35rem":"0.75rem 0.5rem",marginBottom:isMobile?"0.18rem":"0.5rem",background:"rgba(255,255,255,0.5)",borderRadius:"4px",fontSize:isMobile?10:11,lineHeight:1.1}}>
       {chantiersActifs.map(chantier=><div key={chantier.id} style={{display:"flex",alignItems:"center",gap:"5px"}}><div style={{width:isMobile?"9px":"10px",height:isMobile?"9px":"10px",backgroundColor:getChantierColor(chantier.id),borderRadius:"2px",flexShrink:0}}/><span style={{color:"#4b5563",fontWeight:500}}>{chantier.nom}</span></div>)}
     </div>
-    <div ref={scrollRef} style={{background:"white",borderRadius:6,border:"1px solid #e5e7eb",display:"flex",flexDirection:"column",flex:1,overflowY:"auto",overflowX:"auto",WebkitOverflowScrolling:"touch",touchAction:"pan-x pan-y pinch-zoom",overscrollBehaviorX:"none",minWidth:0,minHeight:0,scrollbarWidth:"none",msOverflowStyle:"none"}}>
+    <div ref={scrollRef} className="gantt-scroll" onScroll={lockLeftBoundary} style={{background:"white",borderRadius:6,border:"1px solid #e5e7eb",display:"flex",flexDirection:"column",flex:1,overflowY:"auto",overflowX:"auto",WebkitOverflowScrolling:"touch",touchAction:"pan-x pan-y pinch-zoom",overscrollBehaviorX:"none",minWidth:0,minHeight:0,scrollbarWidth:"none",msOverflowStyle:"none"}}>
       <div style={{display:"flex",height:`${headerHeight}px`,flexShrink:0,...rowWidthStyle}}>
         <div style={{width:workerColumnWidth,background:"#e5e7eb",borderRight:"1px solid #9ca3af",flexShrink:0,...stickyHeaderStyle}} />
         <div style={{height:`${headerHeight}px`,background:"#e5e7eb",borderRight:"1px solid #9ca3af",...timelineFlexStyle}}>
