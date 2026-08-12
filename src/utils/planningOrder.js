@@ -16,6 +16,8 @@ const BASE_ORDER = [
   "NORDINE"
 ];
 
+let latestWorkers = [];
+
 export const normalizeWorkerName = (name) =>
   String(name || "")
     .normalize("NFD")
@@ -26,13 +28,13 @@ export const normalizeWorkerName = (name) =>
 const boolValue = value =>
   value === true || value === 1 || String(value || "").trim().toUpperCase() === "TRUE";
 
-export const getWorkerSeparators = (workers = []) =>
-  workers
+export const getWorkerSeparators = (workers = latestWorkers) =>
+  (workers || [])
     .filter(worker => boolValue(worker?.separateurApres))
     .map(worker => normalizeWorkerName(worker.nom));
 
-export const hasWorkerSeparator = (workerName, workers = []) => {
-  const worker = workers.find(w => normalizeWorkerName(w.nom) === normalizeWorkerName(workerName));
+export const hasWorkerSeparator = (workerName, workers = latestWorkers) => {
+  const worker = (workers || []).find(w => normalizeWorkerName(w.nom) === normalizeWorkerName(workerName));
   return !!worker && boolValue(worker.separateurApres);
 };
 
@@ -57,6 +59,7 @@ export const buildWorkerOrder = (workers = []) => {
 };
 
 export const sortWorkersPlanning = (workers = []) => {
+  latestWorkers = workers;
   const order = buildWorkerOrder(workers);
   return [...workers].sort((a, b) => {
     const ia = order.indexOf(normalizeWorkerName(a.nom));
