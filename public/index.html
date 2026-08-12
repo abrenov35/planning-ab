@@ -62,5 +62,30 @@
 <body>
   <noscript>Tu dois activer JavaScript pour utiliser cette app.</noscript>
   <div id="root"></div>
+  <script>
+    /* Suppression d'affectation : un seul clic utilisateur.
+       La seconde étape historique est déclenchée automatiquement sans demander
+       une confirmation supplémentaire à l'utilisateur. */
+    const abDeleteObserver = new MutationObserver(() => {
+      const confirmButton = Array.from(document.querySelectorAll('button')).find(
+        button => button.textContent.trim() === 'Confirmer la suppression'
+      );
+      if (!confirmButton || confirmButton.dataset.abAutoConfirm === '1') return;
+
+      const modalTitle = Array.from(document.querySelectorAll('h2')).find(
+        title => title.textContent.trim() === "Modifier l'affectation"
+      );
+      const modal = modalTitle?.parentElement?.parentElement;
+      if (!modal || !modal.contains(confirmButton)) return;
+
+      confirmButton.dataset.abAutoConfirm = '1';
+      const warning = Array.from(modal.querySelectorAll('div')).find(div =>
+        div.textContent.trim().startsWith('Confirmer la suppression de cette affectation ?')
+      );
+      if (warning) warning.style.display = 'none';
+      requestAnimationFrame(() => confirmButton.click());
+    });
+    abDeleteObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
+  </script>
 </body>
 </html>
