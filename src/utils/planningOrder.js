@@ -16,7 +16,7 @@ const BASE_ORDER = [
   "NORDINE"
 ];
 
-const DEFAULT_SEPARATORS = ["KEVIN #2", "ABOUL", "MORVAN", "NORDINE"];
+const DEFAULT_SEPARATORS = ["KEVIN #2", "ABOUL", "MATHIEU", "NORDINE"];
 
 export const normalizeWorkerName = (name) =>
   String(name || "")
