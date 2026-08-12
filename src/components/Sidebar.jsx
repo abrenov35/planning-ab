@@ -57,13 +57,10 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
       </button>
 
       {currentPage === "gantt" && ganttControls && (
-        <>
-          <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
-            <button onClick={ganttControls.onPrevWeek} style={{ padding:"5px 8px", background:"transparent", color:"white", border:"1px solid rgba(255,255,255,0.28)", borderRadius:5, fontSize:10, cursor:"pointer", fontWeight:600 }}>← 4 Sem</button>
-            <button onClick={ganttControls.onToday} style={{ padding:"5px 9px", background:"#10b981", color:"white", border:"none", borderRadius:5, fontSize:10, cursor:"pointer", fontWeight:700 }}>Auj.</button>
-            <button onClick={ganttControls.onNextWeek} style={{ padding:"5px 8px", background:"transparent", color:"white", border:"1px solid rgba(255,255,255,0.28)", borderRadius:5, fontSize:10, cursor:"pointer", fontWeight:600 }}>4 Sem →</button>
-          </div>
-        </>
+        <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+          <button onClick={ganttControls.onPrevWeek} style={{ padding:"5px 8px", background:"transparent", color:"white", border:"1px solid rgba(255,255,255,0.28)", borderRadius:5, fontSize:10, cursor:"pointer", fontWeight:600 }}>← Passé</button>
+          <button onClick={ganttControls.onToday} style={{ padding:"5px 9px", background:"#10b981", color:"white", border:"none", borderRadius:5, fontSize:10, cursor:"pointer", fontWeight:700 }}>Auj.</button>
+        </div>
       )}
 
       {separator}
