@@ -331,7 +331,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const minRowHeight = isMobile ? 24 : 26;
   const gridTemplate = `repeat(${allDates.length}, ${dayWidth}px)`;
   const separateursApres = new Set(getWorkerSeparators());
-  const separationStyle = { height:"2px", background:"#1e3a8a", width:"100%" };
+  const separationStyle = { height:"3px", background:"#94a3b8", width:"100%" };
   const timelineWidth = allDates.length * dayWidth;
   const totalWidth = workerColumnWidth + timelineWidth;
   const timelineFlexStyle = { width:timelineWidth, flex:`0 0 ${timelineWidth}px` };
@@ -433,7 +433,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
                   })}
                 </div>
               </div>
-              <div style={separation ? {...separationStyle,width:totalWidth} : {height:2,background:"#1e3a8a",width:totalWidth}} />
+              <div style={separation ? {...separationStyle,width:totalWidth} : {height:1,background:"#d1d5db",width:totalWidth}} />
             </div>
           );
         })}
