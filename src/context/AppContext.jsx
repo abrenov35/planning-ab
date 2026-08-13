@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, useCallback } from "react";
 import * as api from "../utils/api";
 export const AppContext=createContext();
 export const AppProvider=({children})=>{
- const[ouvriers,setOuvriers]=useState([]),[chantiers,setChantiers]=useState([]),[affectations,setAffectations]=useState([]),[loading,setLoading]=useState(true),[error,setError]=useState(null),[lastUpdated,setLastUpdated]=useState(null);
+ const[ouvriers,setOuvriers]=useState([]),[chantiers,setChantiers]=useState([]),[affectations,setAffectations]=useState([]),[loading,setLoading]=useState(true),[error,setError]=useState(null),[lastUpdated,setLastUpdated]=useState(null),[lastDeletedAffectation,setLastDeletedAffectation]=useState(null),[undoingDelete,setUndoingDelete]=useState(false);
  const loadData=useCallback(async(showLoader=false)=>{if(showLoader)setLoading(true);try{const data=await api.getAll();if(data?.error)throw new Error(data.error);setOuvriers(Array.isArray(data?.ouvriers)?data.ouvriers:[]);setChantiers(Array.isArray(data?.chantiers)?data.chantiers:[]);setAffectations(Array.isArray(data?.affectations)?data.affectations:[]);setError(null);setLastUpdated(new Date());}catch(err){console.error("Error loading data:",err);setError(err.message);}finally{if(showLoader)setLoading(false);}},[]);
  useEffect(()=>{let actif=true;(async()=>{if(actif)await loadData(true);})();const interval=setInterval(()=>{if(actif)loadData(false);},30000);return()=>{actif=false;clearInterval(interval);};},[loadData]);
  const refreshLater=(delay=1200)=>{setTimeout(()=>loadData(false),delay);};
@@ -42,19 +42,37 @@ export const AppProvider=({children})=>{
  };
 
  const deleteAffectation=id=>{
-   let removed=null;
-   let removedIndex=-1;
-   setAffectations(prev=>{removedIndex=prev.findIndex(a=>String(a.id)===String(id));removed=removedIndex>=0?prev[removedIndex]:null;return prev.filter(a=>String(a.id)!==String(id));});
+   const removed=affectations.find(a=>String(a.id)===String(id));
+   const removedIndex=affectations.findIndex(a=>String(a.id)===String(id));
+   if(removed)setLastDeletedAffectation({...removed});
+   setAffectations(prev=>prev.filter(a=>String(a.id)!==String(id)));
    api.deleteAffectation(id).then(r=>{
-     if(!r?.success){if(removed)setAffectations(prev=>{const copy=[...prev];copy.splice(Math.max(0,Math.min(removedIndex,copy.length)),0,removed);return copy;});setError(r?.error||"Impossible de supprimer l'affectation");return;}
+     if(!r?.success){if(removed)setAffectations(prev=>{const copy=[...prev];copy.splice(Math.max(0,Math.min(removedIndex,copy.length)),0,removed);return copy;});setLastDeletedAffectation(null);setError(r?.error||"Impossible de supprimer l'affectation");return;}
      setError(null);refreshLater(250);
-   }).catch(err=>{if(removed)setAffectations(prev=>{const copy=[...prev];copy.splice(Math.max(0,Math.min(removedIndex,copy.length)),0,removed);return copy;});setError(err?.message||"Impossible de supprimer l'affectation");});
+   }).catch(err=>{if(removed)setAffectations(prev=>{const copy=[...prev];copy.splice(Math.max(0,Math.min(removedIndex,copy.length)),0,removed);return copy;});setLastDeletedAffectation(null);setError(err?.message||"Impossible de supprimer l'affectation");});
    return {success:true,pending:true};
+ };
+
+ const undoLastDelete=async()=>{
+   const a=lastDeletedAffectation;
+   if(!a||undoingDelete)return {success:false};
+   setUndoingDelete(true);
+   try{
+     const nom=a.nomExterne||a.affectationNom||a.nomAffectation||"";
+     const type=a.typeAffectation||(!a.chantierId?"HORS_GANTT":"CHANTIER");
+     const r=await api.createAffectation(a.ouvrierID,a.chantierId||"",a.dateDebut,a.dateFin,a.tache||"",nom,type);
+     if(!r?.success)throw new Error(r?.error||"Impossible de restaurer l'affectation");
+     setLastDeletedAffectation(null);
+     setError(null);
+     await loadData(false);
+     return {success:true};
+   }catch(err){setError(err?.message||"Impossible de restaurer l'affectation");return {success:false,error:err?.message};}
+   finally{setUndoingDelete(false);}
  };
 
  const getOuvrierById=id=>ouvriers.find(o=>Number(o.id)===Number(id));
  const getChantierId=id=>chantiers.find(c=>Number(c.id)===Number(id));
  const getAffectationsByOuvrier=ouvrierID=>affectations.filter(a=>Number(a.ouvrierID)===Number(ouvrierID));
  const getAffectationsByChantier=chantierId=>affectations.filter(a=>Number(a.chantierId)===Number(chantierId));
- return <AppContext.Provider value={{ouvriers,chantiers,affectations,loading,error,lastUpdated,addOuvrier,updateOuvrier,addChantier,updateChantier,addAffectation,updateAffectation,deleteAffectation,getOuvrierById,getChantierId,getAffectationsByOuvrier,getAffectationsByChantier,loadData}}>{children}</AppContext.Provider>;
+ return <AppContext.Provider value={{ouvriers,chantiers,affectations,loading,error,lastUpdated,addOuvrier,updateOuvrier,addChantier,updateChantier,addAffectation,updateAffectation,deleteAffectation,lastDeletedAffectation,undoLastDelete,undoingDelete,getOuvrierById,getChantierId,getAffectationsByOuvrier,getAffectationsByChantier,loadData}}>{children}</AppContext.Provider>;
 };
