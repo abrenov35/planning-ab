@@ -13,18 +13,24 @@
     .gantt-scroll { scrollbar-width: none !important; -ms-overflow-style: none !important; }
     .gantt-scroll::-webkit-scrollbar { width: 0 !important; height: 0 !important; display: none !important; }
 
-    /* V96 : encadrement bleu de l'entete, meme trait que les separateurs du planning */
+    /* Encadrement bleu de l'entete */
     .gantt-scroll > div:first-child {
       border-top: 2px solid #1e3a8a !important;
       border-bottom: 2px solid #1e3a8a !important;
       box-sizing: border-box !important;
     }
-    /* Trait bleu entre la ligne du mois et la ligne des dates */
     .gantt-scroll > div:first-child > div:nth-child(2) > div:first-child {
       border-bottom: 2px solid #1e3a8a !important;
     }
 
-    /* Separateur choisi sur la fiche ouvrier : bleu fonce et legerement renforce */
+    /* V97 : uniquement le trait juste au-dessus du premier ouvrier (Kevin) */
+    .gantt-scroll > div:nth-child(2) {
+      height: 2px !important;
+      min-height: 2px !important;
+      background: #1e3a8a !important;
+    }
+
+    /* Separateur choisi sur la fiche ouvrier */
     .gantt-scroll div[style*="height: 3px"][style*="rgb(148, 163, 184)"],
     .gantt-scroll div[style*="height:3px"][style*="#94a3b8"] {
       height: 2px !important;
