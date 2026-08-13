@@ -23,6 +23,13 @@
       display: none !important;
     }
 
+    /* V93 : séparateurs horizontaux fins en bleu foncé, verticales inchangées */
+    .gantt-scroll div[style*="height: 3px"][style*="rgb(148, 163, 184)"],
+    .gantt-scroll div[style*="height:3px"][style*="#94a3b8"] {
+      height: 1px !important;
+      background: #1e3a8a !important;
+    }
+
     /* V87 : affectations plus lisibles sans modifier la largeur des 4 semaines */
     .gantt-scroll div[title] {
       font-size: 11px !important;
