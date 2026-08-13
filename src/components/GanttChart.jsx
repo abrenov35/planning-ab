@@ -167,7 +167,19 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   };
   const handleAffectationClick = (e,affectation) => {
     e.stopPropagation();
-    onAffectationClick(affectation);
+    if (!isMobile) {
+      onAffectationClick(affectation);
+      return;
+    }
+    const key = `affectation:${affectation.id}`;
+    const now = Date.now();
+    const last = lastTapRef.current;
+    if (last.key === key && now-last.time <= 350) {
+      lastTapRef.current = { key:"", time:0 };
+      onAffectationClick(affectation);
+    } else {
+      lastTapRef.current = { key, time:now };
+    }
   };
   const handleAffectationTouchStart = (e,key) => {
     if (!isMobile || e.touches.length !== 1) {
@@ -368,8 +380,6 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
                           <div
                             key={aff.id}
                             onClick={e=>handleAffectationClick(e,aff)}
-                            onTouchStart={e=>handleAffectationTouchStart(e,`affectation:${aff.id}`)}
-                            onTouchEnd={e=>handleAffectationTouchEnd(e,aff,`affectation:${aff.id}`)}
                             style={{position:"absolute",left:1,right:1,top:topOffset,cursor:"pointer",zIndex:2}}
                           >
                             <div title={rdv ? `${rdvName} — ${label}` : horsGantt ? aff.nomExterne || "Événement Google" : `${chantier?.nom || ""} — cliquer pour modifier`} style={{width:"100%",height:barHeight,backgroundColor:barBackground,border:barBorder,borderRadius:isMobile ? 3 : 2,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center",padding:(horsGantt || rdv) ? "0 2px" : 0,color:barColor,fontWeight:800,fontSize:fitTextSize(barText),overflow:"hidden",minWidth:0}}><span style={{display:"block",maxWidth:"100%",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center"}}>{barText}</span></div>
