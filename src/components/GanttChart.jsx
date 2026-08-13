@@ -6,9 +6,12 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.matchMedia(mobileMediaQuery).matches);
   const [pastWeeks, setPastWeeks] = useState(0);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
+  const [isMouseDragging, setIsMouseDragging] = useState(false);
   const scrollRef = useRef(null);
   const touchStartRef = useRef(null);
   const lastTapRef = useRef({ key:"", time:0 });
+  const mouseDragRef = useRef({ active:false, moved:false, startX:0, scrollLeft:0 });
+  const suppressClickRef = useRef(false);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -137,7 +140,39 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     window.setTimeout(() => scrollRef.current?.scrollTo({ left:0, behavior:"smooth" }), 0);
   };
 
+  const handleMouseDown = e => {
+    if (isMobile || e.button !== 0) return;
+    if (e.target?.closest?.("button,input,textarea,select,a")) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    mouseDragRef.current = { active:true, moved:false, startX:e.clientX, scrollLeft:el.scrollLeft };
+    suppressClickRef.current = false;
+  };
+  const handleMouseMove = e => {
+    if (isMobile) return;
+    const drag = mouseDragRef.current;
+    const el = scrollRef.current;
+    if (!drag.active || !el) return;
+    const dx = e.clientX - drag.startX;
+    if (!drag.moved && Math.abs(dx) < 4) return;
+    if (!drag.moved) {
+      drag.moved = true;
+      suppressClickRef.current = true;
+      setIsMouseDragging(true);
+    }
+    el.scrollLeft = drag.scrollLeft - dx;
+    e.preventDefault();
+  };
+  const endMouseDrag = () => {
+    const moved = mouseDragRef.current.moved;
+    mouseDragRef.current.active = false;
+    mouseDragRef.current.moved = false;
+    setIsMouseDragging(false);
+    if (moved) window.setTimeout(() => { suppressClickRef.current = false; }, 0);
+  };
+
   const handleEmptyCellClick = (ouvrierId,date) => {
+    if (suppressClickRef.current) return;
     if (!isMobile) onAddAffectation(ouvrierId,date);
   };
   const handleEmptyCellTouchStart = (e,key) => {
@@ -167,6 +202,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   };
   const handleAffectationClick = (e,affectation) => {
     e.stopPropagation();
+    if (suppressClickRef.current) return;
     if (!isMobile) {
       onAffectationClick(affectation);
       return;
@@ -291,11 +327,8 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const headerHeight = isMobile ? 42 : 52;
   const monthHeaderHeight = isMobile ? 15 : 19;
   const dayHeaderHeight = headerHeight - monthHeaderHeight;
-  const separatorCount = 1 + ouvriersActifs.filter(o => new Set(getWorkerSeparators()).has(normalizeWorkerName(o.nom))).length;
-  const availableRowsHeight = Math.max(180, (viewport.height || 600) - headerHeight - separatorCount*3 - Math.max(0,ouvriersActifs.length-1));
-  const fittedRowHeight = ouvriersActifs.length ? Math.floor(availableRowsHeight / ouvriersActifs.length) : 40;
-  const affectationSlotHeight = Math.max(18, Math.min(isMobile ? 25 : 27, fittedRowHeight - 2));
-  const minRowHeight = Math.max(isMobile ? 24 : 28, fittedRowHeight);
+  const affectationSlotHeight = isMobile ? 22 : 24;
+  const minRowHeight = isMobile ? 24 : 26;
   const gridTemplate = `repeat(${allDates.length}, ${dayWidth}px)`;
   const separateursApres = new Set(getWorkerSeparators());
   const separationStyle = { height:"3px", background:"#94a3b8", width:"100%" };
@@ -308,7 +341,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
 
   return (
     <div style={{padding:isMobile ? "0.12rem" : "0.45rem",flex:1,display:"flex",flexDirection:"column",minWidth:0,minHeight:0}}>
-      <style>{`.gantt-scroll::-webkit-scrollbar{width:0;height:${isMobile ? 0 : 10}px}.gantt-scroll::-webkit-scrollbar-thumb{background:#9ca3af;border-radius:999px}.gantt-scroll::-webkit-scrollbar-track{background:#f3f4f6}.gantt-scroll{scrollbar-width:${isMobile ? "none" : "auto"}}`}</style>
+      <style>{`.gantt-scroll::-webkit-scrollbar{width:0;height:${isMobile ? 0 : 10}px}.gantt-scroll::-webkit-scrollbar-thumb{background:#9ca3af;border-radius:999px}.gantt-scroll::-webkit-scrollbar-track{background:#f3f4f6}.gantt-scroll{scrollbar-width:${isMobile ? "none" : "auto"}}.gantt-scroll.dragging,.gantt-scroll.dragging *{cursor:grabbing!important;user-select:none!important}`}</style>
 
       <div style={{display:"flex",gap:isMobile ? "0.45rem" : "0.8rem",alignItems:"center",flexWrap:"nowrap",overflowX:"auto",padding:isMobile ? "0.18rem 0.3rem" : "0.35rem 0.4rem",marginBottom:isMobile ? "0.12rem" : "0.3rem",background:"rgba(255,255,255,0.5)",borderRadius:4,fontSize:isMobile ? 9 : 10,lineHeight:1.1,flexShrink:0}}>
         {chantiersActifs.map(chantier => (
@@ -327,7 +360,15 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
         </div>
       </div>
 
-      <div ref={scrollRef} className="gantt-scroll" style={{background:"white",borderRadius:6,border:"1px solid #e5e7eb",display:"flex",flexDirection:"column",flex:1,overflowY:"auto",overflowX:"auto",WebkitOverflowScrolling:"touch",touchAction:"pan-x pan-y pinch-zoom",overscrollBehaviorX:"none",minWidth:0,minHeight:0}}>
+      <div
+        ref={scrollRef}
+        className={`gantt-scroll${isMouseDragging ? " dragging" : ""}`}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={endMouseDrag}
+        onMouseLeave={endMouseDrag}
+        style={{background:"white",borderRadius:6,border:"1px solid #e5e7eb",display:"flex",flexDirection:"column",flex:1,overflowY:"auto",overflowX:"auto",WebkitOverflowScrolling:"touch",touchAction:"pan-x pan-y pinch-zoom",overscrollBehaviorX:"none",minWidth:0,minHeight:0,cursor:isMobile ? "default" : isMouseDragging ? "grabbing" : "grab"}}
+      >
         <div style={{display:"flex",height:headerHeight,flexShrink:0,...rowWidthStyle}}>
           <div style={{width:workerColumnWidth,background:"#e5e7eb",borderRight:"1px solid #9ca3af",flexShrink:0,...stickyHeaderStyle}} />
           <div style={{height:headerHeight,background:"#e5e7eb",borderRight:"1px solid #9ca3af",...timelineFlexStyle}}>
