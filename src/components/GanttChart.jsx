@@ -167,7 +167,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   };
   const handleAffectationClick = (e,affectation) => {
     e.stopPropagation();
-    if (!isMobile) onAffectationClick(affectation);
+    onAffectationClick(affectation);
   };
   const handleAffectationTouchStart = (e,key) => {
     if (!isMobile || e.touches.length !== 1) {
