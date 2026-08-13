@@ -390,7 +390,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
               {monthGroups.map((group,index) => <div key={group.key} style={{gridColumn:`${group.start+1} / span ${group.count}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:dayWidth < 27 ? 7 : isMobile ? 8 : 9,fontWeight:800,letterSpacing:"0.03em",color:"#334155",background:monthBandColors[index%monthBandColors.length],overflow:"hidden"}}>{group.label}</div>)}
             </div>
             <div style={{display:"grid",gridTemplateColumns:gridTemplate,height:dayHeaderHeight,background:"#e5e7eb"}}>
-              {allDates.map((date,idx) => <div key={idx} style={{borderRight:getDayRightBorder(idx),textAlign:"center",fontSize:dayWidth < 27 ? 7 : 8,fontWeight:700,color:"#1f2937",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",whiteSpace:"nowrap"}}>{formatShortDate(date)}</div>)}
+              {allDates.map((date,idx) => <div key={idx} style={{borderRight:getDayRightBorder(idx),textAlign:"center",fontSize:dayWidth < 27 ? 8 : isMobile ? 9 : 10,fontWeight:900,color:"#172554",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",whiteSpace:"nowrap"}}>{formatShortDate(date)}</div>)}
             </div>
           </div>
         </div>
@@ -406,7 +406,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
           return (
             <div key={ouvrier.id} style={rowWidthStyle}>
               <div style={{display:"flex",height:rowHeight,background:rowBackground,...rowWidthStyle}}>
-                <div style={{width:workerColumnWidth,padding:isMobile ? "0.12rem 0.3rem" : "0.25rem 0.55rem",background:rowBackground,borderRight:"1px solid #9ca3af",fontSize:isMobile ? 8 : 9,fontWeight:700,color:"#1f2937",display:"flex",alignItems:"center",flexShrink:0,...stickyWorkerStyle,boxSizing:"border-box",overflow:"hidden"}}>
+                <div style={{width:workerColumnWidth,padding:isMobile ? "0.12rem 0.3rem" : "0.25rem 0.55rem",background:rowBackground,borderRight:"1px solid #9ca3af",fontSize:isMobile ? 11 : 12,fontWeight:900,color:"#172554",display:"flex",alignItems:"center",flexShrink:0,...stickyWorkerStyle,boxSizing:"border-box",overflow:"hidden"}}>
                   <div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ouvrier.nom}</div>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:gridTemplate,background:rowBackground,borderRight:"1px solid #9ca3af",position:"relative",height:rowHeight,...timelineFlexStyle}}>
