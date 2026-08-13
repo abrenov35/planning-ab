@@ -31,115 +31,41 @@
   <script>
     const abReadOnly = new URLSearchParams(window.location.search).get('mode') === 'lecture';
     if (abReadOnly) localStorage.setItem('currentPage', 'gantt');
+    const fitLongGanttNames=()=>{document.querySelectorAll('.gantt-scroll div[title] > span').forEach(span=>{const parent=span.parentElement;if(!parent||!span.textContent.trim())return;const maxSize=window.matchMedia('(max-width: 1100px) and (pointer: coarse)').matches?9:11;let size=maxSize;span.style.setProperty('font-size',`${size}px`,'important');while(span.scrollWidth>span.clientWidth+1&&size>5){size-=.5;span.style.setProperty('font-size',`${size}px`,'important');}});};
 
-    const fitLongGanttNames = () => {
-      document.querySelectorAll('.gantt-scroll div[title] > span').forEach(span => {
-        const parent = span.parentElement;
-        if (!parent || !span.textContent.trim()) return;
-        const maxSize = window.matchMedia('(max-width: 1100px) and (pointer: coarse)').matches ? 9 : 11;
-        let size = maxSize;
-        span.style.setProperty('font-size', `${size}px`, 'important');
-        while (span.scrollWidth > span.clientWidth + 1 && size > 5) {
-          size -= 0.5;
-          span.style.setProperty('font-size', `${size}px`, 'important');
+    const contrastPalette=['#2563eb','#10b981','#8b5cf6','#ef4444','#06b6d4','#ec4899','#14b8a6','#6366f1'];
+    const rgbKey=s=>String(s||'').replace(/\s+/g,'').toLowerCase();
+    const applyAdjacentColorContrast=()=>{
+      const gantt=document.querySelector('.gantt-scroll'); if(!gantt)return;
+      const bars=Array.from(gantt.querySelectorAll('div[title]')).filter(el=>{const r=el.getBoundingClientRect();return el.querySelector('span')&&r.width>20&&r.height>=14&&r.height<=32;});
+      bars.forEach(el=>{if(!el.dataset.abBaseColor)el.dataset.abBaseColor=getComputedStyle(el).backgroundColor;el.style.setProperty('background-color',el.dataset.abBaseColor,'important');});
+      const groups=new Map();
+      bars.forEach(el=>{const r=el.getBoundingClientRect();const label=(el.querySelector('span')?.textContent||'').trim().toUpperCase();if(!label)return;const key=label;const arr=groups.get(key)||[];arr.push({el,r,base:rgbKey(el.dataset.abBaseColor)});groups.set(key,arr);});
+      const labels=[...groups.keys()]; const alt=new Map();
+      for(let i=0;i<labels.length;i++)for(let j=i+1;j<labels.length;j++){
+        const la=labels[i],lb=labels[j]; if(la===lb)continue;
+        let conflict=false, base='';
+        outer:for(const a of groups.get(la))for(const b of groups.get(lb)){
+          if(a.base!==b.base)continue;
+          const xOverlap=Math.min(a.r.right,b.r.right)-Math.max(a.r.left,b.r.left);
+          const verticalGap=Math.max(0,Math.max(a.r.top,b.r.top)-Math.min(a.r.bottom,b.r.bottom));
+          if(xOverlap>Math.min(a.r.width,b.r.width)*.45&&verticalGap<=8){conflict=true;base=a.base;break outer;}
         }
-      });
-    };
-
-    const adjacentPalette = ['#2563eb','#10b981','#8b5cf6','#ef4444','#06b6d4','#ec4899','#14b8a6','#6366f1'];
-    const applyAdjacentColorContrast = () => {
-      const gantt = document.querySelector('.gantt-scroll');
-      if (!gantt) return;
-      const bars = Array.from(gantt.querySelectorAll('div[title]')).filter(el => el.querySelector(':scope > span') && el.offsetWidth > 8 && el.offsetHeight >= 10);
-      bars.forEach(el => {
-        if (el.dataset.abOriginalColor) el.style.setProperty('background-color', el.dataset.abOriginalColor, 'important');
-        else el.dataset.abOriginalColor = getComputedStyle(el).backgroundColor;
-      });
-      const alternatives = new Map();
-      for (let i=0;i<bars.length;i++) {
-        const a=bars[i], ra=a.getBoundingClientRect(), titleA=(a.title||'').split(' — ')[0].trim();
-        for (let j=i+1;j<bars.length;j++) {
-          const b=bars[j], rb=b.getBoundingClientRect(), titleB=(b.title||'').split(' — ')[0].trim();
-          if (!titleA || !titleB || titleA===titleB) continue;
-          const xOverlap=Math.min(ra.right,rb.right)-Math.max(ra.left,rb.left);
-          const verticalGap=Math.max(0,Math.max(ra.top,rb.top)-Math.min(ra.bottom,rb.bottom));
-          if (xOverlap < Math.min(ra.width,rb.width)*0.45 || verticalGap > 4) continue;
-          if (a.dataset.abOriginalColor !== b.dataset.abOriginalColor) continue;
-          if (!alternatives.has(titleB)) {
-            const used=new Set([a.dataset.abOriginalColor,...alternatives.values()]);
-            alternatives.set(titleB, adjacentPalette.find(c=>!used.has(c)) || '#2563eb');
-          }
+        if(conflict&&!alt.has(lb)){
+          const used=new Set([base,...alt.values()].map(rgbKey));
+          const color=contrastPalette.find(c=>!used.has(rgbKey(c)))||'#2563eb'; alt.set(lb,color);
         }
       }
-      bars.forEach(el => {
-        const key=(el.title||'').split(' — ')[0].trim();
-        if (alternatives.has(key)) el.style.setProperty('background-color', alternatives.get(key), 'important');
-      });
+      groups.forEach((items,label)=>{const color=alt.get(label);if(color)items.forEach(({el})=>el.style.setProperty('background-color',color,'important'));});
     };
 
-    const applyReadOnlyUi = () => {
-      if (!abReadOnly) return;
-      const buttons = Array.from(document.querySelectorAll('button'));
-      buttons.forEach(button => {
-        const text = button.textContent.trim();
-        if (text.includes('Chantiers') || text.includes('Ouvriers') || text.includes('Annuler')) button.style.display = 'none';
-      });
-      const topBar = Array.from(document.querySelectorAll('div')).find(div => div.textContent?.trim().startsWith('AB PLANNING') && div.querySelector('button'));
-      if (topBar && !topBar.querySelector('.ab-readonly-badge')) {
-        const badge = document.createElement('div');
-        badge.className = 'ab-readonly-badge';
-        badge.textContent = 'Lecture seule';
-        topBar.appendChild(badge);
-      }
-    };
-
-    const blockReadOnlyEdit = event => {
-      if (!abReadOnly) return;
-      const gantt = event.target?.closest?.('.gantt-scroll');
-      if (!gantt) return;
-      const button = event.target?.closest?.('button');
-      if (button && ["Aujourd'hui",'Aujourd’hui','Auj.'].includes(button.textContent.trim())) return;
-      if (event.type === 'click' || event.type === 'dblclick' || event.type === 'touchend') {
-        event.stopPropagation();
-        if (event.type !== 'touchend') event.preventDefault();
-      }
-    };
-    document.addEventListener('click', blockReadOnlyEdit, true);
-    document.addEventListener('dblclick', blockReadOnlyEdit, true);
-    document.addEventListener('touchend', blockReadOnlyEdit, true);
-
-    const refreshGanttVisuals = () => requestAnimationFrame(() => { fitLongGanttNames(); applyAdjacentColorContrast(); });
-    const abUiObserver = new MutationObserver(() => {
-      if (!abReadOnly) {
-        const confirmButton = Array.from(document.querySelectorAll('button')).find(button => button.textContent.trim() === 'Confirmer la suppression');
-        if (confirmButton && confirmButton.dataset.abAutoConfirm !== '1') {
-          const modalTitle = Array.from(document.querySelectorAll('h2')).find(title => title.textContent.trim() === "Modifier l'affectation");
-          const modal = modalTitle?.parentElement?.parentElement;
-          if (modal && modal.contains(confirmButton)) {
-            confirmButton.dataset.abAutoConfirm = '1';
-            const warning = Array.from(modal.querySelectorAll('div')).find(div => div.textContent.trim().startsWith('Confirmer la suppression de cette affectation ?'));
-            if (warning) warning.style.display = 'none';
-            requestAnimationFrame(() => confirmButton.click());
-          }
-        }
-      }
-
-      const gantt = document.querySelector('.gantt-scroll');
-      const targetCell = gantt?.firstElementChild?.firstElementChild;
-      const todayButton = Array.from(document.querySelectorAll('button')).find(button => ['Auj.','Aujourd’hui',"Aujourd'hui"].includes(button.textContent.trim()));
-      if (targetCell && todayButton && todayButton.parentElement !== targetCell) {
-        targetCell.classList.add('ab-today-cell');
-        todayButton.classList.add('ab-today-button');
-        todayButton.textContent = "Aujourd'hui";
-        targetCell.appendChild(todayButton);
-      }
-
-      applyReadOnlyUi();
-      refreshGanttVisuals();
-    });
-    abUiObserver.observe(document.body, { childList:true, subtree:true, characterData:true });
-    window.addEventListener('resize', refreshGanttVisuals);
-    window.addEventListener('scroll', refreshGanttVisuals, true);
+    const applyReadOnlyUi=()=>{if(!abReadOnly)return;Array.from(document.querySelectorAll('button')).forEach(button=>{const text=button.textContent.trim();if(text.includes('Chantiers')||text.includes('Ouvriers')||text.includes('Annuler'))button.style.display='none';});const topBar=Array.from(document.querySelectorAll('div')).find(div=>div.textContent?.trim().startsWith('AB PLANNING')&&div.querySelector('button'));if(topBar&&!topBar.querySelector('.ab-readonly-badge')){const badge=document.createElement('div');badge.className='ab-readonly-badge';badge.textContent='Lecture seule';topBar.appendChild(badge);}};
+    const blockReadOnlyEdit=event=>{if(!abReadOnly)return;const gantt=event.target?.closest?.('.gantt-scroll');if(!gantt)return;const button=event.target?.closest?.('button');if(button&&["Aujourd'hui",'Aujourd’hui','Auj.'].includes(button.textContent.trim()))return;if(event.type==='click'||event.type==='dblclick'||event.type==='touchend'){event.stopPropagation();if(event.type!=='touchend')event.preventDefault();}};
+    document.addEventListener('click',blockReadOnlyEdit,true);document.addEventListener('dblclick',blockReadOnlyEdit,true);document.addEventListener('touchend',blockReadOnlyEdit,true);
+    let visualFrame=0;const refreshGanttVisuals=()=>{cancelAnimationFrame(visualFrame);visualFrame=requestAnimationFrame(()=>{fitLongGanttNames();applyAdjacentColorContrast();});};
+    const abUiObserver=new MutationObserver(()=>{if(!abReadOnly){const confirmButton=Array.from(document.querySelectorAll('button')).find(button=>button.textContent.trim()==='Confirmer la suppression');if(confirmButton&&confirmButton.dataset.abAutoConfirm!=='1'){const modalTitle=Array.from(document.querySelectorAll('h2')).find(title=>title.textContent.trim()==="Modifier l'affectation");const modal=modalTitle?.parentElement?.parentElement;if(modal&&modal.contains(confirmButton)){confirmButton.dataset.abAutoConfirm='1';const warning=Array.from(modal.querySelectorAll('div')).find(div=>div.textContent.trim().startsWith('Confirmer la suppression de cette affectation ?'));if(warning)warning.style.display='none';requestAnimationFrame(()=>confirmButton.click());}}}
+      const gantt=document.querySelector('.gantt-scroll');const targetCell=gantt?.firstElementChild?.firstElementChild;const todayButton=Array.from(document.querySelectorAll('button')).find(button=>['Auj.','Aujourd’hui',"Aujourd'hui"].includes(button.textContent.trim()));if(targetCell&&todayButton&&todayButton.parentElement!==targetCell){targetCell.classList.add('ab-today-cell');todayButton.classList.add('ab-today-button');todayButton.textContent="Aujourd'hui";targetCell.appendChild(todayButton);}applyReadOnlyUi();refreshGanttVisuals();});
+    abUiObserver.observe(document.body,{childList:true,subtree:true,characterData:true});window.addEventListener('resize',refreshGanttVisuals);window.addEventListener('scroll',refreshGanttVisuals,true);setTimeout(refreshGanttVisuals,500);setTimeout(refreshGanttVisuals,1500);
   </script>
 </body>
 </html>
