@@ -52,6 +52,9 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const isValidChantier = chantier => chantier && String(chantier.nom ?? "").trim() !== "" && String(chantier.nom ?? "").trim() !== "??";
   const isHorsGantt = (aff, chantier) => !isValidChantier(chantier) || normalize(aff?.typeAffectation) === "HORS_GANTT" || (normalize(aff?.source) === "GOOGLE" && normalize(aff?.typeAffectation) === "HORS_GANTT");
   const getChantierColor = chantierId => {
+    const chantier = chantiers.find(c => Number(c.id) === Number(chantierId));
+    const couleurManuelle = String(chantier?.couleur || "").trim();
+    if (/^#[0-9A-Fa-f]{6}$/.test(couleurManuelle)) return couleurManuelle;
     if (colorMap[chantierId]) return colorMap[chantierId];
     const colors = Object.values(colorMap);
     const numericId = Number(chantierId);
