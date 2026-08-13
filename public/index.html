@@ -12,23 +12,15 @@
       touch-action: auto;
     }
 
-    /* PC : masquer uniquement la barre verticale et garder la barre horizontale */
-    #root div[style*="scrollbar-width: none"] {
-      scrollbar-width: auto !important;
+    /* V93 : le planning se déplace au drag, donc aucune barre de défilement visible */
+    .gantt-scroll {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
     }
-    #root div[style*="scrollbar-width: none"]::-webkit-scrollbar,
-    .gantt-scroll-desktop::-webkit-scrollbar {
-      width: 0;
-      height: 12px;
-    }
-    #root div[style*="scrollbar-width: none"]::-webkit-scrollbar-thumb,
-    .gantt-scroll-desktop::-webkit-scrollbar-thumb {
-      background: #9ca3af;
-      border-radius: 999px;
-    }
-    #root div[style*="scrollbar-width: none"]::-webkit-scrollbar-track,
-    .gantt-scroll-desktop::-webkit-scrollbar-track {
-      background: #f3f4f6;
+    .gantt-scroll::-webkit-scrollbar {
+      width: 0 !important;
+      height: 0 !important;
+      display: none !important;
     }
 
     /* V87 : affectations plus lisibles sans modifier la largeur des 4 semaines */
