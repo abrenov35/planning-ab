@@ -46,6 +46,37 @@
       });
     };
 
+    const adjacentPalette = ['#2563eb','#10b981','#8b5cf6','#ef4444','#06b6d4','#ec4899','#14b8a6','#6366f1'];
+    const applyAdjacentColorContrast = () => {
+      const gantt = document.querySelector('.gantt-scroll');
+      if (!gantt) return;
+      const bars = Array.from(gantt.querySelectorAll('div[title]')).filter(el => el.querySelector(':scope > span') && el.offsetWidth > 8 && el.offsetHeight >= 10);
+      bars.forEach(el => {
+        if (el.dataset.abOriginalColor) el.style.setProperty('background-color', el.dataset.abOriginalColor, 'important');
+        else el.dataset.abOriginalColor = getComputedStyle(el).backgroundColor;
+      });
+      const alternatives = new Map();
+      for (let i=0;i<bars.length;i++) {
+        const a=bars[i], ra=a.getBoundingClientRect(), titleA=(a.title||'').split(' — ')[0].trim();
+        for (let j=i+1;j<bars.length;j++) {
+          const b=bars[j], rb=b.getBoundingClientRect(), titleB=(b.title||'').split(' — ')[0].trim();
+          if (!titleA || !titleB || titleA===titleB) continue;
+          const xOverlap=Math.min(ra.right,rb.right)-Math.max(ra.left,rb.left);
+          const verticalGap=Math.max(0,Math.max(ra.top,rb.top)-Math.min(ra.bottom,rb.bottom));
+          if (xOverlap < Math.min(ra.width,rb.width)*0.45 || verticalGap > 4) continue;
+          if (a.dataset.abOriginalColor !== b.dataset.abOriginalColor) continue;
+          if (!alternatives.has(titleB)) {
+            const used=new Set([a.dataset.abOriginalColor,...alternatives.values()]);
+            alternatives.set(titleB, adjacentPalette.find(c=>!used.has(c)) || '#2563eb');
+          }
+        }
+      }
+      bars.forEach(el => {
+        const key=(el.title||'').split(' — ')[0].trim();
+        if (alternatives.has(key)) el.style.setProperty('background-color', alternatives.get(key), 'important');
+      });
+    };
+
     const applyReadOnlyUi = () => {
       if (!abReadOnly) return;
       const buttons = Array.from(document.querySelectorAll('button'));
@@ -77,6 +108,7 @@
     document.addEventListener('dblclick', blockReadOnlyEdit, true);
     document.addEventListener('touchend', blockReadOnlyEdit, true);
 
+    const refreshGanttVisuals = () => requestAnimationFrame(() => { fitLongGanttNames(); applyAdjacentColorContrast(); });
     const abUiObserver = new MutationObserver(() => {
       if (!abReadOnly) {
         const confirmButton = Array.from(document.querySelectorAll('button')).find(button => button.textContent.trim() === 'Confirmer la suppression');
@@ -103,10 +135,11 @@
       }
 
       applyReadOnlyUi();
-      requestAnimationFrame(fitLongGanttNames);
+      refreshGanttVisuals();
     });
     abUiObserver.observe(document.body, { childList:true, subtree:true, characterData:true });
-    window.addEventListener('resize', () => requestAnimationFrame(fitLongGanttNames));
+    window.addEventListener('resize', refreshGanttVisuals);
+    window.addEventListener('scroll', refreshGanttVisuals, true);
   </script>
 </body>
 </html>
