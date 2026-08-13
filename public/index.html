@@ -17,18 +17,21 @@
     .gantt-scroll div[style*="height: 3px"][style*="rgb(148, 163, 184)"], .gantt-scroll div[style*="height:3px"][style*="#94a3b8"] { height: 2px !important; background: #1e3a8a !important; }
     .gantt-scroll div[title] { font-size: 11px !important; }
     .gantt-scroll div[title] + div[title] { font-size: 8px !important; height: 9px !important; line-height: 9px !important; }
-    /* Noms trop longs : coupe nette, sans points de suspension */
     .gantt-scroll span, .gantt-scroll div[title] { text-overflow: clip !important; }
     @media (max-width: 1100px) and (pointer: coarse) { .gantt-scroll div[title] { font-size: 9px !important; } .gantt-scroll div[title] + div[title] { font-size: 8px !important; height: 9px !important; line-height: 9px !important; } }
     #root div[title]:empty { background-color: #9CA3AF !important; background-image: none !important; opacity: 1 !important; }
     .ab-today-cell { position: relative !important; }
     .ab-today-cell > .ab-today-button { position:absolute !important; left:8px !important; right:8px !important; top:50% !important; transform:translateY(-50%) !important; width:auto !important; height:28px !important; margin:0 !important; padding:0 6px !important; z-index:30 !important; background:#10b981 !important; border:1px solid rgba(255,255,255,0.42) !important; border-radius:5px !important; color:white !important; font-size:10px !important; font-weight:700 !important; display:flex !important; align-items:center !important; justify-content:center !important; white-space:nowrap !important; box-sizing:border-box !important; }
+    .ab-readonly-badge { height:28px; padding:0 10px; border:1px solid rgba(255,255,255,.42); border-radius:5px; display:inline-flex; align-items:center; justify-content:center; color:white; font-size:10px; font-weight:800; background:#64748b; white-space:nowrap; flex-shrink:0; }
   </style>
 </head>
 <body>
   <noscript>Tu dois activer JavaScript pour utiliser cette app.</noscript>
   <div id="root"></div>
   <script>
+    const abReadOnly = new URLSearchParams(window.location.search).get('mode') === 'lecture';
+    if (abReadOnly) localStorage.setItem('currentPage', 'gantt');
+
     const fitLongGanttNames = () => {
       document.querySelectorAll('.gantt-scroll div[title] > span').forEach(span => {
         const parent = span.parentElement;
@@ -43,16 +46,49 @@
       });
     };
 
+    const applyReadOnlyUi = () => {
+      if (!abReadOnly) return;
+      const buttons = Array.from(document.querySelectorAll('button'));
+      buttons.forEach(button => {
+        const text = button.textContent.trim();
+        if (text.includes('Chantiers') || text.includes('Ouvriers') || text.includes('Annuler')) button.style.display = 'none';
+      });
+      const topBar = Array.from(document.querySelectorAll('div')).find(div => div.textContent?.trim().startsWith('AB PLANNING') && div.querySelector('button'));
+      if (topBar && !topBar.querySelector('.ab-readonly-badge')) {
+        const badge = document.createElement('div');
+        badge.className = 'ab-readonly-badge';
+        badge.textContent = 'Lecture seule';
+        topBar.appendChild(badge);
+      }
+    };
+
+    const blockReadOnlyEdit = event => {
+      if (!abReadOnly) return;
+      const gantt = event.target?.closest?.('.gantt-scroll');
+      if (!gantt) return;
+      const button = event.target?.closest?.('button');
+      if (button && ["Aujourd'hui",'Aujourd’hui','Auj.'].includes(button.textContent.trim())) return;
+      if (event.type === 'click' || event.type === 'dblclick' || event.type === 'touchend') {
+        event.stopPropagation();
+        if (event.type !== 'touchend') event.preventDefault();
+      }
+    };
+    document.addEventListener('click', blockReadOnlyEdit, true);
+    document.addEventListener('dblclick', blockReadOnlyEdit, true);
+    document.addEventListener('touchend', blockReadOnlyEdit, true);
+
     const abUiObserver = new MutationObserver(() => {
-      const confirmButton = Array.from(document.querySelectorAll('button')).find(button => button.textContent.trim() === 'Confirmer la suppression');
-      if (confirmButton && confirmButton.dataset.abAutoConfirm !== '1') {
-        const modalTitle = Array.from(document.querySelectorAll('h2')).find(title => title.textContent.trim() === "Modifier l'affectation");
-        const modal = modalTitle?.parentElement?.parentElement;
-        if (modal && modal.contains(confirmButton)) {
-          confirmButton.dataset.abAutoConfirm = '1';
-          const warning = Array.from(modal.querySelectorAll('div')).find(div => div.textContent.trim().startsWith('Confirmer la suppression de cette affectation ?'));
-          if (warning) warning.style.display = 'none';
-          requestAnimationFrame(() => confirmButton.click());
+      if (!abReadOnly) {
+        const confirmButton = Array.from(document.querySelectorAll('button')).find(button => button.textContent.trim() === 'Confirmer la suppression');
+        if (confirmButton && confirmButton.dataset.abAutoConfirm !== '1') {
+          const modalTitle = Array.from(document.querySelectorAll('h2')).find(title => title.textContent.trim() === "Modifier l'affectation");
+          const modal = modalTitle?.parentElement?.parentElement;
+          if (modal && modal.contains(confirmButton)) {
+            confirmButton.dataset.abAutoConfirm = '1';
+            const warning = Array.from(modal.querySelectorAll('div')).find(div => div.textContent.trim().startsWith('Confirmer la suppression de cette affectation ?'));
+            if (warning) warning.style.display = 'none';
+            requestAnimationFrame(() => confirmButton.click());
+          }
         }
       }
 
@@ -66,6 +102,7 @@
         targetCell.appendChild(todayButton);
       }
 
+      applyReadOnlyUi();
       requestAnimationFrame(fitLongGanttNames);
     });
     abUiObserver.observe(document.body, { childList:true, subtree:true, characterData:true });
