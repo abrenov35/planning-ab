@@ -303,20 +303,32 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     return d >= s && d <= e;
   };
   const getAffectationKey = aff => Number(aff?.chantierId) ? `CHANTIER:${Number(aff.chantierId)}` : `LIBRE:${normalize(aff?.nomExterne || aff?.affectationNom || "")}`;
-  const getAffectationPriority = (aff,list) => {
-    const key = getAffectationKey(aff);
-    return list.reduce((score,item) => getAffectationKey(item) !== key ? score : score + allDates.filter(date => isVisibleOnDay(item,date)).length, 0);
-  };
-  const getRankOnDay = (aff,date,list) => {
-    const overlapping = list.filter(item => isVisibleOnDay(item,date)).sort((a,b) => {
-      const p = getAffectationPriority(b,list) - getAffectationPriority(a,list);
-      if (p !== 0) return p;
-      const k = getAffectationKey(a).localeCompare(getAffectationKey(b),"fr",{sensitivity:"base"});
-      return k !== 0 ? k : Number(a.id)-Number(b.id);
+  const getLanePlan = list => {
+    const groups = new Map();
+    list.forEach((aff,index) => {
+      const key = getAffectationKey(aff);
+      if (!groups.has(key)) groups.set(key,{ key, firstIndex:index, days:new Set() });
+      const group = groups.get(key);
+      allDates.forEach((date,dayIndex) => {
+        if (isVisibleOnDay(aff,date)) group.days.add(dayIndex);
+      });
     });
-    return Math.max(0, overlapping.findIndex(item => String(item.id) === String(aff.id)));
+    const ordered = [...groups.values()].sort((a,b) => {
+      const aFirst = a.days.size ? Math.min(...a.days) : Number.MAX_SAFE_INTEGER;
+      const bFirst = b.days.size ? Math.min(...b.days) : Number.MAX_SAFE_INTEGER;
+      return aFirst-bFirst || a.firstIndex-b.firstIndex || a.key.localeCompare(b.key,"fr",{sensitivity:"base"});
+    });
+    const laneDays = [];
+    const laneByKey = new Map();
+    ordered.forEach(group => {
+      let lane = 0;
+      while (laneDays[lane] && [...group.days].some(dayIndex => laneDays[lane].has(dayIndex))) lane += 1;
+      if (!laneDays[lane]) laneDays[lane] = new Set();
+      group.days.forEach(dayIndex => laneDays[lane].add(dayIndex));
+      laneByKey.set(group.key,lane);
+    });
+    return { laneByKey, laneCount:Math.max(1,laneDays.length) };
   };
-  const getMaxOverlap = list => Math.max(1, ...allDates.map(date => list.filter(item => isVisibleOnDay(item,date)).length));
   const canShowHorsGanttName = date => {
     const seuil = new Date(2026,7,3); seuil.setHours(0,0,0,0);
     const jour = new Date(date); jour.setHours(0,0,0,0);
@@ -370,7 +382,9 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
         style={{background:"white",borderRadius:6,border:"1px solid #e5e7eb",display:"flex",flexDirection:"column",flex:1,overflowY:"auto",overflowX:"auto",WebkitOverflowScrolling:"touch",touchAction:"pan-x pan-y pinch-zoom",overscrollBehaviorX:"none",minWidth:0,minHeight:0,cursor:isMobile ? "default" : isMouseDragging ? "grabbing" : "grab"}}
       >
         <div style={{display:"flex",height:headerHeight,flexShrink:0,...rowWidthStyle}}>
-          <div style={{width:workerColumnWidth,background:"#e5e7eb",borderRight:"1px solid #9ca3af",flexShrink:0,...stickyHeaderStyle}} />
+          <div style={{width:workerColumnWidth,background:"#e5e7eb",borderRight:"1px solid #9ca3af",flexShrink:0,...stickyHeaderStyle,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 8px",boxSizing:"border-box"}}>
+            <button type="button" onClick={e=>{e.stopPropagation();goToday();}} style={{width:"100%",height:28,border:"1px solid rgba(255,255,255,0.42)",borderRadius:5,background:"#10b981",color:"white",fontSize:10,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>Aujourd'hui</button>
+          </div>
           <div style={{height:headerHeight,background:"#e5e7eb",borderRight:"1px solid #9ca3af",...timelineFlexStyle}}>
             <div style={{display:"grid",gridTemplateColumns:gridTemplate,height:monthHeaderHeight,borderBottom:"1px solid #cbd5e1",background:"#eef2f7"}}>
               {monthGroups.map((group,index) => <div key={group.key} style={{gridColumn:`${group.start+1} / span ${group.count}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:dayWidth < 27 ? 7 : isMobile ? 8 : 9,fontWeight:800,letterSpacing:"0.03em",color:"#334155",background:monthBandColors[index%monthBandColors.length],overflow:"hidden"}}>{group.label}</div>)}
@@ -386,8 +400,8 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
         {ouvriersActifs.map((ouvrier,idx) => {
           const affectsByOuvrier = affectations.filter(a => Number(a.ouvrierID) === Number(ouvrier.id) && isAffectationInRange(a));
           const rowBackground = idx%2 === 0 ? "white" : "#f3f4f6";
-          const maxOverlap = getMaxOverlap(affectsByOuvrier);
-          const rowHeight = Math.max(minRowHeight, maxOverlap*affectationSlotHeight+2);
+          const lanePlan = getLanePlan(affectsByOuvrier);
+          const rowHeight = Math.max(minRowHeight, lanePlan.laneCount*affectationSlotHeight+2);
           const separation = separateursApres.has(normalizeWorkerName(ouvrier.nom));
           return (
             <div key={ouvrier.id} style={rowWidthStyle}>
@@ -409,7 +423,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
                         const label = rdv ? getRdvTimeLabel(aff) : getLabel(aff);
                         const nomHorsGantt = horsGantt ? getHorsGanttName(aff,date) : "";
                         const rdvName = String(nomHorsGantt || chantier?.nom || "RDV").trim();
-                        const rank = getRankOnDay(aff,date,affectsByOuvrier);
+                        const rank = lanePlan.laneByKey.get(getAffectationKey(aff)) ?? 0;
                         const topOffset = rank*affectationSlotHeight+1;
                         const planning = isPlanning(aff);
                         const barBackground = rdv ? rdvColor : planning ? planningColor : horsGantt ? "#D1D5DB" : getChantierColor(chantier?.id);
