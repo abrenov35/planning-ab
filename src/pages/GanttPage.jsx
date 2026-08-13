@@ -32,6 +32,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [editAffectation, setEditAffectation] = useState(null);
   const [editForm, setEditForm] = useState({
+    ouvrierId: "",
     dateDebut: "",
     dateFin: "",
     tache: "",
@@ -120,6 +121,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
 
     setEditAffectation(affectation);
     setEditForm({
+      ouvrierId: String(affectation.ouvrierID || ""),
       dateDebut: toInputDate(affectation.dateDebut),
       dateFin: toInputDate(affectation.dateFin),
       tache: rdv ? "" : affectation.tache || "",
@@ -139,6 +141,10 @@ export const GanttPage = ({ onGanttControlsReady }) => {
 
   const handleSaveEdit = async () => {
     if (!editAffectation || savingEdit) return;
+    if (!editForm.ouvrierId) {
+      alert("Sélectionnez un ouvrier.");
+      return;
+    }
     if (!editForm.dateDebut || !editForm.dateFin) {
       alert("Les dates de début et de fin sont obligatoires.");
       return;
@@ -165,19 +171,40 @@ export const GanttPage = ({ onGanttControlsReady }) => {
     const taskToSave = editForm.isRdv
       ? formatRdvTask(editForm.rdvHeure)
       : editForm.tache || "ND";
+    const dateDebutApi = toApiDate(editForm.dateDebut);
+    const dateFinApi = toApiDate(editForm.dateFin);
+    const nouveauOuvrier = Number(editForm.ouvrierId);
+    const ouvrierChange = nouveauOuvrier !== Number(editAffectation.ouvrierID);
+    const nomLibre = horsGantt ? editForm.affectationNom.trim() : "";
+    const chantierId = horsGantt ? "" : editForm.chantierId;
 
     setSavingEdit(true);
     try {
-      const result = await updateAffectation(
-        editAffectation.id,
-        toApiDate(editForm.dateDebut),
-        toApiDate(editForm.dateFin),
-        taskToSave,
-        "Actif",
-        horsGantt ? editForm.affectationNom.trim() : "",
-        horsGantt ? "" : editForm.chantierId
-      );
-      if (result?.error) throw new Error(result.error);
+      if (ouvrierChange) {
+        const createResult = await addAffectation(
+          nouveauOuvrier,
+          chantierId,
+          dateDebutApi,
+          dateFinApi,
+          taskToSave,
+          nomLibre,
+          horsGantt ? "HORS_GANTT" : "CHANTIER"
+        );
+        if (!createResult?.success) throw new Error(createResult?.error || "Impossible de déplacer l'affectation");
+        const deleteResult = await deleteAffectation(editAffectation.id, false);
+        if (!deleteResult?.success) throw new Error(deleteResult?.error || "Impossible de supprimer l'ancienne affectation");
+      } else {
+        const result = await updateAffectation(
+          editAffectation.id,
+          dateDebutApi,
+          dateFinApi,
+          taskToSave,
+          "Actif",
+          nomLibre,
+          chantierId
+        );
+        if (result?.error) throw new Error(result.error);
+      }
       setEditAffectation(null);
       setDeleteStep(false);
     } catch (error) {
@@ -209,11 +236,9 @@ export const GanttPage = ({ onGanttControlsReady }) => {
     }
   };
 
-  const editOuvrier = editAffectation
-    ? ouvriers.find(o => Number(o.id) === Number(editAffectation.ouvrierID))
-    : null;
   const editHorsGantt = editAffectation ? isHorsGantt(editAffectation) : false;
   const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
+  const ouvriersActifs = ouvriers.filter(o => o.statut === "Actif");
 
   if (loading) return <div style={{ padding: "1rem" }}>Chargement...</div>;
 
@@ -268,9 +293,19 @@ export const GanttPage = ({ onGanttControlsReady }) => {
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div>
-                <label style={labelStyle}>Ouvrier</label>
-                <div style={{ marginTop: 4, padding: "8px 10px", borderRadius: 6, background: "#f3f4f6", border: "1px solid #e5e7eb", fontSize: 12 }}>
-                  {editOuvrier?.nom || "Ouvrier inconnu"}
+                <label style={{ ...labelStyle, color: "#1e40af" }}>Ouvrier — modifiable ✎</label>
+                <select
+                  value={editForm.ouvrierId}
+                  onChange={e => setEditForm(prev => ({ ...prev, ouvrierId: e.target.value }))}
+                  disabled={savingEdit}
+                  style={{ ...inputStyle, border: "2px solid #2563eb", background: "white" }}
+                >
+                  {ouvriersActifs.map(ouvrier => (
+                    <option key={ouvrier.id} value={ouvrier.id}>{ouvrier.nom}</option>
+                  ))}
+                </select>
+                <div style={{ marginTop: 3, fontSize: 9, color: "#2563eb" }}>
+                  Choisissez un autre ouvrier si nécessaire.
                 </div>
               </div>
 
