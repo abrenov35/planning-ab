@@ -17,7 +17,7 @@
     .gantt-scroll div[style*="height: 3px"][style*="rgb(148, 163, 184)"], .gantt-scroll div[style*="height:3px"][style*="#94a3b8"] { height: 2px !important; background: #1e3a8a !important; }
     .gantt-scroll div[title] { font-size: 11px !important; }
     .gantt-scroll div[title] + div[title] { font-size: 8px !important; height: 9px !important; line-height: 9px !important; }
-    /* V101 : noms trop longs coupes net, sans points de suspension */
+    /* Noms trop longs : coupe nette, sans points de suspension */
     .gantt-scroll span, .gantt-scroll div[title] { text-overflow: clip !important; }
     @media (max-width: 1100px) and (pointer: coarse) { .gantt-scroll div[title] { font-size: 9px !important; } .gantt-scroll div[title] + div[title] { font-size: 8px !important; height: 9px !important; line-height: 9px !important; } }
     #root div[title]:empty { background-color: #9CA3AF !important; background-image: none !important; opacity: 1 !important; }
@@ -29,6 +29,20 @@
   <noscript>Tu dois activer JavaScript pour utiliser cette app.</noscript>
   <div id="root"></div>
   <script>
+    const fitLongGanttNames = () => {
+      document.querySelectorAll('.gantt-scroll div[title] > span').forEach(span => {
+        const parent = span.parentElement;
+        if (!parent || !span.textContent.trim()) return;
+        const maxSize = window.matchMedia('(max-width: 1100px) and (pointer: coarse)').matches ? 9 : 11;
+        let size = maxSize;
+        span.style.setProperty('font-size', `${size}px`, 'important');
+        while (span.scrollWidth > span.clientWidth + 1 && size > 5) {
+          size -= 0.5;
+          span.style.setProperty('font-size', `${size}px`, 'important');
+        }
+      });
+    };
+
     const abUiObserver = new MutationObserver(() => {
       const confirmButton = Array.from(document.querySelectorAll('button')).find(button => button.textContent.trim() === 'Confirmer la suppression');
       if (confirmButton && confirmButton.dataset.abAutoConfirm !== '1') {
@@ -51,8 +65,11 @@
         todayButton.textContent = "Aujourd'hui";
         targetCell.appendChild(todayButton);
       }
+
+      requestAnimationFrame(fitLongGanttNames);
     });
     abUiObserver.observe(document.body, { childList:true, subtree:true, characterData:true });
+    window.addEventListener('resize', () => requestAnimationFrame(fitLongGanttNames));
   </script>
 </body>
 </html>
