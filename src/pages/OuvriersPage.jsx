@@ -22,19 +22,33 @@ export const OuvriersPage = () => {
     return ordered;
   };
 
-  const persistActiveOrder = async ordered => {
-    for (let i = 0; i < ordered.length; i++) {
-      const o = ordered[i];
-      const result = await updateOuvrier(o.id, o.nom, o.type, o.metier, o.statut, i + 1, !!o.separateurApres, false);
-      if (!result.success) throw new Error(result.error || `Impossible d'enregistrer l'ordre de ${o.nom}`);
-    }
+  const persistActiveOrder = async (ordered, baseline = ouvriers) => {
+    const updates = ordered.flatMap((o, i) => {
+      const previous = baseline.find(item => Number(item.id) === Number(o.id));
+      const ordre = i + 1;
+      const changed = !previous ||
+        previous.nom !== o.nom ||
+        previous.type !== o.type ||
+        previous.metier !== o.metier ||
+        previous.statut !== o.statut ||
+        Number(previous.ordre) !== ordre ||
+        !!previous.separateurApres !== !!o.separateurApres;
+
+      return changed
+        ? [updateOuvrier(o.id, o.nom, o.type, o.metier, o.statut, ordre, !!o.separateurApres, false)]
+        : [];
+    });
+
+    const results = await Promise.all(updates);
+    const failed = results.find(result => !result.success);
+    if (failed) throw new Error(failed.error || "Impossible d'enregistrer l'ordre des ouvriers");
   };
 
   const handleAddOuvrier = async formData => {
-    const result = await addOuvrier(formData.nom, formData.type, formData.metier);
+    const result = await addOuvrier(formData.nom, formData.type, formData.metier, false);
     if (!result.success) {
       alert("Erreur: " + (result.error || "Impossible d'ajouter l'ouvrier"));
-      return;
+      return false;
     }
     try {
       const nouveau = { id: result.id, nom: formData.nom, type: formData.type, metier: formData.metier, statut: "Actif", separateurApres: !!formData.separateurApres };
@@ -42,8 +56,10 @@ export const OuvriersPage = () => {
       await persistActiveOrder(ordered);
       await loadData(false);
       setShowAddModal(false);
+      return true;
     } catch (err) {
       alert("Ouvrier créé, mais ordre non enregistré : " + err.message);
+      return false;
     }
   };
 
@@ -64,8 +80,10 @@ export const OuvriersPage = () => {
 
       await loadData(false);
       setEditingOuvrier(null);
+      return true;
     } catch (err) {
       alert("Erreur: " + err.message);
+      return false;
     }
   };
 

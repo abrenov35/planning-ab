@@ -42,7 +42,9 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     6:"#06b6d4", 7:"#ec4899", 8:"#f97316", 9:"#6366f1", 10:"#14b8a6"
   };
   const rdvColor = "#7c3aed";
+  const planningColor = "#0f766e";
   const normalize = value => String(value ?? "").trim().toUpperCase();
+  const isPlanning = aff => normalize(aff?.nomExterne || aff?.affectationNom || aff?.tache) === "PLANNING";
   const isRdvTask = aff => /^\s*RDV\b/i.test(String(aff?.tache ?? ""));
   const isValidChantier = chantier => chantier && String(chantier.nom ?? "").trim() !== "" && String(chantier.nom ?? "").trim() !== "??";
   const isHorsGantt = (aff, chantier) => !isValidChantier(chantier) || normalize(aff?.typeAffectation) === "HORS_GANTT" || (normalize(aff?.source) === "GOOGLE" && normalize(aff?.typeAffectation) === "HORS_GANTT");
@@ -56,6 +58,15 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const getLabel = aff => {
     const tache = String(aff?.tache ?? "").trim();
     return !tache || normalize(tache) === "ND" ? "" : tache;
+  };
+  const getRdvTimeLabel = aff => {
+    const match = String(aff?.tache ?? "").match(/(\d{1,2})\s*[h:]\s*(\d{2})/i);
+    return match ? `${String(match[1]).padStart(2,"0")}h${match[2]}` : "";
+  };
+  const fitTextSize = text => {
+    const length = String(text || "").length;
+    if (dayWidth < 27) return length > 8 ? 4.5 : length > 5 ? 5 : 6;
+    return length > 16 ? 5 : length > 11 ? 6 : length > 7 ? 7 : 8;
   };
   const parseDate = dateStr => {
     if (!dateStr) return null;
@@ -150,6 +161,36 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
       lastTapRef.current = { key:"", time:0 };
       e.preventDefault();
       onAddAffectation(ouvrierId,date);
+    } else {
+      lastTapRef.current = { key, time:now };
+    }
+  };
+  const handleAffectationClick = (e,affectation) => {
+    e.stopPropagation();
+    if (!isMobile) onAffectationClick(affectation);
+  };
+  const handleAffectationTouchStart = (e,key) => {
+    if (!isMobile || e.touches.length !== 1) {
+      touchStartRef.current = null;
+      return;
+    }
+    const touch = e.touches[0];
+    touchStartRef.current = { x:touch.clientX, y:touch.clientY, key };
+  };
+  const handleAffectationTouchEnd = (e,affectation,key) => {
+    if (!isMobile) return;
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    const touch = e.changedTouches?.[0];
+    if (!start || !touch || start.key !== key) return;
+    if (Math.hypot(touch.clientX-start.x, touch.clientY-start.y) > 10) return;
+    const now = Date.now();
+    const last = lastTapRef.current;
+    if (last.key === key && now-last.time <= 350) {
+      lastTapRef.current = { key:"", time:0 };
+      e.preventDefault();
+      e.stopPropagation();
+      onAffectationClick(affectation);
     } else {
       lastTapRef.current = { key, time:now };
     }
@@ -268,6 +309,10 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
           <div style={{width:8,height:8,backgroundColor:rdvColor,borderRadius:2,flexShrink:0}} />
           <span style={{color:"#6d28d9",fontWeight:800}}>RDV</span>
         </div>
+        <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
+          <div style={{width:8,height:8,backgroundColor:planningColor,borderRadius:2,flexShrink:0}} />
+          <span style={{color:planningColor,fontWeight:800}}>PLANNING</span>
+        </div>
       </div>
 
       <div ref={scrollRef} className="gantt-scroll" style={{background:"white",borderRadius:6,border:"1px solid #e5e7eb",display:"flex",flexDirection:"column",flex:1,overflowY:"auto",overflowX:"auto",WebkitOverflowScrolling:"touch",touchAction:"pan-x pan-y pinch-zoom",overscrollBehaviorX:"none",minWidth:0,minHeight:0}}>
@@ -308,19 +353,26 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
                         const horsGantt = isHorsGantt(aff,chantier);
                         const rdv = isRdvTask(aff);
                         const lettres = getLetters(aff,chantier);
-                        const label = getLabel(aff);
+                        const label = rdv ? getRdvTimeLabel(aff) : getLabel(aff);
                         const nomHorsGantt = horsGantt ? getHorsGanttName(aff,date) : "";
                         const rdvName = String(nomHorsGantt || chantier?.nom || "RDV").trim();
                         const rank = getRankOnDay(aff,date,affectsByOuvrier);
                         const topOffset = rank*affectationSlotHeight+1;
-                        const barBackground = rdv ? rdvColor : horsGantt ? "#D1D5DB" : getChantierColor(chantier?.id);
-                        const barColor = rdv ? "white" : horsGantt ? "#374151" : "white";
-                        const barBorder = rdv ? "1px solid #6d28d9" : horsGantt ? "1px solid #9CA3AF" : "1px solid rgba(0,0,0,0.16)";
+                        const planning = isPlanning(aff);
+                        const barBackground = rdv ? rdvColor : planning ? planningColor : horsGantt ? "#D1D5DB" : getChantierColor(chantier?.id);
+                        const barColor = rdv || planning ? "white" : horsGantt ? "#374151" : "white";
+                        const barBorder = rdv ? "1px solid #6d28d9" : planning ? "1px solid #115e59" : horsGantt ? "1px solid #9CA3AF" : "1px solid rgba(0,0,0,0.16)";
                         const barText = rdv ? rdvName : horsGantt ? nomHorsGantt : lettres;
                         const barHeight = Math.max(13, affectationSlotHeight - 10);
                         return (
-                          <div key={aff.id} onClick={e=>{e.stopPropagation();onAffectationClick(aff);}} style={{position:"absolute",left:1,right:1,top:topOffset,cursor:"pointer",zIndex:2}}>
-                            <div title={rdv ? `${rdvName} — ${label}` : horsGantt ? aff.nomExterne || "Événement Google" : `${chantier?.nom || ""} — cliquer pour modifier`} style={{width:"100%",height:barHeight,backgroundColor:barBackground,border:barBorder,borderRadius:isMobile ? 3 : 2,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center",padding:(horsGantt || rdv) ? "0 2px" : 0,color:barColor,fontWeight:800,fontSize:dayWidth < 27 ? 6 : (horsGantt || rdv) ? 7 : 9,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{barText}</div>
+                          <div
+                            key={aff.id}
+                            onClick={e=>handleAffectationClick(e,aff)}
+                            onTouchStart={e=>handleAffectationTouchStart(e,`affectation:${aff.id}`)}
+                            onTouchEnd={e=>handleAffectationTouchEnd(e,aff,`affectation:${aff.id}`)}
+                            style={{position:"absolute",left:1,right:1,top:topOffset,cursor:"pointer",zIndex:2}}
+                          >
+                            <div title={rdv ? `${rdvName} — ${label}` : horsGantt ? aff.nomExterne || "Événement Google" : `${chantier?.nom || ""} — cliquer pour modifier`} style={{width:"100%",height:barHeight,backgroundColor:barBackground,border:barBorder,borderRadius:isMobile ? 3 : 2,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center",padding:(horsGantt || rdv) ? "0 2px" : 0,color:barColor,fontWeight:800,fontSize:fitTextSize(barText),overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{barText}</div>
                             {label && <div title={label} style={{marginTop:1,height:7,fontSize:dayWidth < 27 ? 5 : 6,fontWeight:rdv ? 800 : 600,color:rdv ? "#6d28d9" : "#374151",textAlign:"center",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:"7px"}}>{label}</div>}
                           </div>
                         );

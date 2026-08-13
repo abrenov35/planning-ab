@@ -23,7 +23,8 @@ export const FormOuvrier = ({ ouvrier, ouvriers = [], onSubmit, onCancel, mode =
     }
     setIsSubmitting(true);
     try {
-      await onSubmit(formData);
+      const saved = await onSubmit(formData);
+      if (saved === false) setIsSubmitting(false);
     } catch (error) {
       console.error("Erreur lors de la soumission:", error);
       setIsSubmitting(false);
