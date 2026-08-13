@@ -61,7 +61,7 @@ export const FormOuvrier = ({ ouvrier, ouvriers = [], onSubmit, onCancel, mode =
       </div>
       <label style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",marginBottom:mode === "edit" ? "1.25rem" : "2rem",border:"1px solid #cbd5e1",borderRadius:7,background:formData.separateurApres?"#f1f5f9":"white",cursor:"pointer"}}>
         <input type="checkbox" name="separateurApres" checked={!!formData.separateurApres} onChange={handleChange} />
-        <div><div style={{fontSize:12,fontWeight:700,color:"#334155"}}>Trait gris après cette personne</div><div style={{fontSize:10,color:"#64748b",marginTop:2}}>Séparation visuelle commune au PC et à l’iPhone.</div></div>
+        <div><div style={{fontSize:12,fontWeight:700,color:"#334155"}}>Trait bleu après cette personne</div><div style={{fontSize:10,color:"#64748b",marginTop:2}}>Séparation visuelle commune au PC et à l’iPhone.</div></div>
       </label>
       {mode === "edit" && <div style={{ marginBottom:"2rem" }}>
         <label style={{ ...labelStyle, marginBottom:8 }}>Statut</label>
