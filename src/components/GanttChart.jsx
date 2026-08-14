@@ -356,9 +356,9 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
 
   return (
     <div style={{padding:isMobile ? "0.12rem" : "0.45rem",flex:1,display:"flex",flexDirection:"column",minWidth:0,minHeight:0}}>
-      <style>{`.gantt-scroll::-webkit-scrollbar{width:0;height:0}.gantt-scroll{scrollbar-width:none;-ms-overflow-style:none}.gantt-scroll.dragging,.gantt-scroll.dragging *{cursor:grabbing!important;user-select:none!important}`}</style>
+      <style>{`.gantt-scroll::-webkit-scrollbar,.gantt-legend::-webkit-scrollbar{display:none;width:0;height:0}.gantt-scroll,.gantt-legend{scrollbar-width:none;-ms-overflow-style:none}.gantt-scroll.dragging,.gantt-scroll.dragging *{cursor:grabbing!important;user-select:none!important}`}</style>
 
-      <div style={{display:"flex",gap:isMobile ? "0.45rem" : "0.8rem",alignItems:"center",flexWrap:"nowrap",overflowX:"auto",padding:isMobile ? "0.18rem 0.3rem" : "0.35rem 0.4rem",marginBottom:isMobile ? "0.12rem" : "0.3rem",background:"rgba(255,255,255,0.5)",borderRadius:4,fontSize:isMobile ? 9 : 10,lineHeight:1.1,flexShrink:0}}>
+      <div className="gantt-legend" style={{display:"flex",gap:isMobile ? "0.45rem" : "0.8rem",alignItems:"center",flexWrap:"nowrap",overflowX:"auto",padding:isMobile ? "0.18rem 0.3rem" : "0.35rem 0.4rem",marginBottom:isMobile ? "0.12rem" : "0.3rem",background:"rgba(255,255,255,0.5)",borderRadius:4,fontSize:isMobile ? 9 : 10,lineHeight:1.1,flexShrink:0}}>
         {chantiersActifs.map(chantier => (
           <div key={chantier.id} style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
             <div style={{width:8,height:8,backgroundColor:getChantierColor(chantier.id),borderRadius:2,flexShrink:0}} />
