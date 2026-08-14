@@ -174,9 +174,10 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     if (moved) window.setTimeout(() => { suppressClickRef.current = false; }, 0);
   };
 
-  const handleEmptyCellClick = (ouvrierId,date) => {
-    if (suppressClickRef.current) return;
-    if (!isMobile) onAddAffectation(ouvrierId,date);
+  const handleEmptyCellDoubleClick = (e,ouvrierId,date) => {
+    e.stopPropagation();
+    if (isMobile || suppressClickRef.current) return;
+    onAddAffectation(ouvrierId,date);
   };
   const handleEmptyCellTouchStart = (e,key) => {
     if (!isMobile || e.target !== e.currentTarget || e.touches.length !== 1) {
@@ -203,22 +204,10 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
       lastTapRef.current = { key, time:now };
     }
   };
-  const handleAffectationClick = (e,affectation) => {
+  const handleAffectationDoubleClick = (e,affectation) => {
     e.stopPropagation();
-    if (suppressClickRef.current) return;
-    if (!isMobile) {
-      onAffectationClick(affectation);
-      return;
-    }
-    const key = `affectation:${affectation.id}`;
-    const now = Date.now();
-    const last = lastTapRef.current;
-    if (last.key === key && now-last.time <= 350) {
-      lastTapRef.current = { key:"", time:0 };
-      onAffectationClick(affectation);
-    } else {
-      lastTapRef.current = { key, time:now };
-    }
+    if (isMobile || suppressClickRef.current) return;
+    onAffectationClick(affectation);
   };
   const handleAffectationTouchStart = (e,key) => {
     if (!isMobile || e.touches.length !== 1) {
@@ -391,7 +380,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
                 <div style={{display:"grid",gridTemplateColumns:gridTemplate,background:rowBackground,borderRight:"1px solid #9ca3af",position:"relative",height:rowHeight,...timelineFlexStyle}}>
                   {allDates.map((date,dayIdx) => {
                     const cellKey = `${ouvrier.id}:${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`;
-                    return <div key={dayIdx} onClick={()=>handleEmptyCellClick(ouvrier.id,date)} onTouchStart={e=>handleEmptyCellTouchStart(e,cellKey)} onTouchEnd={e=>handleEmptyCellTouchEnd(e,ouvrier.id,date,cellKey)} style={{borderRight:getDayRightBorder(dayIdx),position:"relative",cursor:"pointer",padding:1,overflow:"hidden"}}>
+                    return <div key={dayIdx} onDoubleClick={e=>handleEmptyCellDoubleClick(e,ouvrier.id,date)} onTouchStart={e=>handleEmptyCellTouchStart(e,cellKey)} onTouchEnd={e=>handleEmptyCellTouchEnd(e,ouvrier.id,date,cellKey)} style={{borderRight:getDayRightBorder(dayIdx),position:"relative",cursor:"pointer",padding:1,overflow:"hidden"}}>
                       {affectsByOuvrier.map(aff => {
                         if (!isVisibleOnDay(aff,date)) return null;
                         const chantier = chantiers.find(c => Number(c.id) === Number(aff.chantierId));
@@ -409,7 +398,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
                         const barBorder = rdv ? "1px solid #6d28d9" : planning ? "1px solid #115e59" : horsGantt ? "1px solid #9CA3AF" : "1px solid rgba(0,0,0,0.16)";
                         const barText = rdv ? rdvName : horsGantt ? nomHorsGantt : lettres;
                         const barHeight = Math.max(13, affectationSlotHeight - 10);
-                        return <div key={aff.id} onClick={e=>handleAffectationClick(e,aff)} style={{position:"absolute",left:1,right:1,top:topOffset,cursor:"pointer",zIndex:2}}>
+                        return <div key={aff.id} onDoubleClick={e=>handleAffectationDoubleClick(e,aff)} onTouchStart={e=>handleAffectationTouchStart(e,`affectation:${aff.id}`)} onTouchEnd={e=>handleAffectationTouchEnd(e,aff,`affectation:${aff.id}`)} style={{position:"absolute",left:1,right:1,top:topOffset,cursor:"pointer",zIndex:2}}>
                           <div title={rdv ? `${rdvName} — ${label}` : horsGantt ? aff.nomExterne || "Événement Google" : `${chantier?.nom || ""} — cliquer pour modifier`} style={{width:"100%",height:barHeight,backgroundColor:barBackground,border:barBorder,borderRadius:isMobile ? 3 : 2,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center",padding:(horsGantt || rdv) ? "0 2px" : 0,color:barColor,fontWeight:800,fontSize:fitTextSize(barText),overflow:"hidden",minWidth:0}}><span style={{display:"block",maxWidth:"100%",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center"}}>{barText}</span></div>
                           {label && <div title={label} style={{marginTop:1,height:7,fontSize:dayWidth < 27 ? 5 : 6,fontWeight:rdv ? 800 : 600,color:rdv ? "#6d28d9" : "#374151",textAlign:"center",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:"7px"}}>{label}</div>}
                         </div>;
