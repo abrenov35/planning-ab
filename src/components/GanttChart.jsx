@@ -102,7 +102,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const ouvriersActifs = sortWorkersPlanning(ouvriers.filter(o => o.statut === "Actif"));
   const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
   const futureWeeks = 52;
-  const visibleDays = 20;
+  const visibleDays = 15;
   const workerColumnWidth = isMobile ? 92 : 150;
   const availableTimelineWidth = Math.max(280, (viewport.width || (typeof window !== "undefined" ? window.innerWidth : 1200)) - workerColumnWidth - 2);
   const dayWidth = Math.max(14, availableTimelineWidth / visibleDays);
@@ -254,7 +254,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
 
   React.useEffect(() => {
     if (!onControlsReady) return;
-    onControlsReady({ onToday:goToday, onPast:showPast, weekText:"4 semaines visibles" });
+    onControlsReady({ onToday:goToday, onPast:showPast, weekText:"3 semaines visibles" });
   }, [onControlsReady, isMobile, pastWeeks, dayWidth]);
 
   React.useEffect(() => {
@@ -365,41 +365,19 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
             <span style={{color:"#4b5563",fontWeight:500}}>{chantier.nom}</span>
           </div>
         ))}
-        <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
-          <div style={{width:8,height:8,backgroundColor:rdvColor,borderRadius:2,flexShrink:0}} />
-          <span style={{color:"#6d28d9",fontWeight:800}}>RDV</span>
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
-          <div style={{width:8,height:8,backgroundColor:planningColor,borderRadius:2,flexShrink:0}} />
-          <span style={{color:planningColor,fontWeight:800}}>PLANNING</span>
-        </div>
+        <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}><div style={{width:8,height:8,backgroundColor:rdvColor,borderRadius:2,flexShrink:0}} /><span style={{color:"#6d28d9",fontWeight:800}}>RDV</span></div>
+        <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}><div style={{width:8,height:8,backgroundColor:planningColor,borderRadius:2,flexShrink:0}} /><span style={{color:planningColor,fontWeight:800}}>PLANNING</span></div>
       </div>
 
-      <div
-        ref={scrollRef}
-        className={`gantt-scroll${isMouseDragging ? " dragging" : ""}`}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={endMouseDrag}
-        onMouseLeave={endMouseDrag}
-        style={{background:"white",borderRadius:6,border:"1px solid #e5e7eb",display:"flex",flexDirection:"column",flex:1,overflowY:"auto",overflowX:"auto",WebkitOverflowScrolling:"touch",touchAction:"pan-x pan-y pinch-zoom",overscrollBehaviorX:"none",minWidth:0,minHeight:0,cursor:isMobile ? "default" : isMouseDragging ? "grabbing" : "grab"}}
-      >
+      <div ref={scrollRef} className={`gantt-scroll${isMouseDragging ? " dragging" : ""}`} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={endMouseDrag} onMouseLeave={endMouseDrag} style={{background:"white",borderRadius:6,border:"1px solid #e5e7eb",display:"flex",flexDirection:"column",flex:1,overflowY:"auto",overflowX:"auto",WebkitOverflowScrolling:"touch",touchAction:"pan-x pan-y pinch-zoom",overscrollBehaviorX:"none",minWidth:0,minHeight:0,cursor:isMobile ? "default" : isMouseDragging ? "grabbing" : "grab"}}>
         <div style={{display:"flex",height:headerHeight,flexShrink:0,...rowWidthStyle}}>
-          <div style={{width:workerColumnWidth,background:"#e5e7eb",borderRight:"1px solid #9ca3af",flexShrink:0,...stickyHeaderStyle,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 8px",boxSizing:"border-box"}}>
-            <button type="button" onClick={e=>{e.stopPropagation();goToday();}} style={{width:"100%",height:28,border:"1px solid rgba(255,255,255,0.42)",borderRadius:5,background:"#10b981",color:"white",fontSize:10,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>Aujourd'hui</button>
-          </div>
+          <div style={{width:workerColumnWidth,background:"#e5e7eb",borderRight:"1px solid #9ca3af",flexShrink:0,...stickyHeaderStyle,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 8px",boxSizing:"border-box"}}><button type="button" onClick={e=>{e.stopPropagation();goToday();}} style={{width:"100%",height:28,border:"1px solid rgba(255,255,255,0.42)",borderRadius:5,background:"#10b981",color:"white",fontSize:10,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>Aujourd'hui</button></div>
           <div style={{height:headerHeight,background:"#e5e7eb",borderRight:"1px solid #9ca3af",...timelineFlexStyle}}>
-            <div style={{display:"grid",gridTemplateColumns:gridTemplate,height:monthHeaderHeight,borderBottom:"1px solid #cbd5e1",background:"#eef2f7"}}>
-              {monthGroups.map((group,index) => <div key={group.key} style={{gridColumn:`${group.start+1} / span ${group.count}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:dayWidth < 27 ? 7 : isMobile ? 8 : 9,fontWeight:800,letterSpacing:"0.03em",color:"#334155",background:monthBandColors[index%monthBandColors.length],overflow:"hidden"}}>{group.label}</div>)}
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:gridTemplate,height:dayHeaderHeight,background:"#e5e7eb"}}>
-              {allDates.map((date,idx) => <div key={idx} style={{borderRight:getDayRightBorder(idx),textAlign:"center",fontSize:dayWidth < 27 ? 8 : isMobile ? 9 : 10,fontWeight:900,color:"#172554",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",whiteSpace:"nowrap"}}>{formatShortDate(date)}</div>)}
-            </div>
+            <div style={{display:"grid",gridTemplateColumns:gridTemplate,height:monthHeaderHeight,borderBottom:"1px solid #cbd5e1",background:"#eef2f7"}}>{monthGroups.map((group,index) => <div key={group.key} style={{gridColumn:`${group.start+1} / span ${group.count}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:dayWidth < 27 ? 7 : isMobile ? 8 : 9,fontWeight:800,letterSpacing:"0.03em",color:"#334155",background:monthBandColors[index%monthBandColors.length],overflow:"hidden"}}>{group.label}</div>)}</div>
+            <div style={{display:"grid",gridTemplateColumns:gridTemplate,height:dayHeaderHeight,background:"#e5e7eb"}}>{allDates.map((date,idx) => <div key={idx} style={{borderRight:getDayRightBorder(idx),textAlign:"center",fontSize:dayWidth < 27 ? 8 : isMobile ? 9 : 10,fontWeight:900,color:"#172554",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",whiteSpace:"nowrap"}}>{formatShortDate(date)}</div>)}</div>
           </div>
         </div>
-
         <div style={{...separationStyle,width:totalWidth,flexShrink:0}} />
-
         {ouvriersActifs.map((ouvrier,idx) => {
           const affectsByOuvrier = affectations.filter(a => Number(a.ouvrierID) === Number(ouvrier.id) && isAffectationInRange(a));
           const rowBackground = idx%2 === 0 ? "white" : "#f3f4f6";
@@ -409,14 +387,11 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
           return (
             <div key={ouvrier.id} style={rowWidthStyle}>
               <div style={{display:"flex",height:rowHeight,background:rowBackground,...rowWidthStyle}}>
-                <div style={{width:workerColumnWidth,padding:isMobile ? "0.12rem 0.3rem" : "0.25rem 0.55rem",background:rowBackground,borderRight:"1px solid #9ca3af",fontSize:isMobile ? 11 : 12,fontWeight:900,color:"#172554",display:"flex",alignItems:"center",flexShrink:0,...stickyWorkerStyle,boxSizing:"border-box",overflow:"hidden"}}>
-                  <div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ouvrier.nom}</div>
-                </div>
+                <div style={{width:workerColumnWidth,padding:isMobile ? "0.12rem 0.3rem" : "0.25rem 0.55rem",background:rowBackground,borderRight:"1px solid #9ca3af",fontSize:isMobile ? 11 : 12,fontWeight:900,color:"#172554",display:"flex",alignItems:"center",flexShrink:0,...stickyWorkerStyle,boxSizing:"border-box",overflow:"hidden"}}><div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ouvrier.nom}</div></div>
                 <div style={{display:"grid",gridTemplateColumns:gridTemplate,background:rowBackground,borderRight:"1px solid #9ca3af",position:"relative",height:rowHeight,...timelineFlexStyle}}>
                   {allDates.map((date,dayIdx) => {
                     const cellKey = `${ouvrier.id}:${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`;
-                    return (
-                    <div key={dayIdx} onClick={()=>handleEmptyCellClick(ouvrier.id,date)} onTouchStart={e=>handleEmptyCellTouchStart(e,cellKey)} onTouchEnd={e=>handleEmptyCellTouchEnd(e,ouvrier.id,date,cellKey)} style={{borderRight:getDayRightBorder(dayIdx),position:"relative",cursor:"pointer",padding:1,overflow:"hidden"}}>
+                    return <div key={dayIdx} onClick={()=>handleEmptyCellClick(ouvrier.id,date)} onTouchStart={e=>handleEmptyCellTouchStart(e,cellKey)} onTouchEnd={e=>handleEmptyCellTouchEnd(e,ouvrier.id,date,cellKey)} style={{borderRight:getDayRightBorder(dayIdx),position:"relative",cursor:"pointer",padding:1,overflow:"hidden"}}>
                       {affectsByOuvrier.map(aff => {
                         if (!isVisibleOnDay(aff,date)) return null;
                         const chantier = chantiers.find(c => Number(c.id) === Number(aff.chantierId));
@@ -434,19 +409,12 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
                         const barBorder = rdv ? "1px solid #6d28d9" : planning ? "1px solid #115e59" : horsGantt ? "1px solid #9CA3AF" : "1px solid rgba(0,0,0,0.16)";
                         const barText = rdv ? rdvName : horsGantt ? nomHorsGantt : lettres;
                         const barHeight = Math.max(13, affectationSlotHeight - 10);
-                        return (
-                          <div
-                            key={aff.id}
-                            onClick={e=>handleAffectationClick(e,aff)}
-                            style={{position:"absolute",left:1,right:1,top:topOffset,cursor:"pointer",zIndex:2}}
-                          >
-                            <div title={rdv ? `${rdvName} — ${label}` : horsGantt ? aff.nomExterne || "Événement Google" : `${chantier?.nom || ""} — cliquer pour modifier`} style={{width:"100%",height:barHeight,backgroundColor:barBackground,border:barBorder,borderRadius:isMobile ? 3 : 2,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center",padding:(horsGantt || rdv) ? "0 2px" : 0,color:barColor,fontWeight:800,fontSize:fitTextSize(barText),overflow:"hidden",minWidth:0}}><span style={{display:"block",maxWidth:"100%",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center"}}>{barText}</span></div>
-                            {label && <div title={label} style={{marginTop:1,height:7,fontSize:dayWidth < 27 ? 5 : 6,fontWeight:rdv ? 800 : 600,color:rdv ? "#6d28d9" : "#374151",textAlign:"center",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:"7px"}}>{label}</div>}
-                          </div>
-                        );
+                        return <div key={aff.id} onClick={e=>handleAffectationClick(e,aff)} style={{position:"absolute",left:1,right:1,top:topOffset,cursor:"pointer",zIndex:2}}>
+                          <div title={rdv ? `${rdvName} — ${label}` : horsGantt ? aff.nomExterne || "Événement Google" : `${chantier?.nom || ""} — cliquer pour modifier`} style={{width:"100%",height:barHeight,backgroundColor:barBackground,border:barBorder,borderRadius:isMobile ? 3 : 2,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center",padding:(horsGantt || rdv) ? "0 2px" : 0,color:barColor,fontWeight:800,fontSize:fitTextSize(barText),overflow:"hidden",minWidth:0}}><span style={{display:"block",maxWidth:"100%",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center"}}>{barText}</span></div>
+                          {label && <div title={label} style={{marginTop:1,height:7,fontSize:dayWidth < 27 ? 5 : 6,fontWeight:rdv ? 800 : 600,color:rdv ? "#6d28d9" : "#374151",textAlign:"center",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:"7px"}}>{label}</div>}
+                        </div>;
                       })}
-                    </div>
-                    );
+                    </div>;
                   })}
                 </div>
               </div>
