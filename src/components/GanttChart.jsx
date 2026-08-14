@@ -60,7 +60,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     const numericId = Number(chantierId);
     return !numericId || Number.isNaN(numericId) ? colors[0] : colors[numericId % colors.length];
   };
-  const getLetters = (aff, chantier) => isHorsGantt(aff, chantier) ? "" : String(chantier?.nom ?? "").trim().substring(0,3).toUpperCase();
+  const getLetters = (aff, chantier) => isHorsGantt(aff, chantier) ? "" : String(chantier?.nom ?? "").trim().substring(0,4).toUpperCase();
   const getLabel = aff => {
     const tache = String(aff?.tache ?? "").trim();
     return !tache || normalize(tache) === "ND" ? "" : tache;
