@@ -7,6 +7,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const [pastWeeks, setPastWeeks] = useState(0);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const [isMouseDragging, setIsMouseDragging] = useState(false);
+  const [highlightedAffectationId, setHighlightedAffectationId] = useState(null);
   const scrollRef = useRef(null);
   const touchStartRef = useRef(null);
   const lastTapRef = useRef({ key:"", time:0 });
@@ -143,6 +144,36 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     window.setTimeout(() => scrollRef.current?.scrollTo({ left:0, behavior:"smooth" }), 0);
   };
 
+  const findFirstChantierAffectation = query => {
+    const searched=normalize(query);
+    const chantier=chantiers.find(c => String(c.id) === String(query) || normalize(c.nom) === searched)
+      || chantiers.find(c => normalize(c.nom).includes(searched));
+    if(!chantier) return {success:false,message:"Chantier introuvable."};
+    const candidates=affectations.filter(aff => {
+      if(Number(aff.chantierId)!==Number(chantier.id)) return false;
+      const end=parseDate(aff.dateFin);
+      return end && end.setHours(23,59,59,999)>=today.getTime();
+    }).sort((a,b) => {
+      const aStart=parseDate(a.dateDebut)?.getTime() || Number.MAX_SAFE_INTEGER;
+      const bStart=parseDate(b.dateDebut)?.getTime() || Number.MAX_SAFE_INTEGER;
+      return Math.max(aStart,today.getTime())-Math.max(bStart,today.getTime());
+    });
+    const found=candidates[0];
+    if(!found) return {success:false,message:`Aucune affectation de ${chantier.nom} à partir d'aujourd'hui.`};
+    const dayIndex=allDates.findIndex(date => date>=today && isVisibleOnDay(found,date));
+    if(dayIndex<0) return {success:false,message:"L'affectation est au-delà de la période affichable."};
+    const el=scrollRef.current;
+    const workerIndex=ouvriersActifs.findIndex(o => Number(o.id)===Number(found.ouvrierID));
+    if(!el || workerIndex<0) return {success:false,message:"L'ouvrier de cette affectation n'est pas affiché."};
+    const row=el.querySelector(`[data-worker-id="${found.ouvrierID}"]`);
+    const left=Math.max(0,dayIndex*dayWidth-dayWidth*2);
+    const top=row ? Math.max(0,row.offsetTop-headerHeight-4) : el.scrollTop;
+    el.scrollTo({left,top,behavior:"smooth"});
+    setHighlightedAffectationId(found.id);
+    window.setTimeout(()=>setHighlightedAffectationId(current => current===found.id ? null : current),2600);
+    return {success:true,affectation:found};
+  };
+
   const handleMouseDown = e => {
     if (isMobile || e.button !== 0) return;
     if (e.target?.closest?.("button,input,textarea,select,a")) return;
@@ -243,8 +274,8 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
 
   React.useEffect(() => {
     if (!onControlsReady) return;
-    onControlsReady({ onToday:goToday, onPast:showPast, weekText:"3 semaines visibles" });
-  }, [onControlsReady, isMobile, pastWeeks, dayWidth]);
+    onControlsReady({ onToday:goToday, onPast:showPast, onFindChantier:findFirstChantierAffectation, searchChantiers:chantiersActifs.map(c=>({id:c.id,nom:c.nom})), weekText:"3 semaines visibles" });
+  }, [onControlsReady, isMobile, pastWeeks, dayWidth, affectations, chantiers]);
 
   React.useEffect(() => {
     if (isMobile || typeof window === "undefined") return;
@@ -345,7 +376,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
 
   return (
     <div style={{padding:isMobile ? "0.12rem" : "0.45rem",flex:1,display:"flex",flexDirection:"column",minWidth:0,minHeight:0}}>
-      <style>{`.gantt-scroll::-webkit-scrollbar,.gantt-legend::-webkit-scrollbar{display:none;width:0;height:0}.gantt-scroll,.gantt-legend{scrollbar-width:none;-ms-overflow-style:none}.gantt-scroll.dragging,.gantt-scroll.dragging *{cursor:grabbing!important;user-select:none!important}`}</style>
+      <style>{`.gantt-scroll::-webkit-scrollbar,.gantt-legend::-webkit-scrollbar{display:none;width:0;height:0}.gantt-scroll,.gantt-legend{scrollbar-width:none;-ms-overflow-style:none}.gantt-scroll.dragging,.gantt-scroll.dragging *{cursor:grabbing!important;user-select:none!important}@keyframes ganttSearchPulse{0%,100%{filter:brightness(1);box-shadow:0 0 0 0 rgba(245,158,11,0)}25%,75%{filter:brightness(1.18);box-shadow:0 0 0 4px rgba(245,158,11,.9)}}.gantt-search-hit{animation:ganttSearchPulse 2.4s ease-in-out}`}</style>
 
       <div className="gantt-legend" style={{display:"flex",gap:isMobile ? "0.45rem" : "0.8rem",alignItems:"center",flexWrap:"nowrap",overflowX:"auto",padding:isMobile ? "0.18rem 0.3rem" : "0.35rem 0.4rem",marginBottom:isMobile ? "0.12rem" : "0.3rem",background:"rgba(255,255,255,0.5)",borderRadius:4,fontSize:isMobile ? 9 : 10,lineHeight:1.1,flexShrink:0}}>
         {chantiersActifs.map(chantier => (
@@ -374,7 +405,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
           const rowHeight = Math.max(minRowHeight, lanePlan.laneCount*affectationSlotHeight+2);
           const separation = separateursApres.has(normalizeWorkerName(ouvrier.nom));
           return (
-            <div key={ouvrier.id} style={rowWidthStyle}>
+            <div key={ouvrier.id} data-worker-id={ouvrier.id} style={rowWidthStyle}>
               <div style={{display:"flex",height:rowHeight,background:rowBackground,...rowWidthStyle}}>
                 <div style={{width:workerColumnWidth,padding:isMobile ? "0.12rem 0.3rem" : "0.25rem 0.55rem",background:rowBackground,borderRight:"1px solid #9ca3af",fontSize:isMobile ? 11 : 12,fontWeight:900,color:"#172554",display:"flex",alignItems:"center",flexShrink:0,...stickyWorkerStyle,boxSizing:"border-box",overflow:"hidden"}}><div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ouvrier.nom}</div></div>
                 <div style={{display:"grid",gridTemplateColumns:gridTemplate,background:rowBackground,borderRight:"1px solid #9ca3af",position:"relative",height:rowHeight,...timelineFlexStyle}}>
@@ -399,7 +430,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
                         const barText = rdv ? rdvName : horsGantt ? nomHorsGantt : lettres;
                         const barHeight = Math.max(13, affectationSlotHeight - 10);
                         return <div key={aff.id} onDoubleClick={e=>handleAffectationDoubleClick(e,aff)} onTouchStart={e=>handleAffectationTouchStart(e,`affectation:${aff.id}`)} onTouchEnd={e=>handleAffectationTouchEnd(e,aff,`affectation:${aff.id}`)} style={{position:"absolute",left:1,right:1,top:topOffset,cursor:"pointer",zIndex:2}}>
-                          <div title={rdv ? `${rdvName} — ${label}` : horsGantt ? aff.nomExterne || "Événement Google" : `${chantier?.nom || ""} — cliquer pour modifier`} style={{width:"100%",height:barHeight,backgroundColor:barBackground,border:barBorder,borderRadius:isMobile ? 3 : 2,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center",padding:(horsGantt || rdv) ? "0 2px" : 0,color:barColor,fontWeight:800,fontSize:fitTextSize(barText),overflow:"hidden",minWidth:0}}><span style={{display:"block",maxWidth:"100%",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center"}}>{barText}</span></div>
+                          <div className={highlightedAffectationId===aff.id ? "gantt-search-hit" : ""} title={rdv ? `${rdvName} — ${label}` : horsGantt ? aff.nomExterne || "Événement Google" : `${chantier?.nom || ""} — double-cliquer pour modifier`} style={{width:"100%",height:barHeight,backgroundColor:barBackground,border:barBorder,borderRadius:isMobile ? 3 : 2,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center",padding:(horsGantt || rdv) ? "0 2px" : 0,color:barColor,fontWeight:800,fontSize:fitTextSize(barText),overflow:"hidden",minWidth:0}}><span style={{display:"block",maxWidth:"100%",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center"}}>{barText}</span></div>
                           {label && <div title={label} style={{marginTop:1,height:7,fontSize:dayWidth < 27 ? 5 : 6,fontWeight:rdv ? 800 : 600,color:rdv ? "#6d28d9" : "#374151",textAlign:"center",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:"7px"}}>{label}</div>}
                         </div>;
                       })}
