@@ -4,7 +4,7 @@ import { Modal } from "../components/Modal";
 import { FormChantier } from "../components/FormChantier";
 
 export const ChantierPage = () => {
-  const { chantiers, addChantier, updateChantier, loading } = useContext(AppContext);
+  const { chantiers, addChantier, updateChantier, deleteChantier, loading } = useContext(AppContext);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingChantier, setEditingChantier] = useState(null);
   const [isArchivedExpanded, setIsArchivedExpanded] = useState(false);
@@ -19,6 +19,19 @@ export const ChantierPage = () => {
     const result = await updateChantier(editingChantier.id, formData.nom, formData.dateDebut, formData.dateDebut, formData.description, formData.statut, formData.couleur || "");
     if (result.success) setEditingChantier(null);
     else alert("Erreur: " + (result.error || "Impossible de modifier le chantier"));
+  };
+
+  const handleDeleteChantier = async (chantier) => {
+    const result = await deleteChantier(chantier.id);
+    if (result.success) {
+      setEditingChantier(null);
+      return;
+    }
+    if (result.code === "HAS_AFFECTATIONS") {
+      alert(`Suppression impossible : le chantier « ${chantier.nom} » possède encore ${result.count || "des"} affectation(s).\n\nSupprime ou déplace d'abord ses affectations.`);
+      return;
+    }
+    alert("Erreur: " + (result.error || "Impossible de supprimer le chantier"));
   };
 
   if (loading) return <div style={{ padding: "2rem" }}>Chargement...</div>;
@@ -66,7 +79,7 @@ export const ChantierPage = () => {
         </div>}
 
         <Modal isOpen={showAddModal} title="Nouveau chantier" onClose={() => setShowAddModal(false)}><FormChantier onSubmit={handleAddChantier} onCancel={() => setShowAddModal(false)} mode="add" /></Modal>
-        <Modal isOpen={!!editingChantier} title="Modifier le chantier" onClose={() => setEditingChantier(null)}>{editingChantier && <FormChantier chantier={editingChantier} onSubmit={handleUpdateChantier} onCancel={() => setEditingChantier(null)} mode="edit" />}</Modal>
+        <Modal isOpen={!!editingChantier} title="Modifier le chantier" onClose={() => setEditingChantier(null)}>{editingChantier && <FormChantier chantier={editingChantier} onSubmit={handleUpdateChantier} onDelete={handleDeleteChantier} onCancel={() => setEditingChantier(null)} mode="edit" />}</Modal>
       </div>
     </div>
   );
