@@ -8,6 +8,7 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, onDelete, mode = "a
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,11 +31,10 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, onDelete, mode = "a
 
   const handleDelete = async () => {
     if (!onDelete || !chantier) return;
-    const ok = window.confirm(`Supprimer définitivement le chantier « ${chantier.nom} » ?\n\nLa suppression sera refusée s'il existe encore une affectation sur ce chantier.`);
-    if (!ok) return;
     setIsDeleting(true);
     try {
       await onDelete(chantier);
+      setShowDeleteConfirm(false);
     } finally {
       setIsDeleting(false);
     }
@@ -84,7 +84,7 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, onDelete, mode = "a
       )}
 
       {mode === "edit" && (
-        <button onClick={handleDelete} disabled={isDeleting || isSubmitting} style={{ width: "100%", marginBottom: 10, padding: 10, border: "1px solid #dc2626", background: "white", color: "#b91c1c", borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: isDeleting ? "not-allowed" : "pointer", opacity: isDeleting ? 0.6 : 1 }}>
+        <button onClick={() => setShowDeleteConfirm(true)} disabled={isDeleting || isSubmitting} style={{ width: "100%", marginBottom: 10, padding: 10, border: "1px solid #dc2626", background: "white", color: "#b91c1c", borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: isDeleting ? "not-allowed" : "pointer", opacity: isDeleting ? 0.6 : 1 }}>
           {isDeleting ? "Suppression..." : "Supprimer"}
         </button>
       )}
@@ -95,6 +95,62 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, onDelete, mode = "a
           {isSubmitting ? "Enregistrement..." : (mode === "edit" ? "Enregistrer" : "Créer")}
         </button>
       </div>
+
+      {showDeleteConfirm && (
+        <div
+          onClick={() => !isDeleting && setShowDeleteConfirm(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 10000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 18,
+            background: "rgba(15, 23, 42, 0.42)",
+            backdropFilter: "blur(2px)"
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "min(420px, 92vw)",
+              background: "#ffffff",
+              borderRadius: 14,
+              boxShadow: "0 20px 60px rgba(15, 23, 42, 0.25)",
+              border: "1px solid #e2e8f0",
+              overflow: "hidden"
+            }}
+          >
+            <div style={{ padding: "20px 22px 12px", textAlign: "center" }}>
+              <div style={{ width: 44, height: 44, margin: "0 auto 12px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "#fee2e2", color: "#b91c1c", fontSize: 21, fontWeight: 800 }}>!</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", marginBottom: 8 }}>Supprimer ce chantier ?</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#334155", marginBottom: 10 }}>« {chantier?.nom} »</div>
+              <div style={{ fontSize: 13, lineHeight: 1.5, color: "#64748b" }}>
+                Suppression définitive. Elle sera refusée si une affectation existe encore sur ce chantier.
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10, padding: "14px 18px 18px" }}>
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+                style={{ flex: 1, minHeight: 42, border: "1px solid #cbd5e1", borderRadius: 8, background: "#fff", color: "#334155", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                style={{ flex: 1, minHeight: 42, border: "none", borderRadius: 8, background: "#b91c1c", color: "#fff", fontSize: 13, fontWeight: 800, cursor: isDeleting ? "not-allowed" : "pointer", opacity: isDeleting ? 0.65 : 1 }}
+              >
+                {isDeleting ? "Suppression..." : "Supprimer"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
