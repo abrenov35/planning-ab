@@ -3,8 +3,8 @@ import React, { useState } from "react";
 export const FormChantier = ({ chantier, onSubmit, onCancel, onDelete, mode = "add" }) => {
   const [formData, setFormData] = useState(
     chantier
-      ? { ...chantier, dateSignature: chantier.dateSignature || "", couleur: chantier.couleur || "" }
-      : { nom: "", dateDebut: "", dateSignature: "", description: "", statut: "Actif", couleur: "" }
+      ? { ...chantier, dateSignature: chantier.dateSignature || "", typeChantier: chantier.typeChantier || "Rénovation", couleur: chantier.couleur || "" }
+      : { nom: "", dateDebut: "", dateSignature: "", typeChantier: "Rénovation", description: "", statut: "Actif", couleur: "" }
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -58,6 +58,15 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, onDelete, mode = "a
       <div style={{ marginBottom: "1.25rem" }}>
         <label style={labelStyle}>Date de signature</label>
         <input type="month" name="dateSignature" value={formData.dateSignature || ""} onChange={handleChange} style={fieldStyle} />
+      </div>
+
+      <div style={{ marginBottom: "1.25rem" }}>
+        <label style={labelStyle}>Type de chantier</label>
+        <select name="typeChantier" value={formData.typeChantier || "Rénovation"} onChange={handleChange} style={{ ...fieldStyle, background: "white" }}>
+          <option value="Rénovation">Rénovation</option>
+          <option value="Sinistre">Sinistre</option>
+          <option value="Autre">Autre</option>
+        </select>
       </div>
 
       <div style={{ marginBottom: "1.25rem" }}>
