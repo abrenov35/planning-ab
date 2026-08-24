@@ -68,11 +68,11 @@ export const ChantierPage = () => {
           {chantier.nom}
         </span>
       </td>
-      <td style={{ padding: 8, color: "#374151", fontSize: 10 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: "clamp(14px, 4vw, 40px)", alignItems: "center" }}>
-          <span><span style={{ fontWeight: 600 }}>Signature :</span> {formatDateSignature(chantier.dateSignature)}</span>
-          <span><span style={{ fontWeight: 600 }}>Début :</span> {chantier.dateDebut ? formatDate(chantier.dateDebut) : ""}</span>
-        </div>
+      <td style={{ padding: "8px 20px", color: "#374151", fontSize: 10, whiteSpace: "nowrap", width: "180px" }}>
+        <span style={{ fontWeight: 600 }}>Signature :</span> {formatDateSignature(chantier.dateSignature)}
+      </td>
+      <td style={{ padding: "8px 20px", color: "#374151", fontSize: 10, whiteSpace: "nowrap", width: "130px" }}>
+        <span style={{ fontWeight: 600 }}>Début :</span> {chantier.dateDebut ? formatDate(chantier.dateDebut) : ""}
       </td>
       <td style={{ padding: 8, textAlign: "center" }}><button onClick={() => setEditingChantier(chantier)} style={{ padding: "2px 6px", border: "1px solid #d1d5db", background: "white", borderRadius: 3, fontSize: 10, cursor: "pointer" }}>{archive ? "↻" : "✏️"}</button></td>
     </tr>
