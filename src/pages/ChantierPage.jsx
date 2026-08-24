@@ -10,13 +10,15 @@ export const ChantierPage = () => {
   const [isArchivedExpanded, setIsArchivedExpanded] = useState(false);
 
   const handleAddChantier = async (formData) => {
-    const result = await addChantier(formData.nom, formData.dateDebut, formData.dateDebut, formData.description, formData.couleur || "", formData.dateSignature || "", formData.typeChantier || "Rénovation");
+    const dateDebutTechnique = formData.dateDebut || `${formData.dateSignature}-01`;
+    const result = await addChantier(formData.nom, dateDebutTechnique, dateDebutTechnique, formData.description, formData.couleur || "", formData.dateSignature || "", formData.typeChantier || "Rénovation");
     if (result.success) setShowAddModal(false);
     else alert("Erreur: " + (result.error || "Impossible d'ajouter le chantier"));
   };
 
   const handleUpdateChantier = async (formData) => {
-    const result = await updateChantier(editingChantier.id, formData.nom, formData.dateDebut, formData.dateDebut, formData.description, formData.statut, formData.couleur || "", formData.dateSignature || "", formData.typeChantier || "Rénovation");
+    const dateDebutTechnique = formData.dateDebut || `${formData.dateSignature}-01`;
+    const result = await updateChantier(editingChantier.id, formData.nom, dateDebutTechnique, dateDebutTechnique, formData.description, formData.statut, formData.couleur || "", formData.dateSignature || "", formData.typeChantier || "Rénovation");
     if (result.success) setEditingChantier(null);
     else alert("Erreur: " + (result.error || "Impossible de modifier le chantier"));
   };
