@@ -10,15 +10,13 @@ export const ChantierPage = () => {
   const [isArchivedExpanded, setIsArchivedExpanded] = useState(false);
 
   const handleAddChantier = async (formData) => {
-    const dateDebutTechnique = formData.dateDebut || `${formData.dateSignature}-01`;
-    const result = await addChantier(formData.nom, dateDebutTechnique, dateDebutTechnique, formData.description, formData.couleur || "", formData.dateSignature || "", formData.typeChantier || "Rénovation");
+    const result = await addChantier(formData.nom, formData.dateDebut || "", "", formData.description, formData.couleur || "", formData.dateSignature || "", formData.typeChantier || "Rénovation");
     if (result.success) setShowAddModal(false);
     else alert("Erreur: " + (result.error || "Impossible d'ajouter le chantier"));
   };
 
   const handleUpdateChantier = async (formData) => {
-    const dateDebutTechnique = formData.dateDebut || `${formData.dateSignature}-01`;
-    const result = await updateChantier(editingChantier.id, formData.nom, dateDebutTechnique, dateDebutTechnique, formData.description, formData.statut, formData.couleur || "", formData.dateSignature || "", formData.typeChantier || "Rénovation");
+    const result = await updateChantier(editingChantier.id, formData.nom, formData.dateDebut || "", "", formData.description, formData.statut, formData.couleur || "", formData.dateSignature || "", formData.typeChantier || "Rénovation");
     if (result.success) setEditingChantier(null);
     else alert("Erreur: " + (result.error || "Impossible de modifier le chantier"));
   };
@@ -45,6 +43,15 @@ export const ChantierPage = () => {
     return `${String(date.getDate()).padStart(2, "0")} ${days[date.getMonth()]}`;
   };
 
+  const formatDateSignature = (dateStr) => {
+    if (!dateStr) return "non renseignée";
+    const valeur = String(dateStr).substring(0, 7);
+    const [annee, mois] = valeur.split("-");
+    const moisNoms = ["jan", "fév", "mar", "avr", "mai", "juin", "juil", "aoû", "sep", "oct", "nov", "déc"];
+    const indexMois = Number(mois) - 1;
+    return moisNoms[indexMois] && annee ? `${moisNoms[indexMois]} ${annee}` : String(dateStr);
+  };
+
   const triAlpha = (a, b) => String(a.nom || "").localeCompare(String(b.nom || ""), "fr", { sensitivity: "base", numeric: true });
   const actifs = chantiers.filter(c => c.statut === "Actif").sort(triAlpha);
   const archived = chantiers.filter(c => c.statut === "Archivé").sort(triAlpha);
@@ -57,7 +64,11 @@ export const ChantierPage = () => {
           {chantier.nom}
         </span>
       </td>
-      <td style={{ padding: 8, color: "#374151", fontSize: 10 }}>{formatDate(chantier.dateDebut)} → {formatDate(chantier.dateFin)}</td>
+      <td style={{ padding: 8, color: "#374151", fontSize: 10 }}>
+        <span style={{ fontWeight: 600 }}>Signature :</span> {formatDateSignature(chantier.dateSignature)}
+        <span style={{ margin: "0 7px", color: "#94a3b8" }}>•</span>
+        <span style={{ fontWeight: 600 }}>Début :</span> {chantier.dateDebut ? formatDate(chantier.dateDebut) : "à définir"}
+      </td>
       <td style={{ padding: 8, textAlign: "center" }}><button onClick={() => setEditingChantier(chantier)} style={{ padding: "2px 6px", border: "1px solid #d1d5db", background: "white", borderRadius: 3, fontSize: 10, cursor: "pointer" }}>{archive ? "↻" : "✏️"}</button></td>
     </tr>
   ));
