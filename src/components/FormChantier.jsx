@@ -16,7 +16,7 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, onDelete, mode = "a
   };
 
   const handleSubmit = async () => {
-    if (!formData.nom || !formData.dateDebut) {
+    if (!formData.nom || !formData.dateSignature) {
       alert("Veuillez remplir tous les champs obligatoires");
       return;
     }
@@ -52,13 +52,13 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, onDelete, mode = "a
       </div>
 
       <div style={fieldBlockStyle}>
-        <label style={labelStyle}>Date de début *</label>
+        <label style={labelStyle}>Date de début (optionnel)</label>
         <input type="date" name="dateDebut" value={formData.dateDebut} onChange={handleChange} style={fieldStyle} />
       </div>
 
       <div style={fieldBlockStyle}>
-        <label style={labelStyle}>Date de signature</label>
-        <input type="month" name="dateSignature" value={formData.dateSignature || ""} onChange={handleChange} style={fieldStyle} />
+        <label style={labelStyle}>Date de signature *</label>
+        <input type="month" name="dateSignature" value={formData.dateSignature || ""} onChange={handleChange} required style={fieldStyle} />
       </div>
 
       <div style={fieldBlockStyle}>
