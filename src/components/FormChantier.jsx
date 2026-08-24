@@ -3,8 +3,8 @@ import React, { useState } from "react";
 export const FormChantier = ({ chantier, onSubmit, onCancel, onDelete, mode = "add" }) => {
   const [formData, setFormData] = useState(
     chantier
-      ? { ...chantier, couleur: chantier.couleur || "" }
-      : { nom: "", dateDebut: "", description: "", statut: "Actif", couleur: "" }
+      ? { ...chantier, dateSignature: chantier.dateSignature || "", couleur: chantier.couleur || "" }
+      : { nom: "", dateDebut: "", dateSignature: "", description: "", statut: "Actif", couleur: "" }
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -56,8 +56,13 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, onDelete, mode = "a
       </div>
 
       <div style={{ marginBottom: "1.25rem" }}>
+        <label style={labelStyle}>Date de signature</label>
+        <input type="month" name="dateSignature" value={formData.dateSignature || ""} onChange={handleChange} style={fieldStyle} />
+      </div>
+
+      <div style={{ marginBottom: "1.25rem" }}>
         <label style={labelStyle}>Description (optionnel)</label>
-        <textarea name="description" value={formData.description || ""} onChange={handleChange} placeholder="Ex: Rénovation complète du rez-de-chaussée" style={{ ...fieldStyle, resize: "vertical", minHeight: 80 }} />
+        <input type="text" name="description" value={formData.description || ""} onChange={handleChange} placeholder="Ex: Rénovation complète du rez-de-chaussée" style={fieldStyle} />
       </div>
 
       <div style={{ marginBottom: "1.25rem" }}>
