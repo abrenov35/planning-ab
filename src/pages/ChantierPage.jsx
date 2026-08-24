@@ -44,12 +44,16 @@ export const ChantierPage = () => {
   };
 
   const formatDateSignature = (dateStr) => {
-    if (!dateStr) return "non renseignée";
-    const valeur = String(dateStr).substring(0, 7);
-    const [annee, mois] = valeur.split("-");
-    const moisNoms = ["jan", "fév", "mar", "avr", "mai", "juin", "juil", "aoû", "sep", "oct", "nov", "déc"];
-    const indexMois = Number(mois) - 1;
-    return moisNoms[indexMois] && annee ? `${moisNoms[indexMois]} ${annee}` : String(dateStr);
+    if (!dateStr) return "";
+    const moisNoms = ["janv.", "fév.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+    const valeur = String(dateStr).trim();
+    const correspondance = valeur.match(/^(\d{4})-(\d{2})/);
+    if (correspondance) {
+      const indexMois = Number(correspondance[2]) - 1;
+      return moisNoms[indexMois] ? `${moisNoms[indexMois]} ${correspondance[1]}` : "";
+    }
+    const date = new Date(valeur);
+    return Number.isNaN(date.getTime()) ? "" : `${moisNoms[date.getMonth()]} ${date.getFullYear()}`;
   };
 
   const triAlpha = (a, b) => String(a.nom || "").localeCompare(String(b.nom || ""), "fr", { sensitivity: "base", numeric: true });
@@ -67,7 +71,7 @@ export const ChantierPage = () => {
       <td style={{ padding: 8, color: "#374151", fontSize: 10 }}>
         <span style={{ fontWeight: 600 }}>Signature :</span> {formatDateSignature(chantier.dateSignature)}
         <span style={{ margin: "0 7px", color: "#94a3b8" }}>•</span>
-        <span style={{ fontWeight: 600 }}>Début :</span> {chantier.dateDebut ? formatDate(chantier.dateDebut) : "à définir"}
+        <span style={{ fontWeight: 600 }}>Début :</span> {chantier.dateDebut ? formatDate(chantier.dateDebut) : ""}
       </td>
       <td style={{ padding: 8, textAlign: "center" }}><button onClick={() => setEditingChantier(chantier)} style={{ padding: "2px 6px", border: "1px solid #d1d5db", background: "white", borderRadius: 3, fontSize: 10, cursor: "pointer" }}>{archive ? "↻" : "✏️"}</button></td>
     </tr>
