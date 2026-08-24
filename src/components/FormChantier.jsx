@@ -40,27 +40,28 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, onDelete, mode = "a
     }
   };
 
-  const labelStyle = { display: "block", fontWeight: 600, fontSize: 13, color: "#1f2937", marginBottom: 6 };
-  const fieldStyle = { width: "100%", padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, fontFamily: "inherit" };
+  const labelStyle = { display: "block", fontWeight: 600, fontSize: 12, color: "#1f2937", marginBottom: 4 };
+  const fieldStyle = { width: "100%", height: 34, padding: "6px 10px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" };
+  const fieldBlockStyle = { marginBottom: "0.7rem" };
 
   return (
     <div>
-      <div style={{ marginBottom: "1.25rem" }}>
+      <div style={fieldBlockStyle}>
         <label style={labelStyle}>Nom du chantier *</label>
         <input type="text" name="nom" value={formData.nom} onChange={handleChange} placeholder="Ex: Rénovation Maison Petit" style={fieldStyle} />
       </div>
 
-      <div style={{ marginBottom: "1.25rem" }}>
+      <div style={fieldBlockStyle}>
         <label style={labelStyle}>Date de début *</label>
         <input type="date" name="dateDebut" value={formData.dateDebut} onChange={handleChange} style={fieldStyle} />
       </div>
 
-      <div style={{ marginBottom: "1.25rem" }}>
+      <div style={fieldBlockStyle}>
         <label style={labelStyle}>Date de signature</label>
         <input type="month" name="dateSignature" value={formData.dateSignature || ""} onChange={handleChange} style={fieldStyle} />
       </div>
 
-      <div style={{ marginBottom: "1.25rem" }}>
+      <div style={fieldBlockStyle}>
         <label style={labelStyle}>Type de chantier</label>
         <select name="typeChantier" value={formData.typeChantier || "Rénovation"} onChange={handleChange} style={{ ...fieldStyle, background: "white" }}>
           <option value="Rénovation">Rénovation</option>
@@ -69,12 +70,12 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, onDelete, mode = "a
         </select>
       </div>
 
-      <div style={{ marginBottom: "1.25rem" }}>
+      <div style={fieldBlockStyle}>
         <label style={labelStyle}>Description (optionnel)</label>
         <input type="text" name="description" value={formData.description || ""} onChange={handleChange} placeholder="Ex: Rénovation complète du rez-de-chaussée" style={fieldStyle} />
       </div>
 
-      <div style={{ marginBottom: "1.25rem" }}>
+      <div style={fieldBlockStyle}>
         <label style={labelStyle}>Couleur du chantier</label>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button type="button" onClick={() => setFormData(prev => ({ ...prev, couleur: "" }))} style={{ height: 36, padding: "0 12px", border: "1px solid #d1d5db", borderRadius: 6, background: !formData.couleur ? "#dbeafe" : "white", color: "#1f2937", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Automatique</button>
@@ -84,7 +85,7 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, onDelete, mode = "a
       </div>
 
       {mode === "edit" && (
-        <div style={{ marginBottom: "1.25rem" }}>
+        <div style={fieldBlockStyle}>
           <label style={{ ...labelStyle, marginBottom: 8 }}>Statut</label>
           <div style={{ display: "flex", gap: 8 }}>
             {["Actif", "Archivé"].map(statut => (
