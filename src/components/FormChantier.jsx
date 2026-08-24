@@ -1,9 +1,38 @@
 import React, { useState } from "react";
 
+const toDateInputValue = (value) => {
+  if (!value) return "";
+  const texte = String(value).trim();
+  const iso = texte.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (iso) return iso[1];
+  const date = new Date(texte);
+  if (Number.isNaN(date.getTime())) return "";
+  const annee = date.getFullYear();
+  const mois = String(date.getMonth() + 1).padStart(2, "0");
+  const jour = String(date.getDate()).padStart(2, "0");
+  return `${annee}-${mois}-${jour}`;
+};
+
+const toMonthInputValue = (value) => {
+  if (!value) return "";
+  const texte = String(value).trim();
+  const iso = texte.match(/^(\d{4}-\d{2})/);
+  if (iso) return iso[1];
+  const date = new Date(texte);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+};
+
 export const FormChantier = ({ chantier, onSubmit, onCancel, onDelete, mode = "add" }) => {
   const [formData, setFormData] = useState(
     chantier
-      ? { ...chantier, dateSignature: chantier.dateSignature || "", typeChantier: chantier.typeChantier || "Rénovation", couleur: chantier.couleur || "" }
+      ? {
+          ...chantier,
+          dateDebut: toDateInputValue(chantier.dateDebut),
+          dateSignature: toMonthInputValue(chantier.dateSignature),
+          typeChantier: chantier.typeChantier || "Rénovation",
+          couleur: chantier.couleur || ""
+        }
       : { nom: "", dateDebut: "", dateSignature: "", typeChantier: "Rénovation", description: "", statut: "Actif", couleur: "" }
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
