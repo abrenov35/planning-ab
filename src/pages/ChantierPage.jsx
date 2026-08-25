@@ -10,15 +10,26 @@ export const ChantierPage = () => {
   const [isArchivedExpanded, setIsArchivedExpanded] = useState(false);
 
   const handleAddChantier = async (formData) => {
-    const result = await addChantier(formData.nom, formData.dateDebut || "", "", formData.description, formData.couleur || "", formData.dateSignature || "", formData.typeChantier || "Rénovation");
-    if (result.success) setShowAddModal(false);
-    else alert("Erreur: " + (result.error || "Impossible d'ajouter le chantier"));
+    setShowAddModal(false);
+    try {
+      const result = await addChantier(formData.nom, formData.dateDebut || "", "", formData.description, formData.couleur || "", formData.dateSignature || "", formData.typeChantier || "Rénovation");
+      if (!result.success) alert("Erreur: " + (result.error || "Impossible d'ajouter le chantier"));
+    } catch (error) {
+      console.error("Erreur lors de la création du chantier:", error);
+      alert("Erreur: impossible d'ajouter le chantier. Vérifiez la connexion puis réessayez.");
+    }
   };
 
   const handleUpdateChantier = async (formData) => {
-    const result = await updateChantier(editingChantier.id, formData.nom, formData.dateDebut || "", "", formData.description, formData.statut, formData.couleur || "", formData.dateSignature || "", formData.typeChantier || "Rénovation");
-    if (result.success) setEditingChantier(null);
-    else alert("Erreur: " + (result.error || "Impossible de modifier le chantier"));
+    const chantierId = editingChantier.id;
+    setEditingChantier(null);
+    try {
+      const result = await updateChantier(chantierId, formData.nom, formData.dateDebut || "", "", formData.description, formData.statut, formData.couleur || "", formData.dateSignature || "", formData.typeChantier || "Rénovation");
+      if (!result.success) alert("Erreur: " + (result.error || "Impossible de modifier le chantier"));
+    } catch (error) {
+      console.error("Erreur lors de la modification du chantier:", error);
+      alert("Erreur: impossible de modifier le chantier. Vérifiez la connexion puis réessayez.");
+    }
   };
 
   const handleDeleteChantier = async (chantier) => {
