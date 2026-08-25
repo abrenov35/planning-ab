@@ -45,7 +45,7 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, onDelete, mode = "a
   };
 
   const handleSubmit = async () => {
-    if (!formData.nom || !formData.dateSignature) {
+    if (!formData.nom) {
       alert("Veuillez remplir tous les champs obligatoires");
       return;
     }
@@ -85,19 +85,23 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, onDelete, mode = "a
         <input type="date" name="dateDebut" value={formData.dateDebut} onChange={handleChange} style={fieldStyle} />
       </div>
 
-      <div style={fieldBlockStyle}>
-        <label style={labelStyle}>Date de signature *</label>
-        <input type="month" name="dateSignature" value={formData.dateSignature || ""} onChange={handleChange} required style={fieldStyle} />
-      </div>
+      {mode === "edit" && (
+        <div style={fieldBlockStyle}>
+          <label style={labelStyle}>Date de signature (optionnelle)</label>
+          <input type="month" name="dateSignature" value={formData.dateSignature || ""} onChange={handleChange} style={fieldStyle} />
+        </div>
+      )}
 
-      <div style={fieldBlockStyle}>
-        <label style={labelStyle}>Type de chantier</label>
-        <select name="typeChantier" value={formData.typeChantier || "Rénovation"} onChange={handleChange} style={{ ...fieldStyle, background: "white" }}>
-          <option value="Rénovation">Rénovation</option>
-          <option value="Sinistre">Sinistre</option>
-          <option value="Autre">Autre</option>
-        </select>
-      </div>
+      {mode === "edit" && (
+        <div style={fieldBlockStyle}>
+          <label style={labelStyle}>Type de chantier</label>
+          <select name="typeChantier" value={formData.typeChantier || "Rénovation"} onChange={handleChange} style={{ ...fieldStyle, background: "white" }}>
+            <option value="Rénovation">Rénovation</option>
+            <option value="Sinistre">Sinistre</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </div>
+      )}
 
       <div style={fieldBlockStyle}>
         <label style={labelStyle}>Description (optionnel)</label>
