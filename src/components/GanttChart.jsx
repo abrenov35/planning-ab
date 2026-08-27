@@ -211,7 +211,10 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     onAddAffectation(ouvrierId,date);
   };
   const handleEmptyCellTouchStart = (e,key) => {
-    if (!isMobile || e.target !== e.currentTarget || e.touches.length !== 1) {
+    // Un bloc d'affectation est imbriqué dans la case. Ne pas effacer ici le
+    // premier tap du bloc lorsque son événement remonte jusqu'à la case.
+    if (e.target !== e.currentTarget) return;
+    if (!isMobile || e.touches.length !== 1) {
       touchStartRef.current = null;
       return;
     }
@@ -241,6 +244,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     onAffectationClick(affectation);
   };
   const handleAffectationTouchStart = (e,key) => {
+    e.stopPropagation();
     if (!isMobile || e.touches.length !== 1) {
       touchStartRef.current = null;
       return;
@@ -249,6 +253,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     touchStartRef.current = { x:touch.clientX, y:touch.clientY, key };
   };
   const handleAffectationTouchEnd = (e,affectation,key) => {
+    e.stopPropagation();
     if (!isMobile) return;
     const start = touchStartRef.current;
     touchStartRef.current = null;
@@ -260,7 +265,6 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     if (last.key === key && now-last.time <= 350) {
       lastTapRef.current = { key:"", time:0 };
       e.preventDefault();
-      e.stopPropagation();
       onAffectationClick(affectation);
     } else {
       lastTapRef.current = { key, time:now };
