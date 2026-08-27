@@ -4,7 +4,7 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div style={{
+    <div className="ab-modal-overlay" style={{
       position: "fixed",
       top: 0,
       left: 0,
@@ -17,7 +17,23 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
       zIndex: 100,
       padding: 8
     }} onClick={onClose}>
-      <div style={{
+      <style>{`
+        @media (max-width: 1100px) and (pointer: coarse) {
+          .ab-modal-overlay {
+            padding: 0 !important;
+            align-items: stretch !important;
+          }
+          .ab-modal-panel {
+            width: 100% !important;
+            max-width: none !important;
+            height: 100dvh !important;
+            max-height: 100dvh !important;
+            border-radius: 0 !important;
+            padding: calc(12px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom)) !important;
+          }
+        }
+      `}</style>
+      <div className="ab-modal-panel" style={{
         background: "white",
         borderRadius: 10,
         padding: "1rem 1.15rem",
