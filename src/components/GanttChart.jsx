@@ -3,6 +3,8 @@ import { getWorkerSeparators, normalizeWorkerName, sortWorkersPlanning } from ".
 
 export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationClick, onAddAffectation, onControlsReady }) => {
   const mobileMediaQuery = "(max-width: 1100px) and (pointer: coarse)";
+  const mobileDoubleTapDelay = 550;
+  const mobileTapMoveTolerance = 18;
   const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.matchMedia(mobileMediaQuery).matches);
   const [pastWeeks, setPastWeeks] = useState(0);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
@@ -227,10 +229,10 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     touchStartRef.current = null;
     const touch = e.changedTouches?.[0];
     if (!start || !touch || start.key !== key) return;
-    if (Math.hypot(touch.clientX-start.x, touch.clientY-start.y) > 10) return;
+    if (Math.hypot(touch.clientX-start.x, touch.clientY-start.y) > mobileTapMoveTolerance) return;
     const now = Date.now();
     const last = lastTapRef.current;
-    if (last.key === key && now-last.time <= 350) {
+    if (last.key === key && now-last.time <= mobileDoubleTapDelay) {
       lastTapRef.current = { key:"", time:0 };
       e.preventDefault();
       onAddAffectation(ouvrierId,date);
@@ -259,10 +261,10 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     touchStartRef.current = null;
     const touch = e.changedTouches?.[0];
     if (!start || !touch || start.key !== key) return;
-    if (Math.hypot(touch.clientX-start.x, touch.clientY-start.y) > 10) return;
+    if (Math.hypot(touch.clientX-start.x, touch.clientY-start.y) > mobileTapMoveTolerance) return;
     const now = Date.now();
     const last = lastTapRef.current;
-    if (last.key === key && now-last.time <= 350) {
+    if (last.key === key && now-last.time <= mobileDoubleTapDelay) {
       lastTapRef.current = { key:"", time:0 };
       e.preventDefault();
       onAffectationClick(affectation);
@@ -415,7 +417,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
                 <div style={{display:"grid",gridTemplateColumns:gridTemplate,background:rowBackground,borderRight:"1px solid #9ca3af",position:"relative",height:rowHeight,...timelineFlexStyle}}>
                   {allDates.map((date,dayIdx) => {
                     const cellKey = `${ouvrier.id}:${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`;
-                    return <div key={dayIdx} onDoubleClick={e=>handleEmptyCellDoubleClick(e,ouvrier.id,date)} onTouchStart={e=>handleEmptyCellTouchStart(e,cellKey)} onTouchEnd={e=>handleEmptyCellTouchEnd(e,ouvrier.id,date,cellKey)} style={{borderRight:getDayRightBorder(dayIdx),position:"relative",cursor:"pointer",padding:1,overflow:"hidden"}}>
+                    return <div key={dayIdx} onDoubleClick={e=>handleEmptyCellDoubleClick(e,ouvrier.id,date)} onTouchStart={e=>handleEmptyCellTouchStart(e,cellKey)} onTouchEnd={e=>handleEmptyCellTouchEnd(e,ouvrier.id,date,cellKey)} onTouchCancel={()=>{touchStartRef.current=null;}} style={{borderRight:getDayRightBorder(dayIdx),position:"relative",cursor:"pointer",padding:1,overflow:"hidden"}}>
                       {affectsByOuvrier.map(aff => {
                         if (!isVisibleOnDay(aff,date)) return null;
                         const chantier = chantiers.find(c => Number(c.id) === Number(aff.chantierId));
@@ -433,7 +435,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
                         const barBorder = rdv ? "1px solid #6d28d9" : planning ? "1px solid #115e59" : horsGantt ? "1px solid #9CA3AF" : "1px solid rgba(0,0,0,0.16)";
                         const barText = rdv ? rdvName : horsGantt ? nomHorsGantt : lettres;
                         const barHeight = Math.max(13, affectationSlotHeight - 10);
-                        return <div key={aff.id} onDoubleClick={e=>handleAffectationDoubleClick(e,aff)} onTouchStart={e=>handleAffectationTouchStart(e,`affectation:${aff.id}`)} onTouchEnd={e=>handleAffectationTouchEnd(e,aff,`affectation:${aff.id}`)} style={{position:"absolute",left:1,right:1,top:topOffset,cursor:"pointer",zIndex:2}}>
+                        return <div key={aff.id} onDoubleClick={e=>handleAffectationDoubleClick(e,aff)} onTouchStart={e=>handleAffectationTouchStart(e,`affectation:${aff.id}`)} onTouchEnd={e=>handleAffectationTouchEnd(e,aff,`affectation:${aff.id}`)} onTouchCancel={e=>{e.stopPropagation();touchStartRef.current=null;}} style={{position:"absolute",left:1,right:1,top:topOffset,cursor:"pointer",zIndex:2,touchAction:"manipulation",WebkitTapHighlightColor:"transparent",userSelect:"none",WebkitUserSelect:"none"}}>
                           <div className={highlightedAffectationId===aff.id ? "gantt-search-hit" : ""} title={rdv ? `${rdvName} — ${label}` : horsGantt ? aff.nomExterne || "Événement Google" : `${chantier?.nom || ""} — double-cliquer pour modifier`} style={{width:"100%",height:barHeight,backgroundColor:barBackground,border:barBorder,borderRadius:isMobile ? 3 : 2,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center",padding:(horsGantt || rdv) ? "0 2px" : 0,color:barColor,fontWeight:800,fontSize:fitTextSize(barText),overflow:"hidden",minWidth:0}}><span style={{display:"block",maxWidth:"100%",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center"}}>{barText}</span></div>
                           {label && <div title={label} style={{marginTop:1,height:7,fontSize:dayWidth < 27 ? 5 : 6,fontWeight:rdv ? 800 : 600,color:rdv ? "#6d28d9" : "#374151",textAlign:"center",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:"7px"}}>{label}</div>}
                         </div>;
