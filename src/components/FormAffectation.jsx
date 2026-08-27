@@ -17,7 +17,23 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
   const [days, setDays] = useState({ lundi:false, mardi:false, mercredi:false, jeudi:false, vendredi:false });
   const [formData, setFormData] = useState({ chantierId:"", nomLibre:"", tache:"", rdvHeure:"" });
   const [tacheHistory, setTacheHistory] = useState([]);
-  const compactLandscape = typeof window !== "undefined" && window.matchMedia("(max-width: 1100px) and (orientation: landscape)").matches;
+  const compactQuery = "(max-width: 1100px) and (orientation: landscape)";
+  const [compactLandscape, setCompactLandscape] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia(compactQuery).matches
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const media = window.matchMedia(compactQuery);
+    const update = () => setCompactLandscape(media.matches);
+    update();
+    media.addEventListener?.("change", update);
+    window.addEventListener("orientationchange", update);
+    return () => {
+      media.removeEventListener?.("change", update);
+      window.removeEventListener("orientationchange", update);
+    };
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem("tacheHistory");
