@@ -1,15 +1,45 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 export const Modal = ({ isOpen, title, children, onClose }) => {
+  const [visualViewport, setVisualViewport] = useState(null);
+
+  useEffect(() => {
+    if (!isOpen || typeof window === "undefined") return undefined;
+    const viewport = window.visualViewport;
+    const updateViewport = () => {
+      setVisualViewport({
+        height: Math.round(viewport?.height || window.innerHeight),
+        offsetTop: Math.round(viewport?.offsetTop || 0)
+      });
+    };
+    const keepFocusedFieldVisible = event => {
+      if (!event.target?.matches?.("input, textarea, select")) return;
+      window.setTimeout(() => event.target.scrollIntoView({ block:"center", behavior:"smooth" }), 120);
+    };
+
+    updateViewport();
+    viewport?.addEventListener("resize", updateViewport);
+    viewport?.addEventListener("scroll", updateViewport);
+    window.addEventListener("resize", updateViewport);
+    document.addEventListener("focusin", keepFocusedFieldVisible);
+    return () => {
+      viewport?.removeEventListener("resize", updateViewport);
+      viewport?.removeEventListener("scroll", updateViewport);
+      window.removeEventListener("resize", updateViewport);
+      document.removeEventListener("focusin", keepFocusedFieldVisible);
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
     <div className="ab-modal-overlay" style={{
       position: "fixed",
-      top: 0,
+      top: visualViewport?.offsetTop || 0,
       left: 0,
       right: 0,
-      bottom: 0,
+      bottom: "auto",
+      height: visualViewport?.height || "100dvh",
       background: "rgba(0,0,0,0.45)",
       display: "flex",
       alignItems: "center",
@@ -26,10 +56,17 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
           .ab-modal-panel {
             width: 100% !important;
             max-width: none !important;
-            height: 100dvh !important;
-            max-height: 100dvh !important;
+            height: 100% !important;
+            max-height: 100% !important;
             border-radius: 0 !important;
             padding: calc(12px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom)) !important;
+          }
+          .ab-modal-header {
+            position: sticky;
+            top: calc(-12px - env(safe-area-inset-top));
+            z-index: 5;
+            background: white;
+            padding: 8px 0;
           }
         }
       `}</style>
@@ -45,7 +82,7 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
         boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
         WebkitOverflowScrolling: "touch"
       }} onClick={e => e.stopPropagation()}>
-        <div style={{
+        <div className="ab-modal-header" style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
