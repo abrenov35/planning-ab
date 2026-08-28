@@ -1,0 +1,19 @@
+.gantt-scroll > [data-worker-id] > div:first-child > div:first-child {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 100 !important;
+  isolation: isolate;
+  background-clip: padding-box;
+}
+
+.gantt-scroll > div:first-child > div:first-child {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 120 !important;
+  isolation: isolate;
+  background-clip: padding-box;
+}
+
+.gantt-scroll > [data-worker-id] > div:first-child > div:nth-child(2) {
+  z-index: 1;
+}
