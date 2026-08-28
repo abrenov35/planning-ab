@@ -29,11 +29,22 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
 
     setDeleteConfirmTarget(null);
 
-    // Le premier clic arme la suppression dans GanttPage.
-    // Le second clic, après la mise à jour React, exécute réellement la suppression.
+    // Premier clic : arme la suppression dans GanttPage.
     bypassDeleteConfirmRef.current = true;
     target.click();
-    window.setTimeout(() => target.click(), 0);
+
+    // Après le rerender React, le bouton d'origine est remplacé.
+    // On retrouve donc le nouveau bouton "Confirmer la suppression"
+    // et on déclenche la suppression réelle sur ce nouvel élément.
+    window.setTimeout(() => {
+      const panel = document.querySelector('.ab-modal-panel');
+      const confirmButton = panel
+        ? Array.from(panel.querySelectorAll('button')).find(
+            button => String(button.textContent || '').trim() === 'Confirmer la suppression'
+          )
+        : null;
+      if (confirmButton) confirmButton.click();
+    }, 50);
   };
 
   return (
