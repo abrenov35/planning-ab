@@ -1,14 +1,15 @@
 .gantt-scroll {
   position: relative;
+  --gantt-scroll-left: 0px;
 }
 
-/* Chaque ligne devient son propre contexte d'empilement. */
+/* Chaque ligne garde sa propre hiérarchie d'affichage. */
 .gantt-scroll > [data-worker-id] > div:first-child {
   position: relative !important;
   isolation: isolate !important;
 }
 
-/* Colonne ouvrier : sticky, opaque et toujours au-dessus de SA timeline. */
+/* Colonne ouvrier : sticky et toujours au-dessus de sa timeline. */
 .gantt-scroll > [data-worker-id] > div:first-child > div:first-child {
   position: sticky !important;
   left: 0 !important;
@@ -28,8 +29,15 @@
   background-clip: border-box !important;
 }
 
-/* Timeline confinée derrière la cellule ouvrier. */
-.gantt-scroll > [data-worker-id] > div:first-child > div:nth-child(2) {
+/*
+  Correction forte : on ne se contente plus du z-index.
+  La partie de timeline passée sous la colonne des ouvriers est physiquement
+  découpée au fur et à mesure du scroll horizontal. Elle ne peut donc plus
+  se peindre sur les noms, quelle que soit leur couleur de fond.
+*/
+.gantt-scroll > [data-worker-id] > div:first-child > div:nth-child(2),
+.gantt-scroll > div:first-child > div:nth-child(2) {
   position: relative !important;
   z-index: 1 !important;
+  clip-path: inset(0 0 0 var(--gantt-scroll-left));
 }
