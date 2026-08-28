@@ -3,7 +3,8 @@
   isolation: isolate;
 }
 
-/* Colonne ouvriers : toujours au-dessus de la timeline sur PC et mobile. */
+/* Colonne ouvriers : toujours au-dessus de la timeline sur PC et mobile.
+   Ne jamais imposer de background ici : la couleur est fournie par le rendu ouvrier. */
 .gantt-scroll > [data-worker-id] > div:first-child > div:first-child {
   position: sticky !important;
   left: 0 !important;
@@ -13,7 +14,6 @@
   -webkit-transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  background-color: inherit !important;
   background-clip: border-box !important;
   box-shadow: 3px 0 5px rgba(15,23,42,0.12);
 }
