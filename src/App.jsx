@@ -5,6 +5,7 @@ import { GanttPage } from "./pages/GanttPage";
 import { OuvriersPage } from "./pages/OuvriersPage";
 import { ChantierPage } from "./pages/ChantierPage";
 import "./gantt-sticky-fix.css";
+import "./gantt-scroll-mask";
 
 function App() {
   const [currentPage, setCurrentPage] = useState(() => localStorage.getItem("currentPage") || "gantt");
