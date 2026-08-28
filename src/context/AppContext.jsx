@@ -7,6 +7,7 @@ export const AppProvider=({children})=>{
  const[ouvriers,setOuvriers]=useState([]),[chantiers,setChantiers]=useState([]),[affectations,setAffectations]=useState([]),[loading,setLoading]=useState(true),[error,setError]=useState(null),[lastUpdated,setLastUpdated]=useState(null),[lastDeletedAffectation,setLastDeletedAffectation]=useState(null),[undoingDelete,setUndoingDelete]=useState(false);
  const undoTimerRef=useRef(null);
  const pendingAffectationsRef=useRef(new Map());
+ useEffect(()=>{const timer=window.setTimeout(()=>{ouvriers.forEach(o=>{const row=document.querySelector(`[data-worker-id="${o.id}"]`);const cell=row?.firstElementChild?.firstElementChild;if(!cell)return;const c=String(o.couleurCellule||"").trim();if(/^#[0-9A-Fa-f]{6}$/.test(c))cell.style.background=c;});},0);return()=>window.clearTimeout(timer);},[ouvriers,affectations]);
  const clearUndo=()=>{if(undoTimerRef.current){clearTimeout(undoTimerRef.current);undoTimerRef.current=null;}setLastDeletedAffectation(null);};
  const armUndo=a=>{if(undoTimerRef.current)clearTimeout(undoTimerRef.current);setLastDeletedAffectation({...a});undoTimerRef.current=setTimeout(()=>{setLastDeletedAffectation(null);undoTimerRef.current=null;},20000);};
  useEffect(()=>()=>{if(undoTimerRef.current)clearTimeout(undoTimerRef.current);},[]);
