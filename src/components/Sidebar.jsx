@@ -4,11 +4,18 @@ import { AppContext } from "../context/AppContext";
 
 export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
   const [chantierSearch, setChantierSearch] = useState("");
-  const { loadData, loading, lastDeletedAffectation, undoLastDelete, undoingDelete } = useContext(AppContext);
+  const { loadData, loading, lastDeletedAffectation, undoLastDelete, undoingDelete, affectations, deleteAffectation } = useContext(AppContext);
   const handleReload = async () => { await loadData(true); };
   const handleUndo = async () => {
     const result=await undoLastDelete();
     if(!result?.success && result?.error) alert("Annulation impossible : "+result.error);
+  };
+  const handleUndoLastEntry = () => {
+    const candidates=(affectations||[]).filter(a=>String(a.id||"").startsWith("tmp-"));
+    const last=candidates[candidates.length-1];
+    if(!last){alert("Aucune saisie récente à annuler.");return;}
+    if(!window.confirm("Annuler la dernière saisie du planning ?")) return;
+    deleteAffectation(last.id,false);
   };
   const baseButtonStyle = {
     width:92,height:28,padding:"0 8px",display:"inline-flex",alignItems:"center",justifyContent:"center",boxSizing:"border-box",
@@ -17,6 +24,7 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
   const navStyle = active => ({...baseButtonStyle,background:active?"rgba(255,255,255,0.18)":"transparent",borderBottom:active?"2px solid #f59e0b":"1px solid rgba(255,255,255,0.42)"});
   const separator=<div style={{width:1,height:24,background:"rgba(255,255,255,0.25)",flexShrink:0}}/>;
   const undoEnabled=currentPage==="gantt"&&Boolean(lastDeletedAffectation)&&!undoingDelete;
+  const hasRecentEntry=currentPage==="gantt"&&(affectations||[]).some(a=>String(a.id||"").startsWith("tmp-"));
   const runChantierSearch = value => {
     const query=String(value ?? chantierSearch).trim();
     if(!query || !ganttControls?.onFindChantier) return;
@@ -31,6 +39,7 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
     </div>}
     {separator}
     <button onClick={handleReload} disabled={loading} title="Recharger immédiatement les données du planning" style={{...baseButtonStyle,background:loading?"rgba(255,255,255,0.10)":"rgba(255,255,255,0.16)",cursor:loading?"default":"pointer"}}>{loading?"↻ ...":"↻ Recharger"}</button>
+    {currentPage==="gantt"&&<button onClick={handleUndoLastEntry} disabled={!hasRecentEntry} title={hasRecentEntry?"Annuler la dernière saisie effectuée":"Aucune saisie récente à annuler"} style={{...baseButtonStyle,width:112,background:hasRecentEntry?"#f59e0b":"rgba(255,255,255,0.08)",opacity:hasRecentEntry?1:0.45,cursor:hasRecentEntry?"pointer":"default"}}>↶ Dernière saisie</button>}
     {currentPage==="gantt"&&<button onClick={handleUndo} disabled={!undoEnabled} title={undoEnabled?"Restaurer la dernière affectation supprimée":"Aucune suppression à annuler"} style={{...baseButtonStyle,background:undoEnabled?"#f59e0b":"rgba(255,255,255,0.08)",opacity:undoEnabled?1:0.45,cursor:undoEnabled?"pointer":"default"}}>{undoingDelete?"↶ ...":"↶ Annuler"}</button>}
     {currentPage==="gantt"&&ganttControls&&<div style={{display:"flex",alignItems:"center",flexShrink:0}}>
       <input
