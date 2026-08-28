@@ -56,7 +56,6 @@ export const OuvriersPage = () => {
         const ordered = buildReordered(source, edited, formData.positionApres);
         await persistActiveOrder(ordered);
       }
-      await loadData(false);
       setEditingOuvrier(null);
       return true;
     } catch (err) { alert("Erreur: " + err.message); return false; }
