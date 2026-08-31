@@ -224,7 +224,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
 
     setSavingEdit(true);
     try {
-      const result = await deleteAffectation(editAffectation.id);
+      const result = await deleteAffectation(editAffectation.id, false);
       if (result?.error) throw new Error(result.error);
       setEditAffectation(null);
       setDeleteStep(false);
@@ -388,12 +388,11 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                     borderRadius: 7,
                     border: !editForm.isRdv ? "2px solid #1e3a8a" : "1px solid #d1d5db",
                     background: !editForm.isRdv ? "#eff6ff" : "white",
-                    color: "#1e3a8a",
                     fontWeight: 700,
-                    cursor: "pointer"
+                    color: "#1f2937"
                   }}
                 >
-                  Standard
+                  Affectation
                 </button>
                 <button
                   type="button"
@@ -404,65 +403,72 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                     borderRadius: 7,
                     border: editForm.isRdv ? "2px solid #7c3aed" : "1px solid #d1d5db",
                     background: editForm.isRdv ? "#f5f3ff" : "white",
-                    color: "#6d28d9",
-                    fontWeight: 800,
-                    cursor: "pointer"
+                    fontWeight: 700,
+                    color: "#1f2937"
                   }}
                 >
-                  📅 RDV
+                  RDV
                 </button>
               </div>
             </div>
 
             {editForm.isRdv ? (
               <div>
-                <label style={{ ...labelStyle, color: "#6d28d9" }}>Heure du RDV *</label>
+                <label style={labelStyle}>Heure du RDV</label>
                 <input
                   type="time"
                   value={editForm.rdvHeure}
                   onChange={e => setEditForm(prev => ({ ...prev, rdvHeure: e.target.value }))}
                   disabled={savingEdit}
-                  style={{ ...inputStyle, border: "2px solid #7c3aed", background: "#faf5ff" }}
+                  style={inputStyle}
                 />
-                <div style={{ marginTop: 4, fontSize: 10, color: "#6d28d9" }}>
-                  Affichage planning : {formatRdvTask(editForm.rdvHeure)}
-                </div>
               </div>
             ) : (
               <div>
-                <label style={labelStyle}>Tâche / description</label>
-                <textarea
+                <label style={labelStyle}>Tâche</label>
+                <input
+                  type="text"
                   value={editForm.tache}
                   onChange={e => setEditForm(prev => ({ ...prev, tache: e.target.value }))}
                   disabled={savingEdit}
-                  placeholder="Ex : préparation, peinture, SAV, congé, réunion..."
-                  rows={2}
-                  style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit" }}
+                  style={inputStyle}
                 />
               </div>
             )}
 
-            <div style={{ padding: "9px 10px", borderRadius: 6, background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1e40af", fontSize: 11, lineHeight: 1.4 }}>
-              Période actuelle : {formatDateLongue(editAffectation.dateDebut)}
-              {String(editAffectation.dateDebut) !== String(editAffectation.dateFin)
-                ? ` → ${formatDateLongue(editAffectation.dateFin)}`
-                : ""}
+            <div style={{ fontSize: 10, color: "#6b7280" }}>
+              Affectation actuelle : {formatDateLongue(editAffectation.dateDebut)} → {formatDateLongue(editAffectation.dateFin)}
             </div>
 
             {deleteStep && (
-              <div style={{ padding: "10px 12px", borderRadius: 6, background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", fontSize: 12, fontWeight: 600 }}>
-                Confirmer la suppression de cette affectation ? Elle sera également supprimée de Google Calendar.
+              <div style={{
+                background: "#fef2f2",
+                border: "1px solid #fecaca",
+                borderRadius: 8,
+                padding: 10,
+                fontSize: 11,
+                color: "#991b1b",
+                fontWeight: 700
+              }}>
+                Confirmer la suppression de cette affectation ?
               </div>
             )}
 
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginTop: 4 }}>
+            <div style={{ display: "flex", gap: 8, justifyContent: "space-between", flexWrap: "wrap" }}>
               <button
                 type="button"
                 onClick={handleDeleteEdit}
                 disabled={savingEdit}
-                style={{ padding: "9px 14px", borderRadius: 6, border: "1px solid #dc2626", background: deleteStep ? "#991b1b" : "#dc2626", color: "white", fontWeight: 700, cursor: savingEdit ? "not-allowed" : "pointer" }}
+                style={{
+                  padding: "9px 12px",
+                  borderRadius: 7,
+                  border: "1px solid #dc2626",
+                  background: deleteStep ? "#dc2626" : "white",
+                  color: deleteStep ? "white" : "#dc2626",
+                  fontWeight: 700
+                }}
               >
-                {savingEdit && deleteStep ? "Suppression..." : deleteStep ? "Confirmer la suppression" : "Supprimer"}
+                {deleteStep ? "Confirmer suppression" : "Supprimer"}
               </button>
 
               <div style={{ display: "flex", gap: 8 }}>
@@ -470,17 +476,30 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                   type="button"
                   onClick={closeEditModal}
                   disabled={savingEdit}
-                  style={{ padding: "9px 14px", borderRadius: 6, border: "1px solid #d1d5db", background: "white", color: "#374151", fontWeight: 600, cursor: savingEdit ? "not-allowed" : "pointer" }}
+                  style={{
+                    padding: "9px 12px",
+                    borderRadius: 7,
+                    border: "1px solid #d1d5db",
+                    background: "white",
+                    fontWeight: 700
+                  }}
                 >
                   Annuler
                 </button>
                 <button
                   type="button"
                   onClick={handleSaveEdit}
-                  disabled={savingEdit || deleteStep}
-                  style={{ padding: "9px 14px", borderRadius: 6, border: "none", background: savingEdit || deleteStep ? "#9ca3af" : "#1e3a8a", color: "white", fontWeight: 700, cursor: savingEdit || deleteStep ? "not-allowed" : "pointer" }}
+                  disabled={savingEdit}
+                  style={{
+                    padding: "9px 12px",
+                    borderRadius: 7,
+                    border: "1px solid #1e3a8a",
+                    background: "#1e3a8a",
+                    color: "white",
+                    fontWeight: 700
+                  }}
                 >
-                  {savingEdit && !deleteStep ? "Enregistrement..." : "Enregistrer"}
+                  {savingEdit ? "Enregistrement..." : "Enregistrer"}
                 </button>
               </div>
             </div>
