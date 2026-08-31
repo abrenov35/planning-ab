@@ -4,30 +4,45 @@ import * as api from "../utils/api";
 export const AppContext = createContext();
 
 const normaliserDate = value => {
-  const str = String(value || "").split("T")[0];
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) {
-    const [d, m, y] = str.split("/");
+  const str = String(value || "").trim();
+  if (!str) return "";
+  const brut = str.split("T")[0];
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(brut)) {
+    const [d, m, y] = brut.split("/");
     return `${y}-${m}-${d}`;
   }
-  return str;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(brut)) return brut;
+  const d = new Date(str);
+  if (!Number.isNaN(d.getTime())) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+  return brut;
 };
 
 const nomAffectation = a => String(a?.nomExterne || a?.affectationNom || a?.nomAffectation || "").trim();
+const tacheAffectation = a => String(a?.tache || "").trim();
 
 const memeAffectation = (a, b) =>
   String(a?.ouvrierID || "") === String(b?.ouvrierID || "") &&
   String(a?.chantierId || "") === String(b?.chantierId || "") &&
   normaliserDate(a?.dateDebut) === normaliserDate(b?.dateDebut) &&
   normaliserDate(a?.dateFin) === normaliserDate(b?.dateFin) &&
-  String(a?.tache || "").trim() === String(b?.tache || "").trim() &&
+  tacheAffectation(a) === tacheAffectation(b) &&
   nomAffectation(a) === nomAffectation(b);
+
+const memeAffectationSouple = (a, b) =>
+  String(a?.ouvrierID || "") === String(b?.ouvrierID || "") &&
+  String(a?.chantierId || "") === String(b?.chantierId || "") &&
+  normaliserDate(a?.dateDebut) === normaliserDate(b?.dateDebut) &&
+  normaliserDate(a?.dateFin) === normaliserDate(b?.dateFin) &&
+  tacheAffectation(a) === tacheAffectation(b);
 
 const cleAffectation = a => [
   String(a?.ouvrierID || ""),
   String(a?.chantierId || ""),
   normaliserDate(a?.dateDebut),
   normaliserDate(a?.dateFin),
-  String(a?.tache || "").trim(),
+  tacheAffectation(a),
   nomAffectation(a)
 ].join("¦");
 
@@ -123,6 +138,15 @@ export const AppProvider = ({ children }) => {
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
   }, []);
 
+  const doitMasquerSuppression = affectation => {
+    const id = String(affectation?.id || "");
+    for (const [pendingId, pending] of pendingDeletionsRef.current.entries()) {
+      if (id && id === String(pendingId)) return true;
+      if (pending?.affectation && memeAffectationSouple(affectation, pending.affectation)) return true;
+    }
+    return deletedKeysRef.current.has(cleAffectation(affectation));
+  };
+
   const loadData = useCallback(async (showLoader = false) => {
     if (showLoader) setLoading(true);
     try {
@@ -130,18 +154,18 @@ export const AppProvider = ({ children }) => {
       if (data?.error) throw new Error(data.error);
 
       const serveurBrut = Array.isArray(data?.affectations) ? data.affectations : [];
+      const maintenant = Date.now();
 
       pendingDeletionsRef.current.forEach((pending, id) => {
-        const existe = serveurBrut.some(a => String(a.id) === String(id));
-        if (!existe) pendingDeletionsRef.current.delete(id);
+        if (pending?.releaseAt && maintenant >= pending.releaseAt) {
+          pendingDeletionsRef.current.delete(id);
+        } else if (maintenant - Number(pending?.createdAt || maintenant) > 90000) {
+          pendingDeletionsRef.current.delete(id);
+        }
       });
 
-      const serveur = serveurBrut.filter(a => {
-        if (pendingDeletionsRef.current.has(String(a.id))) return false;
-        return !deletedKeysRef.current.has(cleAffectation(a));
-      });
+      const serveur = serveurBrut.filter(a => !doitMasquerSuppression(a));
 
-      const maintenant = Date.now();
       const temporaires = [];
       pendingAffectationsRef.current.forEach((pending, tempId) => {
         if (serveur.some(a => memeAffectation(a, pending.affectation))) {
@@ -213,16 +237,28 @@ export const AppProvider = ({ children }) => {
     return false;
   };
 
-  const verifierSuppressionAffectation = async id => {
+  const verifierSuppressionAffectation = async (id, removed) => {
     const key = String(id);
-    for (const attente of [750, 2000, 4000]) {
+    let absencesConsecutives = 0;
+
+    for (const attente of [500, 1000, 1800, 3000]) {
       await new Promise(resolve => setTimeout(resolve, attente));
       try {
         const data = await api.getAll();
         const serveur = Array.isArray(data?.affectations) ? data.affectations : [];
-        if (!serveur.some(a => String(a.id) === key)) {
-          pendingDeletionsRef.current.delete(key);
-          await loadData(false);
+        const existe = serveur.some(a =>
+          String(a.id) === key ||
+          (removed && memeAffectationSouple(a, removed))
+        );
+
+        absencesConsecutives = existe ? 0 : absencesConsecutives + 1;
+        if (absencesConsecutives >= 2) {
+          const pending = pendingDeletionsRef.current.get(key);
+          if (pending) {
+            pending.confirmedAt = Date.now();
+            pending.releaseAt = Date.now() + 15000;
+            pendingDeletionsRef.current.set(key, pending);
+          }
           setError(null);
           return true;
         }
@@ -301,7 +337,6 @@ export const AppProvider = ({ children }) => {
     const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const optimistic = { id: tempId, ouvrierID, chantierId: cid, dateDebut, dateFin, tache: tache || "", nomAffectation: nom, affectationNom: nom, nomExterne: nom, typeAffectation: type, statut: "Actif" };
 
-    // Une création explicite identique signifie que l'utilisateur veut de nouveau cette affectation.
     forgetDeleted(optimistic);
 
     pendingAffectationsRef.current.set(tempId, { affectation: optimistic, createdAt: Date.now() });
@@ -360,7 +395,12 @@ export const AppProvider = ({ children }) => {
 
     if (removed && allowUndo) armUndo(removed);
     if (removed) {
-      pendingDeletionsRef.current.set(key, { affectation: { ...removed }, createdAt: Date.now() });
+      pendingDeletionsRef.current.set(key, {
+        affectation: { ...removed },
+        createdAt: Date.now(),
+        confirmedAt: null,
+        releaseAt: null
+      });
       rememberDeleted(removed);
     }
 
@@ -384,7 +424,7 @@ export const AppProvider = ({ children }) => {
           return;
         }
         setError(null);
-        verifierSuppressionAffectation(id);
+        verifierSuppressionAffectation(id, removed);
       })
       .catch(err => {
         pendingDeletionsRef.current.delete(key);
@@ -410,6 +450,11 @@ export const AppProvider = ({ children }) => {
     setUndoingDelete(true);
     try {
       forgetDeleted(a);
+      for (const [id, pending] of pendingDeletionsRef.current.entries()) {
+        if (pending?.affectation && memeAffectationSouple(pending.affectation, a)) {
+          pendingDeletionsRef.current.delete(id);
+        }
+      }
       const nom = a.nomExterne || a.affectationNom || a.nomAffectation || "";
       const type = a.typeAffectation || (!a.chantierId ? "HORS_GANTT" : "CHANTIER");
       const r = await api.createAffectation(a.ouvrierID, a.chantierId || "", a.dateDebut, a.dateFin, a.tache || "", nom, type);
