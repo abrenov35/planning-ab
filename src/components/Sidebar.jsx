@@ -78,7 +78,7 @@ const estRecreationModification = affectation => {
 
 export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
   const [chantierSearch, setChantierSearch] = useState("");
-  const { loadData, loading, lastDeletedAffectation, undoLastDelete, undoingDelete, affectations, deleteAffectation } = useContext(AppContext);
+  const { loadData, loading, undoLastDelete, undoingDelete, affectations, deleteAffectation } = useContext(AppContext);
   const handleReload = async () => { await loadData(true); };
   const handleUndo = async () => {
     const result=await undoLastDelete();
@@ -101,10 +101,28 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
   const hasRecentEntry=currentPage==="gantt"&&recentEntries.length>0;
   const canSearch=currentPage==="gantt"&&Boolean(ganttControls)&&Boolean(chantierSearch.trim());
 
+  const registeredSearchOptions=(ganttControls?.searchChantiers||[]).map(c=>({
+    key:`chantier:${c.id}`,
+    label:String(c.nom||"").trim(),
+    type:"chantier",
+    chantierId:c.id
+  })).filter(x=>x.label);
+  const freeSearchOptions=[];
+  const freeSeen=new Set();
+  (affectations||[]).forEach(aff=>{
+    if(Number(aff?.chantierId)) return;
+    const label=nomAffectation(aff);
+    const normalized=normalizeSearch(label);
+    if(!label || freeSeen.has(normalized)) return;
+    freeSeen.add(normalized);
+    freeSearchOptions.push({key:`libre:${normalized}`,label,type:"libre",chantierId:""});
+  });
+  const allSearchOptions=[...registeredSearchOptions,...freeSearchOptions].sort((a,b)=>a.label.localeCompare(b.label,"fr",{sensitivity:"base"}));
+
   const runChantierSearch = value => {
     const query=String(value ?? chantierSearch).trim();
     if(!query){
-      alert("Sélectionnez ou saisissez le nom d'un chantier à rechercher.");
+      alert("Sélectionnez ou saisissez une affectation à rechercher.");
       return;
     }
     if(!ganttControls){
@@ -113,18 +131,19 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
     }
 
     const searched=normalizeSearch(query);
-    const options=ganttControls.searchChantiers||[];
-    const chantier=options.find(c=>String(c.id)===query || normalizeSearch(c.nom)===searched)
-      || options.find(c=>normalizeSearch(c.nom).includes(searched));
-    if(!chantier){
-      alert("Chantier introuvable.");
+    const target=allSearchOptions.find(option=>normalizeSearch(option.label)===searched)
+      || allSearchOptions.find(option=>normalizeSearch(option.label).includes(searched));
+    if(!target){
+      alert("Affectation introuvable.");
       return;
     }
 
     const today=new Date();
     today.setHours(0,0,0,0);
     const candidates=(affectations||[])
-      .filter(aff=>Number(aff.chantierId)===Number(chantier.id))
+      .filter(aff=>target.type==="chantier"
+        ? Number(aff.chantierId)===Number(target.chantierId)
+        : !Number(aff.chantierId) && normalizeSearch(nomAffectation(aff))===normalizeSearch(target.label))
       .map(aff=>{
         let start=parsePlanningDate(aff.dateDebut);
         let end=parsePlanningDate(aff.dateFin);
@@ -153,7 +172,7 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
 
     const found=candidates[0];
     if(!found){
-      alert(`Aucune affectation trouvée pour ${chantier.nom}.`);
+      alert(`Aucune affectation trouvée pour ${target.label}.`);
       return;
     }
 
@@ -172,8 +191,8 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
         detail:{
           targetDate:toIsoDate(found.targetDate),
           workerId:found.aff.ouvrierID,
-          chantierId:chantier.id,
-          chantierName:chantier.nom,
+          chantierId:target.chantierId||"",
+          chantierName:target.label,
           pastWeeks:weeksBack
         }
       }));
@@ -197,7 +216,7 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
     {separator}
     <button onClick={handleReload} disabled={loading} title="Recharger immédiatement les données du planning" style={{...baseButtonStyle,background:loading?"rgba(255,255,255,0.10)":"rgba(255,255,255,0.16)",cursor:loading?"default":"pointer"}}>{loading?"↻ ...":"↻ Recharger"}</button>
     {currentPage==="gantt"&&<button onClick={handleUndoLastEntry} disabled={!hasRecentEntry} title={hasRecentEntry?"Annuler la dernière saisie effectuée":"Aucune saisie récente à annuler"} style={{...baseButtonStyle,width:112,background:hasRecentEntry?"#f59e0b":"rgba(255,255,255,0.08)",opacity:hasRecentEntry?1:0.45,cursor:hasRecentEntry?"pointer":"default"}}>↶ Dernière saisie</button>}
-    {currentPage==="gantt"&&<button onClick={handleUndo} disabled={!undoEnabled} title={undoEnabled?"Restaurer la dernière affectation supprimée":"Aucune suppression à annuler"} style={{...baseButtonStyle,background:undoEnabled?"#f59e0b":"rgba(255,255,255,0.08)",opacity:undoEnabled?1:0.45,cursor:undoEnabled?"pointer":"default"}}>{undoingDelete?"↶ ...":"↶ Annuler"}</button>}
+    {currentPage==="gantt"&&<button onClick={handleUndo} disabled={!undoEnabled} title="Aucune suppression à annuler" style={{...baseButtonStyle,background:"rgba(255,255,255,0.08)",opacity:0.45,cursor:"default"}}>{undoingDelete?"↶ ...":"↶ Annuler"}</button>}
     {currentPage==="gantt"&&ganttControls&&<div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
       <input
         type="search"
@@ -205,18 +224,18 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
         value={chantierSearch}
         onChange={e=>setChantierSearch(e.target.value)}
         onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();runChantierSearch();}}}
-        placeholder="Chercher chantier"
-        title="Trouver l'affectation de ce chantier la plus proche d'aujourd'hui"
+        placeholder="Chercher affectation"
+        title="Trouver l'affectation la plus proche d'aujourd'hui"
         style={{width:145,height:28,padding:"0 8px",border:"1px solid rgba(255,255,255,0.55)",borderRadius:5,background:"white",color:"#172554",fontSize:10,fontWeight:700,boxSizing:"border-box",outline:"none"}}
       />
       <button
         type="button"
         onClick={()=>runChantierSearch()}
         disabled={!canSearch}
-        title="Aller à l'affectation de ce chantier la plus proche d'aujourd'hui"
+        title="Aller à l'affectation la plus proche d'aujourd'hui"
         style={{...baseButtonStyle,width:88,background:canSearch?"#f59e0b":"rgba(255,255,255,0.08)",opacity:canSearch?1:0.45,cursor:canSearch?"pointer":"default"}}
       >🔎 Rechercher</button>
-      <datalist id="gantt-chantier-search">{(ganttControls.searchChantiers||[]).map(chantier=><option key={chantier.id} value={chantier.nom}/>)}</datalist>
+      <datalist id="gantt-chantier-search">{allSearchOptions.map(option=><option key={option.key} value={option.label}/>)}</datalist>
     </div>}
     <button onClick={()=>setCurrentPage("chantiers")} style={navStyle(currentPage==="chantiers")}>🏗️ Chantiers</button>
     <button onClick={()=>setCurrentPage("ouvriers")} style={navStyle(currentPage==="ouvriers")}>👷 Ouvriers</button>
