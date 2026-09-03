@@ -65,7 +65,7 @@ const estRecreationModification = affectation => {
       nomAffectation(affectation)
     ];
     return suppressions.some(item=>{
-      if(!item?.key || maintenant-Number(item.deletedAt||0)>30000)return false;
+      if(!item?.key || maintenant-Number(item.deletedAt||0)>300000)return false;
       const parts=String(item.key).split("¦");
       if(parts.length<6)return false;
       const ancienne=[parts[1],normaliserDate(parts[2]),normaliserDate(parts[3]),parts[4],parts[5]];
@@ -97,7 +97,7 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
   };
   const navStyle = active => ({...baseButtonStyle,background:active?"rgba(255,255,255,0.18)":"transparent",borderBottom:active?"2px solid #f59e0b":"1px solid rgba(255,255,255,0.42)"});
   const separator=<div style={{width:1,height:24,background:"rgba(255,255,255,0.25)",flexShrink:0}}/>;
-  const undoEnabled=currentPage==="gantt"&&Boolean(lastDeletedAffectation)&&!undoingDelete;
+  const undoEnabled=false;
   const hasRecentEntry=currentPage==="gantt"&&recentEntries.length>0;
   const canSearch=currentPage==="gantt"&&Boolean(ganttControls)&&Boolean(chantierSearch.trim());
 
