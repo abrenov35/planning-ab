@@ -95,7 +95,6 @@ export const ChantierPage = () => {
         <div style={{ background: "white", borderRadius: 6, border: "1px solid #e5e7eb", marginBottom: "0.75rem", overflow: "hidden" }}>
           <div style={{ background: "#1e3a8a", color: "white", padding: "0.75rem 1rem", fontWeight: 600, fontSize: 13, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span>🏗️ Chantiers actifs ({actifs.length})</span>
-            <button onClick={() => setShowAddModal(true)} style={{ padding: "6px 12px", background: "#10b981", color: "white", border: "none", borderRadius: 3, fontSize: 11, cursor: "pointer", fontWeight: 600 }}>+ Chantier</button>
           </div>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}><tbody>{actifs.length === 0 ? <tr><td style={{ padding: 8, textAlign: "center", color: "#9ca3af" }}>Aucun chantier</td></tr> : rows(actifs)}</tbody></table>
         </div>
