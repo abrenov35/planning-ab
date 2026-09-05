@@ -1,5 +1,14 @@
 import React, { useState } from "react";
 
+const HIDDEN_GANTT_COLOR = "#9CA3AF";
+const AUTO_GANTT_COLORS = ["#2563EB", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4", "#EC4899", "#F97316", "#6366F1", "#14B8A6"];
+const autoColorFor = value => {
+  const source = String(value?.id || value?.nom || "CHANTIER");
+  let hash = 0;
+  for (let i = 0; i < source.length; i += 1) hash = ((hash << 5) - hash + source.charCodeAt(i)) | 0;
+  return AUTO_GANTT_COLORS[Math.abs(hash) % AUTO_GANTT_COLORS.length];
+};
+
 const toDateInputValue = (value) => {
   if (!value) return "";
   const texte = String(value).trim();
@@ -33,7 +42,7 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, onDelete, mode = "a
           typeChantier: chantier.typeChantier || "Rénovation",
           couleur: chantier.couleur || ""
         }
-      : { nom: "", dateDebut: "", dateSignature: "", typeChantier: "Rénovation", description: "", statut: "Actif", couleur: "" }
+      : { nom: "", dateDebut: "", dateSignature: "", typeChantier: "Rénovation", description: "", statut: "Actif", couleur: HIDDEN_GANTT_COLOR }
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -69,6 +78,7 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, onDelete, mode = "a
     }
   };
 
+  const chantierMasqueGantt = String(formData.couleur || "").toUpperCase() === HIDDEN_GANTT_COLOR;
   const labelStyle = { display: "block", fontWeight: 600, fontSize: 12, color: "#1f2937", marginBottom: 4 };
   const fieldStyle = { width: "100%", height: 34, padding: "6px 10px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" };
   const fieldBlockStyle = { marginBottom: "0.7rem" };
@@ -91,11 +101,34 @@ export const FormChantier = ({ chantier, onSubmit, onCancel, onDelete, mode = "a
       </div>
 
       <div style={fieldBlockStyle}>
-        <label style={labelStyle}>Couleur du chantier</label>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button type="button" onClick={() => setFormData(prev => ({ ...prev, couleur: "" }))} style={{ height: 36, padding: "0 12px", border: "1px solid #d1d5db", borderRadius: 6, background: !formData.couleur ? "#dbeafe" : "white", color: "#1f2937", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Automatique</button>
-          <input type="color" value={formData.couleur || "#2563eb"} onChange={(e) => setFormData(prev => ({ ...prev, couleur: e.target.value }))} title="Choisir une couleur" style={{ width: 48, height: 36, padding: 2, border: "1px solid #d1d5db", borderRadius: 6, background: "white", cursor: "pointer" }} />
-          <span style={{ fontSize: 12, color: "#64748b" }}>{formData.couleur ? "Couleur imposée" : "Couleur gérée par le système"}</span>
+        <label style={labelStyle}>Affichage sur le Gantt</label>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            onClick={() => setFormData(prev => ({ ...prev, couleur: autoColorFor(chantier || prev) }))}
+            style={{ height: 36, padding: "0 12px", border: "1px solid #2563eb", borderRadius: 6, background: chantierMasqueGantt ? "#eff6ff" : "white", color: "#1d4ed8", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+          >
+            {chantierMasqueGantt ? "Afficher — couleur automatique" : "Nouvelle couleur automatique"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setFormData(prev => ({ ...prev, couleur: HIDDEN_GANTT_COLOR }))}
+            style={{ height: 36, padding: "0 12px", border: "1px solid #d1d5db", borderRadius: 6, background: chantierMasqueGantt ? "#e5e7eb" : "white", color: "#4b5563", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+          >
+            Masquer du Gantt
+          </button>
+          <input
+            type="color"
+            value={chantierMasqueGantt || !formData.couleur ? "#2563eb" : formData.couleur}
+            onChange={(e) => setFormData(prev => ({ ...prev, couleur: e.target.value }))}
+            title="Choisir manuellement une couleur"
+            style={{ width: 48, height: 36, padding: 2, border: "1px solid #d1d5db", borderRadius: 6, background: "white", cursor: "pointer" }}
+          />
+          <span style={{ fontSize: 12, color: chantierMasqueGantt ? "#6b7280" : "#166534" }}>
+            {chantierMasqueGantt
+              ? "Gris : disponible pour les affectations, masqué du Gantt"
+              : (formData.couleur ? "Affiché sur le Gantt" : "Affichage automatique existant")}
+          </span>
         </div>
       </div>
 

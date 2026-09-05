@@ -56,7 +56,7 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
       setNotice({ title:"Chantier manquant", message:"Choisissez le chantier à planifier." });
       return;
     }
-    if ((mode === "libre" || mode === "rdv") && !formData.nomLibre.trim()) {
+    if (mode === "rdv" && !formData.nomLibre.trim()) {
       setNotice({ title:"Nom manquant", message:"Donnez un nom à l’affectation." });
       return;
     }
@@ -133,9 +133,8 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
 
         <div>
           <label style={label}>Type d’affectation</label>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
             <button type="button" onClick={()=>setMode("chantier")} style={modeButton("chantier","#1e3a8a","#eff6ff")}>🏗️ Chantier</button>
-            <button type="button" onClick={()=>setMode("libre")} style={modeButton("libre","#4b5563","#f3f4f6")}>Autre</button>
             <button type="button" onClick={()=>setMode("rdv")} style={modeButton("rdv","#6d28d9","#f5f3ff")}>📅 RDV</button>
           </div>
         </div>

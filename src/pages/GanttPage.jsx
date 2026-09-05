@@ -1,6 +1,6 @@
 import React, { useContext, useState } from "react";
 import { AppContext } from "../context/AppContext";
-import { GanttChart } from "../components/GanttChart";
+import { GanttChartPolicy as GanttChart } from "../components/GanttChartPolicy";
 import { Modal } from "../components/Modal";
 import { FormAffectation } from "../components/FormAffectation";
 
