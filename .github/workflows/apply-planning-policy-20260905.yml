@@ -1,0 +1,72 @@
+name: Apply planning policy 2026-09-05
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-planning-policy-20260905.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply source changes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          HIDDEN = '#9CA3AF'
+
+          # 1) Modale d'affectation : uniquement Chantier et RDV.
+          p = Path('src/components/FormAffectation.jsx')
+          s = p.read_text()
+          s = s.replace('if ((mode === "libre" || mode === "rdv") && !formData.nomLibre.trim()) {', 'if (mode === "rdv" && !formData.nomLibre.trim()) {')
+          s = s.replace('gridTemplateColumns:"1fr 1fr 1fr"', 'gridTemplateColumns:"1fr 1fr"')
+          s = s.replace('            <button type="button" onClick={()=>setMode("libre")} style={modeButton("libre","#4b5563","#f3f4f6")}>Autre</button>\n', '')
+          p.write_text(s)
+
+          # 2) Fiche chantier : les nouveaux chantiers naissent gris/hors Gantt.
+          p = Path('src/components/FormChantier.jsx')
+          s = p.read_text()
+          if 'HIDDEN_GANTT_COLOR' not in s:
+              s = s.replace('import React, { useState } from "react";\n', '''import React, { useState } from "react";\n\nconst HIDDEN_GANTT_COLOR = "#9CA3AF";\nconst AUTO_GANTT_COLORS = ["#2563EB", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4", "#EC4899", "#F97316", "#6366F1", "#14B8A6"];\nconst autoColorFor = value => {\n  const source = String(value?.id || value?.nom || "CHANTIER");\n  let hash = 0;\n  for (let i = 0; i < source.length; i += 1) hash = ((hash << 5) - hash + source.charCodeAt(i)) | 0;\n  return AUTO_GANTT_COLORS[Math.abs(hash) % AUTO_GANTT_COLORS.length];\n};\n''')
+          s = s.replace(': { nom: "", dateDebut: "", dateSignature: "", typeChantier: "Rénovation", description: "", statut: "Actif", couleur: "" }', ': { nom: "", dateDebut: "", dateSignature: "", typeChantier: "Rénovation", description: "", statut: "Actif", couleur: HIDDEN_GANTT_COLOR }')
+          marker = '  const labelStyle = { display: "block", fontWeight: 600, fontSize: 12, color: "#1f2937", marginBottom: 4 };'
+          if 'const chantierMasqueGantt' not in s:
+              s = s.replace(marker, '  const chantierMasqueGantt = String(formData.couleur || "").toUpperCase() === HIDDEN_GANTT_COLOR;\n  const labelStyle = { display: "block", fontWeight: 600, fontSize: 12, color: "#1f2937", marginBottom: 4 };')
+          start_marker = '      <div style={fieldBlockStyle}>\n        <label style={labelStyle}>Couleur du chantier</label>'
+          end_marker = '\n\n      {mode === "edit" && ('
+          start = s.find(start_marker)
+          end = s.find(end_marker, start)
+          if start < 0 or end < 0:
+              raise SystemExit('Bloc couleur FormChantier introuvable')
+          new_block = '''      <div style={fieldBlockStyle}>\n        <label style={labelStyle}>Affichage sur le Gantt</label>\n        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>\n          <button\n            type="button"\n            onClick={() => setFormData(prev => ({ ...prev, couleur: autoColorFor(chantier || prev) }))}\n            style={{ height: 36, padding: "0 12px", border: "1px solid #2563eb", borderRadius: 6, background: chantierMasqueGantt ? "#eff6ff" : "white", color: "#1d4ed8", fontSize: 12, fontWeight: 700, cursor: "pointer" }}\n          >\n            {chantierMasqueGantt ? "Afficher — couleur automatique" : "Nouvelle couleur automatique"}\n          </button>\n          <button\n            type="button"\n            onClick={() => setFormData(prev => ({ ...prev, couleur: HIDDEN_GANTT_COLOR }))}\n            style={{ height: 36, padding: "0 12px", border: "1px solid #d1d5db", borderRadius: 6, background: chantierMasqueGantt ? "#e5e7eb" : "white", color: "#4b5563", fontSize: 12, fontWeight: 700, cursor: "pointer" }}\n          >\n            Masquer du Gantt\n          </button>\n          <input\n            type="color"\n            value={chantierMasqueGantt || !formData.couleur ? "#2563eb" : formData.couleur}\n            onChange={(e) => setFormData(prev => ({ ...prev, couleur: e.target.value }))}\n            title="Choisir manuellement une couleur"\n            style={{ width: 48, height: 36, padding: 2, border: "1px solid #d1d5db", borderRadius: 6, background: "white", cursor: "pointer" }}\n          />\n          <span style={{ fontSize: 12, color: chantierMasqueGantt ? "#6b7280" : "#166534" }}>\n            {chantierMasqueGantt\n              ? "Gris : disponible pour les affectations, masqué du Gantt"\n              : (formData.couleur ? "Affiché sur le Gantt" : "Affichage automatique existant")}\n          </span>\n        </div>\n      </div>'''
+          s = s[:start] + new_block + s[end:]
+          p.write_text(s)
+
+          # 3) Filtre d'affichage du Gantt : les chantiers gris restent disponibles mais invisibles.
+          wrapper = Path('src/components/GanttChartPolicy.jsx')
+          wrapper.write_text('''import React from "react";\nimport { GanttChart } from "./GanttChart";\n\nconst HIDDEN_GANTT_COLOR = "#9CA3AF";\nconst isHidden = chantier => String(chantier?.couleur || "").trim().toUpperCase() === HIDDEN_GANTT_COLOR;\n\nexport const GanttChartPolicy = ({ chantiers = [], affectations = [], ...props }) => {\n  const hiddenIds = new Set(\n    chantiers.filter(isHidden).map(chantier => String(chantier.id))\n  );\n  const visibleChantiers = chantiers.filter(chantier => !isHidden(chantier));\n  const visibleAffectations = affectations.filter(affectation => {\n    const chantierId = String(affectation?.chantierId || "");\n    return !chantierId || !hiddenIds.has(chantierId);\n  });\n\n  return (\n    <GanttChart\n      {...props}\n      chantiers={visibleChantiers}\n      affectations={visibleAffectations}\n    />\n  );\n};\n''')
+
+          p = Path('src/pages/GanttPage.jsx')
+          s = p.read_text()
+          old = 'import { GanttChart } from "../components/GanttChart";'
+          new = 'import { GanttChartPolicy as GanttChart } from "../components/GanttChartPolicy";'
+          if old not in s and new not in s:
+              raise SystemExit('Import GanttChart introuvable')
+          s = s.replace(old, new)
+          p.write_text(s)
+          PY
+
+      - name: Commit policy
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/FormAffectation.jsx src/components/FormChantier.jsx src/components/GanttChartPolicy.jsx src/pages/GanttPage.jsx
+          git diff --cached --quiet && exit 0
+          git commit -m "Simplifie les affectations et masque les nouveaux chantiers gris du Gantt"
+          git push
