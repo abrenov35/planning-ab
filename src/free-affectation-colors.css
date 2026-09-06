@@ -1,0 +1,61 @@
+.gantt-scroll [title="Congé"],
+.gantt-scroll [title="cp"],
+.gantt-scroll [title="CP"] {
+  background-color: #FEF3C7 !important;
+  border-color: #F59E0B !important;
+  color: #78350F !important;
+}
+
+.gantt-scroll [title="Absent"] {
+  background-color: #FECACA !important;
+  border-color: #F87171 !important;
+  color: #991B1B !important;
+}
+
+.gantt-scroll [title="Arrêt maladie"] {
+  background-color: #FDA4AF !important;
+  border-color: #FB7185 !important;
+  color: #881337 !important;
+}
+
+.gantt-scroll [title="Accident du travail"] {
+  background-color: #FED7AA !important;
+  border-color: #FB923C !important;
+  color: #9A3412 !important;
+}
+
+.gantt-scroll [title="Congé parental"] {
+  background-color: #DDD6FE !important;
+  border-color: #A78BFA !important;
+  color: #5B21B6 !important;
+}
+
+.gantt-scroll [title="Formation"] {
+  background-color: #BFDBFE !important;
+  border-color: #60A5FA !important;
+  color: #1E3A8A !important;
+}
+
+.gantt-scroll [title="Récup"] {
+  background-color: #D1FAE5 !important;
+  border-color: #6EE7B7 !important;
+  color: #065F46 !important;
+}
+
+.gantt-scroll [title="Congé sans solde"] {
+  background-color: #FDE68A !important;
+  border-color: #F59E0B !important;
+  color: #78350F !important;
+}
+
+.gantt-scroll [title="Absence autorisée"] {
+  background-color: #E9D5FF !important;
+  border-color: #C084FC !important;
+  color: #6B21A8 !important;
+}
+
+.gantt-scroll [title="Autre"] {
+  background-color: #E5E7EB !important;
+  border-color: #9CA3AF !important;
+  color: #374151 !important;
+}
