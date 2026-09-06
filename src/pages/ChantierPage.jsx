@@ -99,7 +99,7 @@ export const ChantierPage = () => {
   ));
 
   return (
-    <div style={{ padding: "0.35rem", flex: 1, overflowY: "auto", background: "#f3f4f6" }}>
+    <div style={{ padding: "0.35rem", flex: "none", minHeight: "100%", overflowY: "visible", background: "#f3f4f6" }}>
       <div style={{ width: "100%" }}>
         <div style={{ background: "white", borderRadius: 6, border: "1px solid #e5e7eb", marginBottom: "0.75rem", overflow: "hidden" }}>
           <div style={{ background: "#1e3a8a", color: "white", padding: "0.75rem 1rem", fontWeight: 600, fontSize: 13, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
