@@ -46,8 +46,7 @@ const memeSignature=(a,signature)=>{
   if(s.dateDebut!==normaliserDate(signature.dateDebut))return false;
   if(s.dateFin!==normaliserDate(signature.dateFin))return false;
   if(s.tache!==String(signature.tache||"").trim())return false;
-  // Pour une affectation libre, le nom fait partie de l'identité.
-  if(!s.chantierId && String(signature.nom||"").trim() && s.nom!==String(signature.nom||"").trim())return false;
+  if(!s.chantierId&&String(signature.nom||"").trim()&&s.nom!==String(signature.nom||"").trim())return false;
   return true;
 };
 
@@ -114,6 +113,11 @@ const ajouterSuppressionEnAttente=(id,signature=null)=>{
   return job;
 };
 
+const estEnSuppression=affectation=>fileSuppressions.some(job=>
+  (job.id&&String(affectation?.id||"")===String(job.id))||
+  (job.signature&&memeSignature(affectation,job.signature))
+);
+
 const supprimerUneFois=async id=>{
   if(!id||String(id).startsWith("tmp-"))return{success:false,error:"Identifiant temporaire"};
   return appeler({action:"deleteAffectation",id:String(id)},{success:false,error:"Erreur suppression"});
@@ -154,7 +158,6 @@ const traiterFileSuppressions=async()=>{
 
       if(!correspondances.length){
         if(!job.absentSince)job.absentSince=maintenant;
-        // On garde le garde-fou 60 s pour absorber les lectures Sheet en retard.
         if(maintenant-Number(job.absentSince||maintenant)>=60000)aSupprimer.push(job.key);
         continue;
       }
@@ -186,6 +189,9 @@ const traiterFileSuppressions=async()=>{
 
 export const getAll=async()=>{
   const r=await appeler({action:"getAll"});
+  if(r&&Array.isArray(r.affectations)&&fileSuppressions.length){
+    r.affectations=r.affectations.filter(a=>!estEnSuppression(a));
+  }
   if(fileSuppressions.length)programmerNettoyage(0);
   return r;
 };
@@ -203,18 +209,9 @@ export const updateAffectation=async(id,dateDebut,dateFin,tache,statut,nomAffect
 
 export const deleteAffectation=async id=>{
   const idString=String(id||"");
-  let signature=null;
-
-  // Les créations optimistes ont un id tmp-. AppContext a déjà enregistré
-  // leur signature dans la liste locale des suppressions : on la récupère ici.
-  if(idString.startsWith("tmp-"))signature=signatureDepuisDerniereSuppression();
-
+  const signature=signatureDepuisDerniereSuppression();
   const job=ajouterSuppressionEnAttente(idString,signature);
-
-  // Réponse immédiate au front : l'affectation reste supprimée visuellement.
-  // La suppression réelle est vérifiée et rejouée en arrière-plan jusqu'à disparition.
   programmerNettoyage(0);
-
   return{success:true,pending:true,queued:true,key:job.key};
 };
 
