@@ -493,12 +493,15 @@ export const GanttPage = ({ onGanttControlsReady }) => {
             {deleteStep && (
               <div
                 data-modal-confirm="true"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="delete-confirm-title"
                 onClick={event => event.stopPropagation()}
                 style={{
                   position: "fixed",
                   inset: 0,
                   zIndex: 10000,
-                  background: "rgba(15,23,42,.52)",
+                  background: "rgba(15,23,42,.58)",
                   backdropFilter: "blur(2px)",
                   display: "flex",
                   alignItems: "center",
@@ -512,14 +515,18 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                     background: "white",
                     borderRadius: 14,
                     boxShadow: "0 24px 70px rgba(15,23,42,.30)",
-                    padding: 20
+                    padding: 20,
+                    border: "2px solid #fecaca"
                   }}
                 >
-                  <div style={{ fontSize: 17, fontWeight: 800, color: "#991b1b" }}>
-                    Confirmer la suppression
+                  <div id="delete-confirm-title" style={{ fontSize: 17, fontWeight: 800, color: "#991b1b" }}>
+                    ⚠️ Confirmer la suppression
                   </div>
                   <div style={{ marginTop: 8, fontSize: 13, lineHeight: 1.5, color: "#4b5563" }}>
-                    Voulez-vous vraiment supprimer cette affectation ? Cette action est définitive.
+                    Voulez-vous vraiment supprimer cette affectation ?
+                  </div>
+                  <div style={{ marginTop: 6, fontSize: 12, lineHeight: 1.5, color: "#991b1b", fontWeight: 700 }}>
+                    Aucune suppression n'est lancée tant que vous n'avez pas cliqué sur « Confirmer la suppression ».
                   </div>
                   <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
                     <button
