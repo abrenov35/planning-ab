@@ -1,8 +1,56 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 export const Modal = ({ isOpen, title, children, onClose }) => {
   const [deleteConfirmTarget, setDeleteConfirmTarget] = useState(null);
   const bypassDeleteConfirmRef = useRef(false);
+  const panelRef = useRef(null);
+
+  const validateModal = event => {
+    if (!isOpen || deleteConfirmTarget) return;
+    if (event.key !== "Enter" || event.repeat || event.isComposing) return;
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+
+    const target = event.target;
+    const tag = target?.tagName?.toLowerCase();
+    if (event.shiftKey && tag === "textarea") return;
+    if (event.shiftKey) return;
+
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    // Ne jamais enregistrer derrière une confirmation secondaire ouverte.
+    if (panel.querySelector('div[style*="position: fixed"]')) return;
+
+    const form = panel.querySelector("form");
+    if (form) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (typeof form.requestSubmit === "function") form.requestSubmit();
+      else {
+        const submit = form.querySelector('button[type="submit"],input[type="submit"]');
+        if (submit && !submit.disabled) submit.click();
+      }
+      return;
+    }
+
+    const primaryButton = Array.from(panel.querySelectorAll("button")).find(button => {
+      if (button.disabled) return false;
+      const texte = String(button.textContent || "").trim();
+      return texte === "Enregistrer" || texte === "Ajouter" || texte === "Créer";
+    });
+
+    if (!primaryButton) return;
+    event.preventDefault();
+    event.stopPropagation();
+    primaryButton.click();
+  };
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const handleDocumentKeyDown = event => validateModal(event);
+    document.addEventListener("keydown", handleDocumentKeyDown, true);
+    return () => document.removeEventListener("keydown", handleDocumentKeyDown, true);
+  }, [isOpen, deleteConfirmTarget]);
 
   if (!isOpen) return null;
 
@@ -21,41 +69,6 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
     event.preventDefault();
     event.stopPropagation();
     setDeleteConfirmTarget(button);
-  };
-
-  const handlePanelKeyDown = event => {
-    if (event.key !== "Enter" || event.repeat || event.isComposing) return;
-    if (event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) return;
-    if (deleteConfirmTarget) return;
-
-    const target = event.target;
-    const panel = event.currentTarget;
-    if (!panel) return;
-
-    // Entrée = validation de la modale, quel que soit le champ actif.
-    // Maj+Entrée reste disponible pour un retour à la ligne dans une zone de texte.
-    if (panel.querySelector('div[style*="position: fixed"]')) return;
-
-    const form = target?.closest?.("form") || panel.querySelector("form");
-    if (form) {
-      event.preventDefault();
-      if (typeof form.requestSubmit === "function") form.requestSubmit();
-      else {
-        const submit = form.querySelector('button[type="submit"],input[type="submit"]');
-        if (submit && !submit.disabled) submit.click();
-      }
-      return;
-    }
-
-    const primaryButton = Array.from(panel.querySelectorAll("button")).find(button => {
-      if (button.disabled) return false;
-      const texte = String(button.textContent || "").trim();
-      return texte === "Enregistrer" || texte === "Ajouter" || texte === "Créer";
-    });
-
-    if (!primaryButton) return;
-    event.preventDefault();
-    primaryButton.click();
   };
 
   const confirmAffectationDeletion = () => {
@@ -113,6 +126,7 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
         }
       `}</style>
       <div
+        ref={panelRef}
         className="ab-modal-panel"
         style={{
           background: "white",
@@ -128,7 +142,6 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
         }}
         onClick={e => e.stopPropagation()}
         onClickCapture={handlePanelClickCapture}
-        onKeyDown={handlePanelKeyDown}
       >
         <div style={{
           display: "flex",
