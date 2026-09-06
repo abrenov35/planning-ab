@@ -15,6 +15,7 @@ export const getAll=async()=>appeler({action:"getAll"});
 export const getOuvriers=async()=>{const r=await appeler({action:"getOuvriers"},{error:"Erreur ouvriers"});return Array.isArray(r)?r:[];};
 export const getChantiers=async()=>{const r=await appeler({action:"getChantiers"},{error:"Erreur chantiers"});return Array.isArray(r)?r:[];};
 export const getAffectations=async()=>{const r=await appeler({action:"getAffectations"},{error:"Erreur affectations"});return Array.isArray(r)?r:[];};
+export const getAffectationsStrict=async()=>{const r=await jsonp({action:"getAffectations"});if(!Array.isArray(r))throw new Error(r?.error||"Réponse affectations invalide");return r;};
 export const createOuvrier=async(nom,type,metier)=>appeler({action:"createOuvrier",nom,type,metier});
 export const createChantier=async(nom,dateDebut,dateFin,description,couleur="",dateSignature="",typeChantier="Rénovation")=>appeler({action:"createChantier",nom,dateDebut,dateFin,description:description||"",couleur:couleur||"",dateSignature:dateSignature||"",typeChantier:typeChantier||"Rénovation"});
 export const updateOuvrier=async(id,nom,type,metier,statut,ordre="",separateurApres=false,couleurCellule="")=>appeler({action:"updateOuvrier",id,nom:nom||"",type:type||"",metier:metier||"",statut:statut||"",ordre:ordre===""?"":String(ordre),separateurApres:separateurApres?"TRUE":"FALSE",couleurCellule:couleurCellule||""});
