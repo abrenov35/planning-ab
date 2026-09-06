@@ -177,7 +177,6 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
           <div>
             <label style={label}>{mode === "rdv" ? "Nom du rendez-vous *" : "Affectation libre *"}</label>
             <input
-              autoFocus
               value={formData.nomLibre}
               onChange={e=>setFormData({...formData,nomLibre:e.target.value})}
               placeholder={mode === "rdv" ? "Ex : HERVOUET" : "Ex : congé, arrêt maladie, congé parental…"}
