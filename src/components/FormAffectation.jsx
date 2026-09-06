@@ -33,8 +33,6 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
     "Arrêt maladie",
     "Accident du travail",
     "Congé parental",
-    "Congé paternité",
-    "Congé maternité",
     "Formation",
     "Récup",
     "Congé sans solde",
