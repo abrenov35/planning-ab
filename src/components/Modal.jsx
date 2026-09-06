@@ -29,13 +29,11 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
     if (deleteConfirmTarget) return;
 
     const target = event.target;
-    const tag = target?.tagName?.toLowerCase();
-    if (tag === "textarea" || tag === "select" || tag === "button") return;
-
     const panel = event.currentTarget;
     if (!panel) return;
 
-    // Ne jamais enregistrer derrière une confirmation secondaire ouverte.
+    // Entrée = validation de la modale, quel que soit le champ actif.
+    // Maj+Entrée reste disponible pour un retour à la ligne dans une zone de texte.
     if (panel.querySelector('div[style*="position: fixed"]')) return;
 
     const form = target?.closest?.("form") || panel.querySelector("form");
