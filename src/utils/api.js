@@ -78,7 +78,7 @@ const signatureDepuisDerniereSuppression=()=>{
     const raw=JSON.parse(localStorage.getItem(LS_DELETED_ASSIGNMENTS)||"[]");
     if(!Array.isArray(raw))return null;
     const recent=raw
-      .filter(x=>x?.key&&Date.now()-Number(x.deletedAt||0)<15000)
+      .filter(x=>x?.key&&Date.now()-Number(x.deletedAt||0)<60000)
       .sort((a,b)=>Number(b.deletedAt||0)-Number(a.deletedAt||0))[0];
     if(!recent)return null;
     const p=String(recent.key).split("¦");
@@ -111,6 +111,14 @@ const ajouterSuppressionEnAttente=(id,signature=null)=>{
   fileSuppressions.push(job);
   sauverFileSuppressions();
   return job;
+};
+
+const annulerSuppressionCorrespondante=signature=>{
+  if(!signature)return;
+  const key=`sig:${signatureKey(signature)}`;
+  const avant=fileSuppressions.length;
+  fileSuppressions=fileSuppressions.filter(job=>job.key!==key);
+  if(fileSuppressions.length!==avant)sauverFileSuppressions();
 };
 
 const estEnSuppression=affectation=>fileSuppressions.some(job=>
@@ -158,7 +166,9 @@ const traiterFileSuppressions=async()=>{
 
       if(!correspondances.length){
         if(!job.absentSince)job.absentSince=maintenant;
-        if(maintenant-Number(job.absentSince||maintenant)>=60000)aSupprimer.push(job.key);
+        // Conserver le garde-fou plusieurs minutes afin qu'une lecture Sheet
+        // retardée ne puisse pas ressusciter une affectation supprimée.
+        if(maintenant-Number(job.absentSince||maintenant)>=300000)aSupprimer.push(job.key);
         continue;
       }
 
@@ -204,14 +214,38 @@ export const createChantier=async(nom,dateDebut,dateFin,description,couleur="",d
 export const updateOuvrier=async(id,nom,type,metier,statut,ordre="",separateurApres=false,couleurCellule="")=>appeler({action:"updateOuvrier",id,nom:nom||"",type:type||"",metier:metier||"",statut:statut||"",ordre:ordre===""?"":String(ordre),separateurApres:separateurApres?"TRUE":"FALSE",couleurCellule:couleurCellule||""});
 export const updateChantier=async(id,nom,dateDebut,dateFin,description,statut,couleur="",dateSignature="",typeChantier="Rénovation")=>appeler({action:"updateChantier",id,nom:nom||"",dateDebut:dateDebut||"",dateFin:dateFin||"",description:description||"",statut:statut||"",couleur:couleur||"",dateSignature:dateSignature||"",typeChantier:typeChantier||"Rénovation"});
 export const deleteChantier=async id=>appeler({action:"deleteChantier",id});
-export const createAffectation=async(ouvrierID,chantierId,dateDebut,dateFin,tache,nomAffectation="",typeAffectation="CHANTIER")=>appeler({action:"createAffectation",ouvrierID,chantierId:chantierId||"",dateDebut,dateFin,tache:tache||"",nomAffectation:nomAffectation||"",nomExterne:nomAffectation||"",typeAffectation:typeAffectation||"CHANTIER"});
+export const createAffectation=async(ouvrierID,chantierId,dateDebut,dateFin,tache,nomAffectation="",typeAffectation="CHANTIER")=>{
+  const signature={
+    ouvrierID:String(ouvrierID||""),
+    chantierId:String(chantierId||""),
+    dateDebut:normaliserDate(dateDebut),
+    dateFin:normaliserDate(dateFin),
+    tache:String(tache||"").trim(),
+    nom:String(nomAffectation||"").trim()
+  };
+  annulerSuppressionCorrespondante(signature);
+  return appeler({action:"createAffectation",ouvrierID,chantierId:chantierId||"",dateDebut,dateFin,tache:tache||"",nomAffectation:nomAffectation||"",nomExterne:nomAffectation||"",typeAffectation:typeAffectation||"CHANTIER"});
+};
 export const updateAffectation=async(id,dateDebut,dateFin,tache,statut,nomAffectation="",chantierId="")=>appeler({action:"updateAffectation",id,dateDebut:dateDebut||"",dateFin:dateFin||"",tache:tache||"",statut:statut||"",nomAffectation:nomAffectation||"",chantierId:chantierId||""});
 
 export const deleteAffectation=async id=>{
   const idString=String(id||"");
   const signature=signatureDepuisDerniereSuppression();
   const job=ajouterSuppressionEnAttente(idString,signature);
-  programmerNettoyage(0);
+
+  // Pour un identifiant serveur réel, lancer la suppression immédiatement.
+  // La file locale reste en place ensuite pour vérifier et rejouer l'opération
+  // si Google Sheets renvoie encore une ancienne lecture.
+  if(idString&&!idString.startsWith("tmp-")){
+    try{
+      const direct=await supprimerUneFois(idString);
+      if(!direct?.success)console.warn("AB Planning suppression directe à rejouer:",direct?.error||direct);
+    }catch(err){
+      console.error("AB Planning suppression directe:",err);
+    }
+  }
+
+  programmerNettoyage(250);
   return{success:true,pending:true,queued:true,key:job.key};
 };
 
