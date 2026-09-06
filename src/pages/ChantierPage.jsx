@@ -80,7 +80,7 @@ export const ChantierPage = () => {
   const isHomonym = chantier => homonymCounts.get(normalizeChantierName(chantier.nom)) > 1;
 
   const rows = (liste, archive = false) => liste.map((chantier, idx) => (
-    <tr key={chantier.id} style={{ borderBottom: "1px solid #d1d5db", background: idx % 2 === 0 ? "white" : "#f3f4f6" }}>
+    <tr key={chantier.id} style={{ borderBottom: "1px solid #d1d5db", background: idx % 2 === 0 ? "white" : "#dfe4ea" }}>
       <td style={{ padding: 8, color: "#1f2937", fontWeight: 600, fontSize: 20 }}>
         <span style={{display:"inline-flex",alignItems:"center",gap:7}}>
           {chantier.couleur && <span title="Couleur personnalisée" style={{width:10,height:10,borderRadius:"50%",background:chantier.couleur,border:"1px solid rgba(0,0,0,.18)",display:"inline-block"}}/>}
