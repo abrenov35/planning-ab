@@ -168,6 +168,11 @@ export const AppProvider = ({ children }) => {
 
       const temporaires = [];
       pendingAffectationsRef.current.forEach((pending, tempId) => {
+        // Une création optimiste supprimée ne doit jamais être réinjectée au prochain refresh.
+        if (pending?.affectation && doitMasquerSuppression(pending.affectation)) {
+          pendingAffectationsRef.current.delete(tempId);
+          return;
+        }
         if (serveur.some(a => memeAffectation(a, pending.affectation))) {
           pendingAffectationsRef.current.delete(tempId);
           return;
@@ -388,8 +393,13 @@ export const AppProvider = ({ children }) => {
 
   const deleteAffectation = (id, allowUndo = true) => {
     const key = String(id);
-    const removed = affectations.find(a => String(a.id) === key);
+    const pendingCreation = pendingAffectationsRef.current.get(key);
+    const removed = affectations.find(a => String(a.id) === key) || pendingCreation?.affectation || null;
     const removedIndex = affectations.findIndex(a => String(a.id) === key);
+
+    // Si l'affectation vient d'être créée et possède encore un id tmp-,
+    // retirer aussi sa copie optimiste pour qu'aucun refresh ne puisse la réafficher.
+    if (pendingCreation) pendingAffectationsRef.current.delete(key);
 
     if (removed && allowUndo) armUndo(removed);
     if (removed) {
