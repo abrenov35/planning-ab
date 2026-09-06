@@ -215,24 +215,24 @@ export const GanttPage = ({ onGanttControlsReady }) => {
     }
   };
 
-  const handleDeleteEdit = async () => {
+  const handleDeleteEdit = () => {
     if (!editAffectation || savingEdit) return;
-    if (!deleteStep) {
-      setDeleteStep(true);
-      return;
-    }
+    setDeleteStep(true);
+  };
 
-    setSavingEdit(true);
-    try {
-      const result = await deleteAffectation(editAffectation.id, false);
-      if (result?.error) throw new Error(result.error);
-      setEditAffectation(null);
-      setDeleteStep(false);
-    } catch (error) {
-      console.error("Erreur suppression affectation:", error);
-      alert("La suppression n'a pas pu être effectuée.");
-    } finally {
-      setSavingEdit(false);
+  const confirmDeleteEdit = () => {
+    if (!editAffectation || savingEdit) return;
+
+    const affectationId = editAffectation.id;
+
+    // Fermeture immédiate : la suppression est optimiste dans AppContext
+    // et continue ensuite en arrière-plan côté serveur.
+    setDeleteStep(false);
+    setEditAffectation(null);
+
+    const result = deleteAffectation(affectationId, false);
+    if (!result?.success) {
+      alert("La suppression n'a pas pu être lancée.");
     }
   };
 
@@ -440,20 +440,6 @@ export const GanttPage = ({ onGanttControlsReady }) => {
               Affectation actuelle : {formatDateLongue(editAffectation.dateDebut)} → {formatDateLongue(editAffectation.dateFin)}
             </div>
 
-            {deleteStep && (
-              <div style={{
-                background: "#fef2f2",
-                border: "1px solid #fecaca",
-                borderRadius: 8,
-                padding: 10,
-                fontSize: 11,
-                color: "#991b1b",
-                fontWeight: 700
-              }}>
-                Confirmer la suppression de cette affectation ?
-              </div>
-            )}
-
             <div style={{ display: "flex", gap: 8, justifyContent: "space-between", flexWrap: "wrap" }}>
               <button
                 type="button"
@@ -463,12 +449,12 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                   padding: "9px 12px",
                   borderRadius: 7,
                   border: "1px solid #dc2626",
-                  background: deleteStep ? "#dc2626" : "white",
-                  color: deleteStep ? "white" : "#dc2626",
+                  background: "white",
+                  color: "#dc2626",
                   fontWeight: 700
                 }}
               >
-                {deleteStep ? "Confirmer suppression" : "Supprimer"}
+                Supprimer
               </button>
 
               <div style={{ display: "flex", gap: 8 }}>
@@ -503,6 +489,73 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                 </button>
               </div>
             </div>
+
+            {deleteStep && (
+              <div
+                data-modal-confirm="true"
+                onClick={event => event.stopPropagation()}
+                style={{
+                  position: "fixed",
+                  inset: 0,
+                  zIndex: 10000,
+                  background: "rgba(15,23,42,.52)",
+                  backdropFilter: "blur(2px)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 20
+                }}
+              >
+                <div
+                  style={{
+                    width: "min(420px, 92vw)",
+                    background: "white",
+                    borderRadius: 14,
+                    boxShadow: "0 24px 70px rgba(15,23,42,.30)",
+                    padding: 20
+                  }}
+                >
+                  <div style={{ fontSize: 17, fontWeight: 800, color: "#991b1b" }}>
+                    Confirmer la suppression
+                  </div>
+                  <div style={{ marginTop: 8, fontSize: 13, lineHeight: 1.5, color: "#4b5563" }}>
+                    Voulez-vous vraiment supprimer cette affectation ? Cette action est définitive.
+                  </div>
+                  <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteStep(false)}
+                      style={{
+                        padding: "10px 16px",
+                        borderRadius: 8,
+                        border: "1px solid #d1d5db",
+                        background: "white",
+                        color: "#374151",
+                        fontWeight: 700,
+                        cursor: "pointer"
+                      }}
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="button"
+                      onClick={confirmDeleteEdit}
+                      style={{
+                        padding: "10px 16px",
+                        borderRadius: 8,
+                        border: 0,
+                        background: "#dc2626",
+                        color: "white",
+                        fontWeight: 800,
+                        cursor: "pointer"
+                      }}
+                    >
+                      Confirmer la suppression
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </Modal>
