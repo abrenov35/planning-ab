@@ -46,10 +46,23 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
     const handleFocusIn = event => {
       const target = event.target;
       if (!mobile || !target?.matches?.("input, textarea, select")) return;
+
       window.setTimeout(() => {
         if (document.activeElement !== target) return;
-        target.scrollIntoView({ behavior: "auto", block: "nearest", inline: "nearest" });
-      }, 260);
+        const modalBody = panel?.querySelector?.(".ab-modal-body");
+        if (!modalBody) return;
+
+        const bodyRect = modalBody.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
+        const topMargin = 10;
+        const bottomMargin = 14;
+
+        if (targetRect.bottom > bodyRect.bottom - bottomMargin) {
+          modalBody.scrollTop += targetRect.bottom - (bodyRect.bottom - bottomMargin);
+        } else if (targetRect.top < bodyRect.top + topMargin) {
+          modalBody.scrollTop -= (bodyRect.top + topMargin) - targetRect.top;
+        }
+      }, 120);
     };
 
     panel?.addEventListener("focusin", handleFocusIn);
@@ -156,10 +169,22 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
             border-radius: 14px 14px 0 0 !important;
             padding: 12px 14px calc(12px + env(safe-area-inset-bottom)) !important;
           }
+          .ab-modal-overlay.ab-modal-portrait-only {
+            align-items: flex-start !important;
+          }
+          .ab-modal-overlay.ab-modal-portrait-only .ab-modal-panel {
+            height: 100% !important;
+            max-height: 100% !important;
+            border-radius: 12px 12px 0 0 !important;
+          }
           .ab-modal-body {
             overscroll-behavior: contain !important;
             -webkit-overflow-scrolling: touch !important;
             padding-bottom: 10px !important;
+          }
+          .ab-modal-overlay.ab-modal-portrait-only .ab-modal-body {
+            overflow-y: auto !important;
+            min-height: 0 !important;
           }
           .ab-modal-panel input,
           .ab-modal-panel textarea,
