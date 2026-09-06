@@ -97,7 +97,7 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
       justifyContent: "center",
       zIndex: 100,
       padding: 8
-    }} onClick={onClose}>
+    }}>
       <style>{`
         @media (max-width: 1100px) and (pointer: coarse) {
           .ab-modal-overlay {
