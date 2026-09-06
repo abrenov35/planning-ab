@@ -219,8 +219,7 @@ export const AppProvider = ({ children }) => {
     for (const attente of [1000, 3000, 6000]) {
       await new Promise(resolve => setTimeout(resolve, attente));
       try {
-        const data = await api.getAll();
-        const serveur = Array.isArray(data?.affectations) ? data.affectations : [];
+        const serveur = await api.getAffectationsStrict();
         if (serveur.some(a => memeAffectation(a, optimistic))) {
           pendingAffectationsRef.current.delete(tempId);
           await loadData(false);
@@ -244,8 +243,7 @@ export const AppProvider = ({ children }) => {
     for (const attente of [500, 1000, 1800, 3000]) {
       await new Promise(resolve => setTimeout(resolve, attente));
       try {
-        const data = await api.getAll();
-        const serveur = Array.isArray(data?.affectations) ? data.affectations : [];
+        const serveur = await api.getAffectationsStrict();
         const existe = serveur.some(a =>
           String(a.id) === key ||
           (removed && memeAffectationSouple(a, removed))
