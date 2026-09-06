@@ -37,10 +37,9 @@ const memeAffectationSouple = (a, b) =>
   normaliserDate(a?.dateFin) === normaliserDate(b?.dateFin) &&
   tacheAffectation(a) === tacheAffectation(b);
 
-// Pour une affectation chantier, le serveur peut renvoyer un nom différent
-// (nomExterne / nomAffectation) pendant quelques secondes. On l'ignore donc
-// pour identifier une suppression. Pour une affectation libre, le nom reste
-// nécessaire afin de ne pas masquer une autre affectation distincte.
+// Pour une affectation chantier, le nom peut varier temporairement côté serveur.
+// On l'ignore pour reconnaître une suppression. Pour une affectation libre,
+// le nom reste nécessaire afin de ne pas masquer une autre affectation distincte.
 const memeAffectationSuppression = (a, b) => {
   if (!memeAffectationSouple(a, b)) return false;
   const chantierId = String(a?.chantierId || b?.chantierId || "");
@@ -77,10 +76,7 @@ export const AppProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [lastDeletedAffectation, setLastDeletedAffectation] = useState(null);
-  const [undoingDelete, setUndoingDelete] = useState(false);
 
-  const undoTimerRef = useRef(null);
   const pendingAffectationsRef = useRef(new Map());
   const pendingDeletionsRef = useRef(new Map());
   const deletedKeysRef = useRef(new Map(lireSuppressionsPersistantes().map(x => [x.key, x])));
@@ -121,7 +117,6 @@ export const AppProvider = ({ children }) => {
     const key = cleAffectation(affectation);
     if (deletedKeysRef.current.delete(key)) changed = true;
 
-    // Nettoie aussi les anciennes entrées sauvegardées avec une clé plus stricte.
     for (const [savedKey, saved] of deletedKeysRef.current.entries()) {
       if (saved?.affectation && memeAffectationSuppression(saved.affectation, affectation)) {
         deletedKeysRef.current.delete(savedKey);
@@ -144,29 +139,9 @@ export const AppProvider = ({ children }) => {
     return () => window.clearTimeout(timer);
   }, [ouvriers, affectations]);
 
-  const clearUndo = () => {
-    if (undoTimerRef.current) {
-      clearTimeout(undoTimerRef.current);
-      undoTimerRef.current = null;
-    }
-    setLastDeletedAffectation(null);
-  };
-
-  const armUndo = a => {
-    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-    setLastDeletedAffectation({ ...a });
-    undoTimerRef.current = setTimeout(() => {
-      setLastDeletedAffectation(null);
-      undoTimerRef.current = null;
-    }, 20000);
-  };
-
-  useEffect(() => () => {
-    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-  }, []);
-
   const doitMasquerSuppression = affectation => {
     const id = String(affectation?.id || "");
+
     for (const [pendingId, pending] of pendingDeletionsRef.current.entries()) {
       if (id && id === String(pendingId)) return true;
       if (pending?.affectation && memeAffectationSuppression(affectation, pending.affectation)) return true;
@@ -174,9 +149,6 @@ export const AppProvider = ({ children }) => {
 
     if (deletedKeysRef.current.has(cleAffectation(affectation))) return true;
 
-    // Les suppressions v148 gardent aussi la photo de l'affectation : même si
-    // Google Sheets la renvoie avec un autre id ou un autre libellé de chantier,
-    // elle reste masquée jusqu'à disparition réelle côté serveur.
     for (const saved of deletedKeysRef.current.values()) {
       if (saved?.affectation && memeAffectationSuppression(affectation, saved.affectation)) return true;
     }
@@ -204,7 +176,6 @@ export const AppProvider = ({ children }) => {
 
       const temporaires = [];
       pendingAffectationsRef.current.forEach((pending, tempId) => {
-        // Une création optimiste supprimée ne doit jamais être réinjectée au prochain refresh.
         if (pending?.affectation && doitMasquerSuppression(pending.affectation)) {
           pendingAffectationsRef.current.delete(tempId);
           return;
@@ -246,8 +217,12 @@ export const AppProvider = ({ children }) => {
 
   useEffect(() => {
     let actif = true;
-    (async () => { if (actif) await loadData(true); })();
-    const interval = setInterval(() => { if (actif) loadData(false); }, 30000);
+    (async () => {
+      if (actif) await loadData(true);
+    })();
+    const interval = setInterval(() => {
+      if (actif) loadData(false);
+    }, 30000);
     return () => {
       actif = false;
       clearInterval(interval);
@@ -295,8 +270,6 @@ export const AppProvider = ({ children }) => {
           const pending = pendingDeletionsRef.current.get(key);
           if (pending) {
             pending.confirmedAt = Date.now();
-            // On conserve le masque 5 minutes après confirmation serveur afin
-            // d'absorber totalement les lectures retardées de Google Sheets.
             pending.releaseAt = Date.now() + 300000;
             pendingDeletionsRef.current.set(key, pending);
           }
@@ -320,13 +293,25 @@ export const AppProvider = ({ children }) => {
     const key = String(id);
     const couleur = String(couleurCellule || "").trim();
     let previous = null;
+
     workerColorCacheRef.current[key] = couleur;
     saveWorkerColorCache();
+
     setOuvriers(prev => prev.map(o => {
       if (String(o.id) !== key) return o;
       previous = { ...o };
-      return { ...o, nom: nom || o.nom, type: type || o.type, metier: metier || o.metier, statut: statut || o.statut, ordre: ordre === "" ? o.ordre : Number(ordre), separateurApres: !!separateurApres, couleurCellule: couleur };
+      return {
+        ...o,
+        nom: nom || o.nom,
+        type: type || o.type,
+        metier: metier || o.metier,
+        statut: statut || o.statut,
+        ordre: ordre === "" ? o.ordre : Number(ordre),
+        separateurApres: !!separateurApres,
+        couleurCellule: couleur
+      };
     }));
+
     try {
       const r = await api.updateOuvrier(id, nom, type, metier, statut, ordre, separateurApres, couleur);
       if (!r?.success) throw new Error(r?.error || "Impossible de modifier l'ouvrier");
@@ -369,6 +354,7 @@ export const AppProvider = ({ children }) => {
     let cid = chantierId || "";
     let nom = nomLibre || "";
     let type = typeAffectation || "CHANTIER";
+
     if (String(cid).startsWith("__LIBRE__:")) {
       nom = String(cid).slice(10).trim();
       cid = "";
@@ -376,10 +362,21 @@ export const AppProvider = ({ children }) => {
     }
 
     const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const optimistic = { id: tempId, ouvrierID, chantierId: cid, dateDebut, dateFin, tache: tache || "", nomAffectation: nom, affectationNom: nom, nomExterne: nom, typeAffectation: type, statut: "Actif" };
+    const optimistic = {
+      id: tempId,
+      ouvrierID,
+      chantierId: cid,
+      dateDebut,
+      dateFin,
+      tache: tache || "",
+      nomAffectation: nom,
+      affectationNom: nom,
+      nomExterne: nom,
+      typeAffectation: type,
+      statut: "Actif"
+    };
 
     forgetDeleted(optimistic);
-
     pendingAffectationsRef.current.set(tempId, { affectation: optimistic, createdAt: Date.now() });
     setAffectations(prev => [...prev, optimistic]);
 
@@ -398,10 +395,17 @@ export const AppProvider = ({ children }) => {
 
   const updateAffectation = (id, dateDebut, dateFin, tache, statut, nomLibre = "", chantierId = "") => {
     let previous = null;
+
     setAffectations(prev => prev.map(a => {
       if (String(a.id) !== String(id)) return a;
       previous = { ...a };
-      const next = { ...a, dateDebut: dateDebut || a.dateDebut, dateFin: dateFin || a.dateFin, tache: tache || "", statut: statut || a.statut };
+      const next = {
+        ...a,
+        dateDebut: dateDebut || a.dateDebut,
+        dateFin: dateFin || a.dateFin,
+        tache: tache || "",
+        statut: statut || a.statut
+      };
       if (chantierId !== "") next.chantierId = chantierId;
       if (nomLibre !== "") {
         next.nomAffectation = nomLibre;
@@ -414,7 +418,9 @@ export const AppProvider = ({ children }) => {
     api.updateAffectation(id, dateDebut, dateFin, tache, statut, nomLibre, chantierId)
       .then(r => {
         if (!r?.success) {
-          if (previous) setAffectations(prev => prev.map(a => String(a.id) === String(id) ? previous : a));
+          if (previous) {
+            setAffectations(prev => prev.map(a => String(a.id) === String(id) ? previous : a));
+          }
           setError(r?.error || "Impossible de modifier l'affectation");
           return;
         }
@@ -422,24 +428,35 @@ export const AppProvider = ({ children }) => {
         refreshLater(250);
       })
       .catch(err => {
-        if (previous) setAffectations(prev => prev.map(a => String(a.id) === String(id) ? previous : a));
+        if (previous) {
+          setAffectations(prev => prev.map(a => String(a.id) === String(id) ? previous : a));
+        }
         setError(err?.message || "Impossible de modifier l'affectation");
       });
 
     return { success: true, pending: true };
   };
 
-  const deleteAffectation = (id, allowUndo = true) => {
+  const deleteAffectation = id => {
     const key = String(id);
     const pendingCreation = pendingAffectationsRef.current.get(key);
-    const removed = affectations.find(a => String(a.id) === key) || pendingCreation?.affectation || null;
-    const removedIndex = affectations.findIndex(a => String(a.id) === key);
+    const removed =
+      affectations.find(a => String(a.id) === key) ||
+      pendingCreation?.affectation ||
+      null;
 
-    // Si l'affectation vient d'être créée et possède encore un id tmp-,
-    // retirer aussi sa copie optimiste pour qu'aucun refresh ne puisse la réafficher.
-    if (pendingCreation) pendingAffectationsRef.current.delete(key);
+    // L'ancienne fonction "Annuler la dernière saisie" est totalement désactivée.
+    // Une suppression confirmée est unidirectionnelle : aucune branche ne recrée
+    // automatiquement l'affectation ensuite.
+    for (const [tempId, pending] of pendingAffectationsRef.current.entries()) {
+      if (
+        String(tempId) === key ||
+        (removed && pending?.affectation && memeAffectationSuppression(pending.affectation, removed))
+      ) {
+        pendingAffectationsRef.current.delete(tempId);
+      }
+    }
 
-    if (removed && allowUndo) armUndo(removed);
     if (removed) {
       pendingDeletionsRef.current.set(key, {
         affectation: { ...removed },
@@ -450,74 +467,31 @@ export const AppProvider = ({ children }) => {
       rememberDeleted(removed);
     }
 
-    setAffectations(prev => prev.filter(a => String(a.id) !== key));
+    // Supprime immédiatement aussi les éventuels doublons de la même affectation.
+    // Cela empêche qu'une deuxième ligne serveur identique apparaisse juste après
+    // la disparition du bloc visible.
+    setAffectations(prev => prev.filter(a => {
+      if (String(a.id) === key) return false;
+      if (removed && memeAffectationSuppression(a, removed)) return false;
+      return true;
+    }));
 
     api.deleteAffectation(id)
       .then(r => {
         if (!r?.success) {
-          pendingDeletionsRef.current.delete(key);
-          if (removed) {
-            forgetDeleted(removed);
-            setAffectations(prev => {
-              if (prev.some(a => String(a.id) === key)) return prev;
-              const copy = [...prev];
-              copy.splice(Math.max(0, Math.min(removedIndex, copy.length)), 0, removed);
-              return copy;
-            });
-          }
-          if (allowUndo) clearUndo();
-          setError(r?.error || "Impossible de supprimer l'affectation");
+          setError(r?.error || "Suppression en attente de synchronisation serveur");
           return;
         }
         setError(null);
         verifierSuppressionAffectation(id, removed);
       })
       .catch(err => {
-        pendingDeletionsRef.current.delete(key);
-        if (removed) {
-          forgetDeleted(removed);
-          setAffectations(prev => {
-            if (prev.some(a => String(a.id) === key)) return prev;
-            const copy = [...prev];
-            copy.splice(Math.max(0, Math.min(removedIndex, copy.length)), 0, removed);
-            return copy;
-          });
-        }
-        if (allowUndo) clearUndo();
-        setError(err?.message || "Impossible de supprimer l'affectation");
+        // Ne jamais restaurer automatiquement une affectation supprimée.
+        // La file de suppression persistante côté API continue les tentatives.
+        setError(err?.message || "Suppression en attente de synchronisation serveur");
       });
 
     return { success: true, pending: true };
-  };
-
-  const undoLastDelete = async () => {
-    const a = lastDeletedAffectation;
-    if (!a || undoingDelete) return { success: false };
-    setUndoingDelete(true);
-    try {
-      forgetDeleted(a);
-      for (const [id, pending] of pendingDeletionsRef.current.entries()) {
-        if (pending?.affectation && memeAffectationSuppression(pending.affectation, a)) {
-          pendingDeletionsRef.current.delete(id);
-        }
-      }
-      const nom = a.nomExterne || a.affectationNom || a.nomAffectation || "";
-      const type = a.typeAffectation || (!a.chantierId ? "HORS_GANTT" : "CHANTIER");
-      const r = await api.createAffectation(a.ouvrierID, a.chantierId || "", a.dateDebut, a.dateFin, a.tache || "", nom, type);
-      if (!r?.success) {
-        rememberDeleted(a);
-        throw new Error(r?.error || "Impossible de restaurer l'affectation");
-      }
-      clearUndo();
-      setError(null);
-      await loadData(false);
-      return { success: true };
-    } catch (err) {
-      setError(err?.message || "Impossible de restaurer l'affectation");
-      return { success: false, error: err?.message };
-    } finally {
-      setUndoingDelete(false);
-    }
   };
 
   const getOuvrierById = id => ouvriers.find(o => Number(o.id) === Number(id));
@@ -527,11 +501,24 @@ export const AppProvider = ({ children }) => {
 
   return (
     <AppContext.Provider value={{
-      ouvriers, chantiers, affectations, loading, error, lastUpdated,
-      addOuvrier, updateOuvrier, addChantier, updateChantier, deleteChantier,
-      addAffectation, updateAffectation, deleteAffectation,
-      lastDeletedAffectation, undoLastDelete, undoingDelete,
-      getOuvrierById, getChantierId, getAffectationsByOuvrier, getAffectationsByChantier,
+      ouvriers,
+      chantiers,
+      affectations,
+      loading,
+      error,
+      lastUpdated,
+      addOuvrier,
+      updateOuvrier,
+      addChantier,
+      updateChantier,
+      deleteChantier,
+      addAffectation,
+      updateAffectation,
+      deleteAffectation,
+      getOuvrierById,
+      getChantierId,
+      getAffectationsByOuvrier,
+      getAffectationsByChantier,
       loadData
     }}>
       {children}
