@@ -84,45 +84,29 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
     const target = deleteConfirmTarget;
     if (!target || confirmingDelete) return;
 
-    // On garde cette confirmation visible jusqu'à la fin de la suppression :
-    // l'étape interne de confirmation du Gantt reste cachée derrière.
     setConfirmingDelete(true);
+
+    // 1) Le clic d'origine arme l'ancienne étape interne du Gantt.
     bypassDeleteConfirmRef.current = true;
     target.click();
 
-    const triggerRealDelete = attempt => {
+    // 2) Dès que React a rendu le bouton interne, on le déclenche une seule fois.
+    // Puis on ferme immédiatement les modales : la suppression continue en arrière-plan.
+    window.setTimeout(() => {
       const panel = panelRef.current;
-      if (!panel) return;
-
       const confirmButton = findInternalDeleteConfirm(panel);
+
       if (!confirmButton) {
-        if (attempt < 12) {
-          window.setTimeout(() => triggerRealDelete(attempt + 1), 20);
-        } else {
-          setConfirmingDelete(false);
-        }
+        setConfirmingDelete(false);
         return;
       }
 
       confirmButton.click();
+      setDeleteConfirmTarget(null);
+      setConfirmingDelete(false);
 
-      // Si la suppression échoue, le bouton interne redevient actif :
-      // on retire alors la confirmation pour permettre un nouvel essai.
-      const watchFailure = () => {
-        const livePanel = panelRef.current;
-        if (!livePanel) return;
-        const liveConfirm = findInternalDeleteConfirm(livePanel);
-        if (liveConfirm && !liveConfirm.disabled) {
-          setDeleteConfirmTarget(null);
-          setConfirmingDelete(false);
-          return;
-        }
-        window.setTimeout(watchFailure, 200);
-      };
-      window.setTimeout(watchFailure, 250);
-    };
-
-    window.setTimeout(() => triggerRealDelete(0), 0);
+      if (typeof onClose === "function") onClose();
+    }, 30);
   };
 
   return (
