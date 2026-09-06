@@ -2,6 +2,7 @@ import React, { useContext, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import { GanttChartPolicy as GanttChart } from "../components/GanttChartPolicy";
 import { Modal } from "../components/Modal";
+import { ConfirmModal } from "../components/ConfirmModal";
 import { FormAffectation } from "../components/FormAffectation";
 
 const isRdvTask = value => /^\s*rdv\b/i.test(String(value || ""));
@@ -134,13 +135,13 @@ export const GanttPage = ({ onGanttControlsReady }) => {
   };
 
   const closeEditModal = () => {
-    if (savingEdit) return;
+    if (savingEdit || deleteStep) return;
     setEditAffectation(null);
     setDeleteStep(false);
   };
 
   const handleSaveEdit = async () => {
-    if (!editAffectation || savingEdit) return;
+    if (!editAffectation || savingEdit || deleteStep) return;
     if (!editForm.ouvrierId) {
       alert("Sélectionnez un ouvrier.");
       return;
@@ -216,17 +217,18 @@ export const GanttPage = ({ onGanttControlsReady }) => {
   };
 
   const handleDeleteEdit = () => {
-    if (!editAffectation || savingEdit) return;
+    if (!editAffectation || savingEdit || deleteStep) return;
+    // Important : ce clic ne lance AUCUNE suppression.
+    // Il ne fait qu'ouvrir la modale de confirmation séparée.
     setDeleteStep(true);
   };
 
   const confirmDeleteEdit = () => {
-    if (!editAffectation || savingEdit) return;
+    if (!editAffectation || savingEdit || !deleteStep) return;
 
     const affectationId = editAffectation.id;
 
-    // Fermeture immédiate : la suppression est optimiste dans AppContext
-    // et continue ensuite en arrière-plan côté serveur.
+    // La suppression ne démarre qu'après ce second clic explicite.
     setDeleteStep(false);
     setEditAffectation(null);
 
@@ -297,7 +299,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                 <select
                   value={editForm.ouvrierId}
                   onChange={e => setEditForm(prev => ({ ...prev, ouvrierId: e.target.value }))}
-                  disabled={savingEdit}
+                  disabled={savingEdit || deleteStep}
                   style={{ ...inputStyle, border: "2px solid #2563eb", background: "white" }}
                 >
                   {ouvriersActifs.map(ouvrier => (
@@ -317,7 +319,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                       type="text"
                       value={editForm.affectationNom}
                       onChange={e => setEditForm(prev => ({ ...prev, affectationNom: e.target.value }))}
-                      disabled={savingEdit}
+                      disabled={savingEdit || deleteStep}
                       placeholder="Écrire l'affectation..."
                       autoFocus
                       style={{ ...inputStyle, border: "2px solid #2563eb", outline: "none" }}
@@ -338,7 +340,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                           affectationNom: chantier?.nom || ""
                         }));
                       }}
-                      disabled={savingEdit}
+                      disabled={savingEdit || deleteStep}
                       style={{ ...inputStyle, border: "2px solid #2563eb", background: "white" }}
                     >
                       {chantiersActifs.map(chantier => (
@@ -360,7 +362,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                   type="date"
                   value={editForm.dateDebut}
                   onChange={e => setEditForm(prev => ({ ...prev, dateDebut: e.target.value }))}
-                  disabled={savingEdit}
+                  disabled={savingEdit || deleteStep}
                   style={inputStyle}
                 />
               </div>
@@ -370,7 +372,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                   type="date"
                   value={editForm.dateFin}
                   onChange={e => setEditForm(prev => ({ ...prev, dateFin: e.target.value }))}
-                  disabled={savingEdit}
+                  disabled={savingEdit || deleteStep}
                   style={inputStyle}
                 />
               </div>
@@ -382,7 +384,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                 <button
                   type="button"
                   onClick={() => setEditForm(prev => ({ ...prev, isRdv: false }))}
-                  disabled={savingEdit}
+                  disabled={savingEdit || deleteStep}
                   style={{
                     padding: "9px 10px",
                     borderRadius: 7,
@@ -397,7 +399,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                 <button
                   type="button"
                   onClick={() => setEditForm(prev => ({ ...prev, isRdv: true }))}
-                  disabled={savingEdit}
+                  disabled={savingEdit || deleteStep}
                   style={{
                     padding: "9px 10px",
                     borderRadius: 7,
@@ -419,7 +421,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                   type="time"
                   value={editForm.rdvHeure}
                   onChange={e => setEditForm(prev => ({ ...prev, rdvHeure: e.target.value }))}
-                  disabled={savingEdit}
+                  disabled={savingEdit || deleteStep}
                   style={inputStyle}
                 />
               </div>
@@ -430,7 +432,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                   type="text"
                   value={editForm.tache}
                   onChange={e => setEditForm(prev => ({ ...prev, tache: e.target.value }))}
-                  disabled={savingEdit}
+                  disabled={savingEdit || deleteStep}
                   style={inputStyle}
                 />
               </div>
@@ -444,7 +446,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
               <button
                 type="button"
                 onClick={handleDeleteEdit}
-                disabled={savingEdit}
+                disabled={savingEdit || deleteStep}
                 style={{
                   padding: "9px 12px",
                   borderRadius: 7,
@@ -461,7 +463,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                 <button
                   type="button"
                   onClick={closeEditModal}
-                  disabled={savingEdit}
+                  disabled={savingEdit || deleteStep}
                   style={{
                     padding: "9px 12px",
                     borderRadius: 7,
@@ -475,7 +477,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                 <button
                   type="button"
                   onClick={handleSaveEdit}
-                  disabled={savingEdit}
+                  disabled={savingEdit || deleteStep}
                   style={{
                     padding: "9px 12px",
                     borderRadius: 7,
@@ -489,83 +491,21 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                 </button>
               </div>
             </div>
-
-            {deleteStep && (
-              <div
-                data-modal-confirm="true"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="delete-confirm-title"
-                onClick={event => event.stopPropagation()}
-                style={{
-                  position: "fixed",
-                  inset: 0,
-                  zIndex: 10000,
-                  background: "rgba(15,23,42,.58)",
-                  backdropFilter: "blur(2px)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: 20
-                }}
-              >
-                <div
-                  style={{
-                    width: "min(420px, 92vw)",
-                    background: "white",
-                    borderRadius: 14,
-                    boxShadow: "0 24px 70px rgba(15,23,42,.30)",
-                    padding: 20,
-                    border: "2px solid #fecaca"
-                  }}
-                >
-                  <div id="delete-confirm-title" style={{ fontSize: 17, fontWeight: 800, color: "#991b1b" }}>
-                    ⚠️ Confirmer la suppression
-                  </div>
-                  <div style={{ marginTop: 8, fontSize: 13, lineHeight: 1.5, color: "#4b5563" }}>
-                    Voulez-vous vraiment supprimer cette affectation ?
-                  </div>
-                  <div style={{ marginTop: 6, fontSize: 12, lineHeight: 1.5, color: "#991b1b", fontWeight: 700 }}>
-                    Aucune suppression n'est lancée tant que vous n'avez pas cliqué sur « Confirmer la suppression ».
-                  </div>
-                  <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
-                    <button
-                      type="button"
-                      onClick={() => setDeleteStep(false)}
-                      style={{
-                        padding: "10px 16px",
-                        borderRadius: 8,
-                        border: "1px solid #d1d5db",
-                        background: "white",
-                        color: "#374151",
-                        fontWeight: 700,
-                        cursor: "pointer"
-                      }}
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      type="button"
-                      onClick={confirmDeleteEdit}
-                      style={{
-                        padding: "10px 16px",
-                        borderRadius: 8,
-                        border: 0,
-                        background: "#dc2626",
-                        color: "white",
-                        fontWeight: 800,
-                        cursor: "pointer"
-                      }}
-                    >
-                      Confirmer la suppression
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </Modal>
+
+      <ConfirmModal
+        isOpen={Boolean(editAffectation) && deleteStep}
+        title="⚠️ Confirmer la suppression"
+        message="Voulez-vous vraiment supprimer cette affectation ? La suppression ne sera lancée qu'après votre confirmation."
+        confirmText="Confirmer la suppression"
+        cancelText="Annuler"
+        isDangerous={true}
+        isLoading={false}
+        onCancel={() => setDeleteStep(false)}
+        onConfirm={confirmDeleteEdit}
+      />
     </div>
   );
 };
