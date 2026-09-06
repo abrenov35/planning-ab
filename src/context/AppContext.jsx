@@ -37,14 +37,27 @@ const memeAffectationSouple = (a, b) =>
   normaliserDate(a?.dateFin) === normaliserDate(b?.dateFin) &&
   tacheAffectation(a) === tacheAffectation(b);
 
-const cleAffectation = a => [
-  String(a?.ouvrierID || ""),
-  String(a?.chantierId || ""),
-  normaliserDate(a?.dateDebut),
-  normaliserDate(a?.dateFin),
-  tacheAffectation(a),
-  nomAffectation(a)
-].join("¦");
+// Pour une affectation chantier, le serveur peut renvoyer un nom différent
+// (nomExterne / nomAffectation) pendant quelques secondes. On l'ignore donc
+// pour identifier une suppression. Pour une affectation libre, le nom reste
+// nécessaire afin de ne pas masquer une autre affectation distincte.
+const memeAffectationSuppression = (a, b) => {
+  if (!memeAffectationSouple(a, b)) return false;
+  const chantierId = String(a?.chantierId || b?.chantierId || "");
+  return chantierId ? true : nomAffectation(a) === nomAffectation(b);
+};
+
+const cleAffectation = a => {
+  const chantierId = String(a?.chantierId || "");
+  return [
+    String(a?.ouvrierID || ""),
+    chantierId,
+    normaliserDate(a?.dateDebut),
+    normaliserDate(a?.dateFin),
+    tacheAffectation(a),
+    chantierId ? "" : nomAffectation(a)
+  ].join("¦");
+};
 
 const LS_DELETED = "abPlanningDeletedAssignmentsV2";
 
@@ -94,14 +107,28 @@ export const AppProvider = ({ children }) => {
   const rememberDeleted = affectation => {
     if (!affectation) return;
     const key = cleAffectation(affectation);
-    deletedKeysRef.current.set(key, { key, deletedAt: Date.now() });
+    deletedKeysRef.current.set(key, {
+      key,
+      deletedAt: Date.now(),
+      affectation: { ...affectation }
+    });
     saveDeletedKeys();
   };
 
   const forgetDeleted = affectation => {
     if (!affectation) return;
+    let changed = false;
     const key = cleAffectation(affectation);
-    if (deletedKeysRef.current.delete(key)) saveDeletedKeys();
+    if (deletedKeysRef.current.delete(key)) changed = true;
+
+    // Nettoie aussi les anciennes entrées sauvegardées avec une clé plus stricte.
+    for (const [savedKey, saved] of deletedKeysRef.current.entries()) {
+      if (saved?.affectation && memeAffectationSuppression(saved.affectation, affectation)) {
+        deletedKeysRef.current.delete(savedKey);
+        changed = true;
+      }
+    }
+    if (changed) saveDeletedKeys();
   };
 
   useEffect(() => {
@@ -142,9 +169,18 @@ export const AppProvider = ({ children }) => {
     const id = String(affectation?.id || "");
     for (const [pendingId, pending] of pendingDeletionsRef.current.entries()) {
       if (id && id === String(pendingId)) return true;
-      if (pending?.affectation && memeAffectationSouple(affectation, pending.affectation)) return true;
+      if (pending?.affectation && memeAffectationSuppression(affectation, pending.affectation)) return true;
     }
-    return deletedKeysRef.current.has(cleAffectation(affectation));
+
+    if (deletedKeysRef.current.has(cleAffectation(affectation))) return true;
+
+    // Les suppressions v148 gardent aussi la photo de l'affectation : même si
+    // Google Sheets la renvoie avec un autre id ou un autre libellé de chantier,
+    // elle reste masquée jusqu'à disparition réelle côté serveur.
+    for (const saved of deletedKeysRef.current.values()) {
+      if (saved?.affectation && memeAffectationSuppression(affectation, saved.affectation)) return true;
+    }
+    return false;
   };
 
   const loadData = useCallback(async (showLoader = false) => {
@@ -159,7 +195,7 @@ export const AppProvider = ({ children }) => {
       pendingDeletionsRef.current.forEach((pending, id) => {
         if (pending?.releaseAt && maintenant >= pending.releaseAt) {
           pendingDeletionsRef.current.delete(id);
-        } else if (maintenant - Number(pending?.createdAt || maintenant) > 90000) {
+        } else if (maintenant - Number(pending?.createdAt || maintenant) > 600000) {
           pendingDeletionsRef.current.delete(id);
         }
       });
@@ -251,7 +287,7 @@ export const AppProvider = ({ children }) => {
         const serveur = await api.getAffectationsStrict();
         const existe = serveur.some(a =>
           String(a.id) === key ||
-          (removed && memeAffectationSouple(a, removed))
+          (removed && memeAffectationSuppression(a, removed))
         );
 
         absencesConsecutives = existe ? 0 : absencesConsecutives + 1;
@@ -259,7 +295,9 @@ export const AppProvider = ({ children }) => {
           const pending = pendingDeletionsRef.current.get(key);
           if (pending) {
             pending.confirmedAt = Date.now();
-            pending.releaseAt = Date.now() + 15000;
+            // On conserve le masque 5 minutes après confirmation serveur afin
+            // d'absorber totalement les lectures retardées de Google Sheets.
+            pending.releaseAt = Date.now() + 300000;
             pendingDeletionsRef.current.set(key, pending);
           }
           setError(null);
@@ -459,7 +497,7 @@ export const AppProvider = ({ children }) => {
     try {
       forgetDeleted(a);
       for (const [id, pending] of pendingDeletionsRef.current.entries()) {
-        if (pending?.affectation && memeAffectationSouple(pending.affectation, a)) {
+        if (pending?.affectation && memeAffectationSuppression(pending.affectation, a)) {
           pendingDeletionsRef.current.delete(id);
         }
       }
