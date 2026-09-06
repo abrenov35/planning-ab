@@ -1,10 +1,10 @@
 import React from "react";
 
-export const ConfirmModal = ({ 
-  isOpen, 
-  title = "Confirmation", 
-  message = "Êtes-vous sûr ?", 
-  onConfirm, 
+export const ConfirmModal = ({
+  isOpen,
+  title = "Confirmation",
+  message = "Êtes-vous sûr ?",
+  onConfirm,
   onCancel,
   confirmText = "Supprimer",
   cancelText = "Annuler",
@@ -14,54 +14,60 @@ export const ConfirmModal = ({
   if (!isOpen) return null;
 
   return (
-    <div style={{
-      position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: "rgba(0, 0, 0, 0.5)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 9999
-    }}>
+    <div
+      data-modal-confirm="true"
+      role="dialog"
+      aria-modal="true"
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: "rgba(15, 23, 42, 0.62)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 20000,
+        padding: 16
+      }}
+      onClick={event => event.stopPropagation()}
+    >
       <div style={{
         background: "white",
-        borderRadius: 8,
-        padding: "24px",
+        borderRadius: 10,
+        padding: "22px",
         maxWidth: "400px",
         width: "90%",
-        boxShadow: "0 10px 40px rgba(0, 0, 0, 0.3)",
-        animation: "slideIn 0.3s ease-out"
+        boxShadow: "0 18px 55px rgba(0, 0, 0, 0.35)",
+        border: isDangerous ? "2px solid #fecaca" : "1px solid #e5e7eb",
+        animation: "slideIn 0.2s ease-out"
       }}>
-        {/* TITRE */}
         <div style={{
           fontSize: 18,
-          fontWeight: 600,
-          color: "#1f2937",
+          fontWeight: 800,
+          color: isDangerous ? "#991b1b" : "#1f2937",
           marginBottom: 12
         }}>
           {title}
         </div>
 
-        {/* MESSAGE */}
         <div style={{
           fontSize: 14,
-          color: "#6b7280",
+          color: "#4b5563",
           marginBottom: 24,
           lineHeight: 1.5
         }}>
           {message}
         </div>
 
-        {/* BOUTONS */}
         <div style={{
           display: "flex",
           gap: 12,
           justifyContent: "flex-end"
         }}>
           <button
+            type="button"
             onClick={onCancel}
             disabled={isLoading}
             style={{
@@ -71,36 +77,29 @@ export const ConfirmModal = ({
               border: "none",
               borderRadius: 6,
               fontSize: 14,
-              fontWeight: 600,
+              fontWeight: 700,
               cursor: isLoading ? "not-allowed" : "pointer",
-              transition: "all 0.2s",
               opacity: isLoading ? 0.6 : 1
             }}
-            onMouseEnter={e => !isLoading && (e.currentTarget.style.background = "#d1d5db")}
-            onMouseLeave={e => !isLoading && (e.currentTarget.style.background = "#e5e7eb")}
           >
             {cancelText}
           </button>
 
           <button
+            type="button"
             onClick={onConfirm}
             disabled={isLoading}
             style={{
               padding: "10px 20px",
-              background: isLoading 
-                ? "#9ca3af" 
-                : (isDangerous ? "#dc2626" : "#1e3a8a"),
+              background: isLoading ? "#9ca3af" : (isDangerous ? "#dc2626" : "#1e3a8a"),
               color: "white",
               border: "none",
               borderRadius: 6,
               fontSize: 14,
-              fontWeight: 600,
+              fontWeight: 800,
               cursor: isLoading ? "not-allowed" : "pointer",
-              transition: "all 0.2s",
               opacity: isLoading ? 0.6 : 1
             }}
-            onMouseEnter={e => !isLoading && (e.currentTarget.style.background = isDangerous ? "#b91c1c" : "#1e40af")}
-            onMouseLeave={e => !isLoading && (e.currentTarget.style.background = isDangerous ? "#dc2626" : "#1e3a8a")}
           >
             {isLoading ? "Suppression..." : confirmText}
           </button>
@@ -109,14 +108,8 @@ export const ConfirmModal = ({
 
       <style>{`
         @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateY(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(-12px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>
