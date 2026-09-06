@@ -70,6 +70,14 @@ export const ChantierPage = () => {
   const triAlpha = (a, b) => String(a.nom || "").localeCompare(String(b.nom || ""), "fr", { sensitivity: "base", numeric: true });
   const actifs = chantiers.filter(c => c.statut === "Actif").sort(triAlpha);
   const archived = chantiers.filter(c => c.statut === "Archivé").sort(triAlpha);
+  const normalizeChantierName = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
+  const shortChantierId = id => String(id ?? "").replace(/\s+/g, "").slice(-4).toUpperCase() || "?";
+  const homonymCounts = new Map();
+  chantiers.forEach(c => {
+    const key = normalizeChantierName(c.nom);
+    homonymCounts.set(key, (homonymCounts.get(key) || 0) + 1);
+  });
+  const isHomonym = chantier => homonymCounts.get(normalizeChantierName(chantier.nom)) > 1;
 
   const rows = (liste, archive = false) => liste.map((chantier, idx) => (
     <tr key={chantier.id} style={{ borderBottom: "1px solid #d1d5db", background: idx % 2 === 0 ? "white" : "#f3f4f6" }}>
@@ -77,6 +85,7 @@ export const ChantierPage = () => {
         <span style={{display:"inline-flex",alignItems:"center",gap:7}}>
           {chantier.couleur && <span title="Couleur personnalisée" style={{width:10,height:10,borderRadius:"50%",background:chantier.couleur,border:"1px solid rgba(0,0,0,.18)",display:"inline-block"}}/>}
           {chantier.nom}
+          {isHomonym(chantier) && <span title="Repère d’homonyme" style={{fontSize:9,fontWeight:700,color:"#6b7280",background:"#f3f4f6",border:"1px solid #d1d5db",borderRadius:4,padding:"1px 4px"}}>#{shortChantierId(chantier.id)}</span>}
         </span>
       </td>
       <td style={{ padding: "8px 20px", color: "#374151", fontSize: 10, whiteSpace: "nowrap", width: "180px" }}>

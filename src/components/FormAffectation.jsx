@@ -10,6 +10,16 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
   const chantiersActifs = chantiers
     .filter(c => c.statut === "Actif")
     .sort((a, b) => String(a.nom || "").localeCompare(String(b.nom || ""), "fr", { sensitivity: "base" }));
+  const normalizeChantierName = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
+  const shortChantierId = id => String(id ?? "").replace(/\s+/g, "").slice(-4).toUpperCase() || "?";
+  const homonymCounts = new Map();
+  chantiersActifs.forEach(c => {
+    const key = normalizeChantierName(c.nom);
+    homonymCounts.set(key, (homonymCounts.get(key) || 0) + 1);
+  });
+  const chantierLabel = c => homonymCounts.get(normalizeChantierName(c.nom)) > 1
+    ? `${c.nom} · #${shortChantierId(c.id)}`
+    : c.nom;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notice, setNotice] = useState(null);
@@ -144,7 +154,7 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
             <label style={label}>Chantier *</label>
             <select value={formData.chantierId} onChange={e=>setFormData({...formData,chantierId:e.target.value})} style={input}>
               <option value="">-- Sélectionner --</option>
-              {chantiersActifs.map(c=><option key={c.id} value={c.id}>{c.nom}</option>)}
+              {chantiersActifs.map(c=><option key={c.id} value={c.id}>{chantierLabel(c)}</option>)}
             </select>
           </div>
         ) : (

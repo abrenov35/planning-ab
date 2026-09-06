@@ -48,6 +48,15 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const rdvColor = "#7c3aed";
   const planningColor = "#0f766e";
   const normalize = value => String(value ?? "").trim().toUpperCase();
+  const normalizeChantierName = value => String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
+  const shortChantierId = id => String(id ?? "").replace(/\s+/g, "").slice(-4).toUpperCase() || "?";
+  const homonymCounts = new Map();
+  chantiers.forEach(c => {
+    const key = normalizeChantierName(c?.nom);
+    homonymCounts.set(key, (homonymCounts.get(key) || 0) + 1);
+  });
+  const isHomonym = chantier => !!chantier && homonymCounts.get(normalizeChantierName(chantier.nom)) > 1;
+  const displayChantierName = chantier => isHomonym(chantier) ? `${chantier.nom} · #${shortChantierId(chantier.id)}` : chantier.nom;
   const isPlanning = aff => normalize(aff?.nomExterne || aff?.affectationNom || aff?.tache) === "PLANNING";
   const isRdvTask = aff => /^\s*RDV\b/i.test(String(aff?.tache ?? ""));
   const isValidChantier = chantier => chantier && String(chantier.nom ?? "").trim() !== "" && String(chantier.nom ?? "").trim() !== "??";
@@ -61,7 +70,11 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     const numericId = Number(chantierId);
     return !numericId || Number.isNaN(numericId) ? colors[0] : colors[numericId % colors.length];
   };
-  const getLetters = (aff, chantier) => isHorsGantt(aff, chantier) ? "" : String(chantier?.nom ?? "").trim().substring(0,4).toUpperCase();
+  const getLetters = (aff, chantier) => {
+    if (isHorsGantt(aff, chantier)) return "";
+    const base = String(chantier?.nom ?? "").trim().substring(0,4).toUpperCase();
+    return isHomonym(chantier) ? `${base}·${shortChantierId(chantier.id).slice(-2)}` : base;
+  };
   const getLabel = aff => {
     const tache = String(aff?.tache ?? "").trim();
     return !tache || normalize(tache) === "ND" ? "" : tache;
@@ -145,9 +158,18 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   };
 
   const findFirstChantierAffectation = query => {
-    const searched=normalize(query);
-    const chantier=chantiers.find(c => String(c.id) === String(query) || normalize(c.nom) === searched)
-      || chantiers.find(c => normalize(c.nom).includes(searched));
+    const searched=normalizeChantierName(query);
+    let chantier=chantiers.find(c => String(c.id) === String(query));
+    if(!chantier){
+      const exact=chantiers.filter(c => normalizeChantierName(c.nom) === searched);
+      if(exact.length>1) return {success:false,message:"Plusieurs chantiers portent ce nom. Choisissez celui avec son repère #."};
+      if(exact.length===1) chantier=exact[0];
+    }
+    if(!chantier){
+      const partial=chantiers.filter(c => normalizeChantierName(c.nom).includes(searched));
+      if(partial.length>1) return {success:false,message:"Plusieurs chantiers correspondent. Choisissez celui avec son repère #."};
+      chantier=partial[0];
+    }
     if(!chantier) return {success:false,message:"Chantier introuvable."};
     const candidates=affectations.filter(aff => {
       if(Number(aff.chantierId)!==Number(chantier.id)) return false;
@@ -278,7 +300,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
 
   React.useEffect(() => {
     if (!onControlsReady) return;
-    onControlsReady({ onToday:goToday, onPast:showPast, onFindChantier:findFirstChantierAffectation, searchChantiers:chantiersActifs.map(c=>({id:c.id,nom:c.nom})), weekText:"3 semaines visibles" });
+    onControlsReady({ onToday:goToday, onPast:showPast, onFindChantier:findFirstChantierAffectation, searchChantiers:chantiersActifs.map(c=>({id:c.id,nom:displayChantierName(c)})), weekText:"3 semaines visibles" });
   }, [onControlsReady, isMobile, pastWeeks, dayWidth, affectations, chantiers]);
 
   React.useEffect(() => {
