@@ -18,8 +18,6 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
 
     const panel = panelRef.current;
     if (!panel) return;
-
-    // Ne jamais enregistrer derrière une confirmation secondaire ouverte.
     if (panel.querySelector('div[style*="position: fixed"]')) return;
 
     const form = panel.querySelector("form");
@@ -85,28 +83,33 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
     if (!target || confirmingDelete) return;
 
     setConfirmingDelete(true);
-
-    // 1) Le clic d'origine arme l'ancienne étape interne du Gantt.
     bypassDeleteConfirmRef.current = true;
     target.click();
 
-    // 2) Dès que React a rendu le bouton interne, on le déclenche une seule fois.
-    // Puis on ferme immédiatement les modales : la suppression continue en arrière-plan.
-    window.setTimeout(() => {
-      const panel = panelRef.current;
-      const confirmButton = findInternalDeleteConfirm(panel);
+    let attempt = 0;
+    const maxAttempts = 100;
 
-      if (!confirmButton) {
-        setConfirmingDelete(false);
+    const triggerInternalDelete = () => {
+      const panel = panelRef.current;
+      if (!panel) return;
+
+      const confirmButton = findInternalDeleteConfirm(panel);
+      if (confirmButton && !confirmButton.disabled) {
+        confirmButton.click();
         return;
       }
 
-      confirmButton.click();
-      setDeleteConfirmTarget(null);
-      setConfirmingDelete(false);
+      attempt += 1;
+      if (attempt < maxAttempts) {
+        window.setTimeout(triggerInternalDelete, 20);
+        return;
+      }
 
-      if (typeof onClose === "function") onClose();
-    }, 30);
+      setConfirmingDelete(false);
+      alert("La suppression n'a pas pu démarrer. Réessayez.");
+    };
+
+    window.setTimeout(triggerInternalDelete, 0);
   };
 
   return (
