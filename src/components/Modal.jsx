@@ -18,8 +18,9 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
       const panel = panelRef.current;
       if (!panel) return;
 
-      // Ne jamais enregistrer derrière une confirmation secondaire ouverte.
-      if (panel.querySelector('[data-modal-confirm="true"]')) return;
+      // Une confirmation secondaire a priorité absolue : ne jamais valider
+      // la modale principale derrière elle.
+      if (document.querySelector('[data-modal-confirm="true"]')) return;
 
       const form = panel.querySelector("form");
       if (form) {
