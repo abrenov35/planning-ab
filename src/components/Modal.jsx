@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 
 export const Modal = ({ isOpen, title, children, onClose }) => {
   const [deleteConfirmTarget, setDeleteConfirmTarget] = useState(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const bypassDeleteConfirmRef = useRef(false);
   const panelRef = useRef(null);
 
@@ -68,31 +69,60 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
 
     event.preventDefault();
     event.stopPropagation();
+    setConfirmingDelete(false);
     setDeleteConfirmTarget(button);
   };
 
+  const findInternalDeleteConfirm = panel =>
+    panel
+      ? Array.from(panel.querySelectorAll("button")).find(
+          button => String(button.textContent || "").trim() === "Confirmer suppression"
+        )
+      : null;
+
   const confirmAffectationDeletion = () => {
     const target = deleteConfirmTarget;
-    if (!target) return;
+    if (!target || confirmingDelete) return;
 
-    setDeleteConfirmTarget(null);
-
-    // Premier clic : arme la suppression dans GanttPage.
+    // On garde cette confirmation visible jusqu'à la fin de la suppression :
+    // l'étape interne de confirmation du Gantt reste cachée derrière.
+    setConfirmingDelete(true);
     bypassDeleteConfirmRef.current = true;
     target.click();
 
-    // Après le rerender React, le bouton d'origine est remplacé.
-    // On retrouve donc le nouveau bouton "Confirmer la suppression"
-    // et on déclenche la suppression réelle sur ce nouvel élément.
-    window.setTimeout(() => {
-      const panel = document.querySelector('.ab-modal-panel');
-      const confirmButton = panel
-        ? Array.from(panel.querySelectorAll('button')).find(
-            button => String(button.textContent || '').trim() === 'Confirmer la suppression'
-          )
-        : null;
-      if (confirmButton) confirmButton.click();
-    }, 50);
+    const triggerRealDelete = attempt => {
+      const panel = panelRef.current;
+      if (!panel) return;
+
+      const confirmButton = findInternalDeleteConfirm(panel);
+      if (!confirmButton) {
+        if (attempt < 12) {
+          window.setTimeout(() => triggerRealDelete(attempt + 1), 20);
+        } else {
+          setConfirmingDelete(false);
+        }
+        return;
+      }
+
+      confirmButton.click();
+
+      // Si la suppression échoue, le bouton interne redevient actif :
+      // on retire alors la confirmation pour permettre un nouvel essai.
+      const watchFailure = () => {
+        const livePanel = panelRef.current;
+        if (!livePanel) return;
+        const liveConfirm = findInternalDeleteConfirm(livePanel);
+        if (liveConfirm && !liveConfirm.disabled) {
+          setDeleteConfirmTarget(null);
+          setConfirmingDelete(false);
+          return;
+        }
+        window.setTimeout(watchFailure, 200);
+      };
+      window.setTimeout(watchFailure, 250);
+    };
+
+    window.setTimeout(() => triggerRealDelete(0), 0);
   };
 
   return (
@@ -204,6 +234,7 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
               <button
                 type="button"
                 onClick={() => setDeleteConfirmTarget(null)}
+                disabled={confirmingDelete}
                 style={{
                   padding: "10px 16px",
                   borderRadius: 8,
@@ -211,7 +242,8 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
                   background: "white",
                   color: "#374151",
                   fontWeight: 700,
-                  cursor: "pointer"
+                  cursor: confirmingDelete ? "not-allowed" : "pointer",
+                  opacity: confirmingDelete ? 0.6 : 1
                 }}
               >
                 Annuler
@@ -219,6 +251,7 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
               <button
                 type="button"
                 onClick={confirmAffectationDeletion}
+                disabled={confirmingDelete}
                 style={{
                   padding: "10px 16px",
                   borderRadius: 8,
@@ -226,10 +259,11 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
                   background: "#dc2626",
                   color: "white",
                   fontWeight: 800,
-                  cursor: "pointer"
+                  cursor: confirmingDelete ? "not-allowed" : "pointer",
+                  opacity: confirmingDelete ? 0.75 : 1
                 }}
               >
-                Confirmer la suppression
+                {confirmingDelete ? "Suppression..." : "Confirmer la suppression"}
               </button>
             </div>
           </div>
