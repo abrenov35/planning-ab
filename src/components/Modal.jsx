@@ -23,6 +23,43 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
     setDeleteConfirmTarget(button);
   };
 
+  const handlePanelKeyDown = event => {
+    if (event.key !== "Enter" || event.repeat || event.isComposing) return;
+    if (event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (deleteConfirmTarget) return;
+
+    const target = event.target;
+    const tag = target?.tagName?.toLowerCase();
+    if (tag === "textarea" || tag === "select" || tag === "button") return;
+
+    const panel = event.currentTarget;
+    if (!panel) return;
+
+    // Ne jamais enregistrer derrière une confirmation secondaire ouverte.
+    if (panel.querySelector('div[style*="position: fixed"]')) return;
+
+    const form = target?.closest?.("form") || panel.querySelector("form");
+    if (form) {
+      event.preventDefault();
+      if (typeof form.requestSubmit === "function") form.requestSubmit();
+      else {
+        const submit = form.querySelector('button[type="submit"],input[type="submit"]');
+        if (submit && !submit.disabled) submit.click();
+      }
+      return;
+    }
+
+    const primaryButton = Array.from(panel.querySelectorAll("button")).find(button => {
+      if (button.disabled) return false;
+      const texte = String(button.textContent || "").trim();
+      return texte === "Enregistrer" || texte === "Ajouter" || texte === "Créer";
+    });
+
+    if (!primaryButton) return;
+    event.preventDefault();
+    primaryButton.click();
+  };
+
   const confirmAffectationDeletion = () => {
     const target = deleteConfirmTarget;
     if (!target) return;
@@ -93,6 +130,7 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
         }}
         onClick={e => e.stopPropagation()}
         onClickCapture={handlePanelClickCapture}
+        onKeyDown={handlePanelKeyDown}
       >
         <div style={{
           display: "flex",
