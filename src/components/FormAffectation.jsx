@@ -29,14 +29,15 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
   const [tacheHistory, setTacheHistory] = useState([]);
   const compactLandscape = typeof window !== "undefined" && window.matchMedia("(max-width: 1100px) and (orientation: landscape)").matches;
   const affectationsLibres = [
-    "cp",
+    "Congé",
     "Arrêt maladie",
     "Accident du travail",
     "Congé parental",
     "Formation",
     "Récup",
     "Congé sans solde",
-    "Absence autorisée"
+    "Absence autorisée",
+    "Absent"
   ];
 
   useEffect(() => {
@@ -179,7 +180,7 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
               autoFocus
               value={formData.nomLibre}
               onChange={e=>setFormData({...formData,nomLibre:e.target.value})}
-              placeholder={mode === "rdv" ? "Ex : HERVOUET" : "Ex : cp, arrêt maladie, congé parental…"}
+              placeholder={mode === "rdv" ? "Ex : HERVOUET" : "Ex : congé, arrêt maladie, congé parental…"}
               style={{...input,border:mode === "rdv" ? "2px solid #7c3aed" : "2px solid #9ca3af"}}
             />
             {mode === "libre" && (
