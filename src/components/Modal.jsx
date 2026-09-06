@@ -11,6 +11,8 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
     const mobile = typeof window !== "undefined" && window.matchMedia("(max-width: 1100px) and (pointer: coarse)").matches;
     const body = document.body;
     const root = document.documentElement;
+    const viewport = document.querySelector('meta[name="viewport"]');
+    const previousViewport = viewport?.getAttribute("content") || "";
     const scrollY = window.scrollY || window.pageYOffset || 0;
     const previousBody = {
       position: body.style.position,
@@ -31,6 +33,12 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
     };
 
     if (mobile) {
+      if (portraitOnly && viewport) {
+        viewport.setAttribute(
+          "content",
+          "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+        );
+      }
       body.style.position = "fixed";
       body.style.top = `-${scrollY}px`;
       body.style.left = "0";
@@ -115,6 +123,7 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
         window.removeEventListener("orientationchange", updateVisualViewport);
         root.style.removeProperty("--ab-modal-vh");
         root.style.removeProperty("--ab-modal-top");
+        if (portraitOnly && viewport) viewport.setAttribute("content", previousViewport);
         body.style.position = previousBody.position;
         body.style.top = previousBody.top;
         body.style.left = previousBody.left;
@@ -124,7 +133,7 @@ export const Modal = ({ isOpen, title, children, onClose }) => {
         window.scrollTo(0, scrollY);
       }
     };
-  }, [isOpen]);
+  }, [isOpen, portraitOnly]);
 
   if (!isOpen) return null;
 
