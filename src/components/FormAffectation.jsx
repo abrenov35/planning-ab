@@ -28,6 +28,7 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
   const [formData, setFormData] = useState({ chantierId:"", nomLibre:"", tache:"", rdvHeure:"" });
   const [tacheHistory, setTacheHistory] = useState([]);
   const compactLandscape = typeof window !== "undefined" && window.matchMedia("(max-width: 1100px) and (orientation: landscape)").matches;
+  const affectationsLibres = ["cp", "Arrêt", "Formation", "Maladie"];
 
   useEffect(() => {
     const saved = localStorage.getItem("tacheHistory");
@@ -64,6 +65,10 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
 
     if (mode === "chantier" && !formData.chantierId) {
       setNotice({ title:"Chantier manquant", message:"Choisissez le chantier à planifier." });
+      return;
+    }
+    if (mode === "libre" && !formData.nomLibre.trim()) {
+      setNotice({ title:"Affectation manquante", message:"Choisissez ou écrivez une affectation libre." });
       return;
     }
     if (mode === "rdv" && !formData.nomLibre.trim()) {
@@ -143,8 +148,9 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
 
         <div>
           <label style={label}>Type d’affectation</label>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3, 1fr)",gap:6}}>
             <button type="button" onClick={()=>setMode("chantier")} style={modeButton("chantier","#1e3a8a","#eff6ff")}>🏗️ Chantier</button>
+            <button type="button" onClick={()=>setMode("libre")} style={modeButton("libre","#374151","#f3f4f6")}>📝 Libre</button>
             <button type="button" onClick={()=>setMode("rdv")} style={modeButton("rdv","#6d28d9","#f5f3ff")}>📅 RDV</button>
           </div>
         </div>
@@ -159,14 +165,37 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
           </div>
         ) : (
           <div>
-            <label style={label}>{mode === "rdv" ? "Nom du rendez-vous *" : "Nom de l’affectation *"}</label>
+            <label style={label}>{mode === "rdv" ? "Nom du rendez-vous *" : "Affectation libre *"}</label>
             <input
               autoFocus
               value={formData.nomLibre}
               onChange={e=>setFormData({...formData,nomLibre:e.target.value})}
-              placeholder={mode === "rdv" ? "Ex : HERVOUET" : "Ex : SAV Dupont, Congé, Formation, Dépôt…"}
+              placeholder={mode === "rdv" ? "Ex : HERVOUET" : "Ex : cp, arrêt, formation, maladie…"}
               style={{...input,border:mode === "rdv" ? "2px solid #7c3aed" : "2px solid #9ca3af"}}
             />
+            {mode === "libre" && (
+              <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:7}}>
+                {affectationsLibres.map(item => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={()=>setFormData({...formData,nomLibre:item})}
+                    style={{
+                      border:formData.nomLibre === item ? "2px solid #374151" : "1px solid #d1d5db",
+                      background:formData.nomLibre === item ? "#f3f4f6" : "white",
+                      borderRadius:999,
+                      padding:compactLandscape ? "3px 7px" : "5px 9px",
+                      fontSize:10,
+                      fontWeight:700,
+                      color:"#374151",
+                      cursor:"pointer"
+                    }}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -216,7 +245,7 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
               rows={compactLandscape ? 1 : 2}
               value={formData.tache}
               onChange={e=>setFormData({...formData,tache:e.target.value})}
-              placeholder="Ex : peinture chambre, reprise plafond, formation habilitation…"
+              placeholder={mode === "libre" ? "Facultatif" : "Ex : peinture chambre, reprise plafond, formation habilitation…"}
               style={{...input,resize:"vertical"}}
             />
           </div>
