@@ -106,7 +106,9 @@ export const ChantierPage = () => {
       <td style={{ padding: "8px 20px", color: "#374151", fontSize: 10, whiteSpace: "nowrap", width: "130px" }}>
         <span style={{ fontWeight: 600 }}>Début :</span> {chantier.dateDebut ? formatDate(chantier.dateDebut) : ""}
       </td>
-      <td style={{ padding: 8, textAlign: "center" }}><button onClick={() => setEditingChantier(chantier)} style={{ padding: "2px 6px", border: "1px solid #d1d5db", background: "white", borderRadius: 3, fontSize: 10, cursor: "pointer" }}>{archive ? "↻" : "✏️"}</button></td>
+      <td style={{ padding: 8, textAlign: "center" }}>
+        {archive && <button onClick={() => setEditingChantier(chantier)} style={{ padding: "2px 6px", border: "1px solid #d1d5db", background: "white", borderRadius: 3, fontSize: 10, cursor: "pointer" }}>↻</button>}
+      </td>
     </tr>
   ));
 
