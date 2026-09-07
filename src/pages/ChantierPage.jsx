@@ -82,7 +82,19 @@ export const ChantierPage = () => {
   const rows = (liste, archive = false) => liste.map((chantier, idx) => (
     <tr key={chantier.id} style={{ borderBottom: "1px solid #d1d5db", background: idx % 2 === 0 ? "white" : "#dfe4ea" }}>
       <td style={{ padding: 8, color: "#1f2937", fontWeight: 600, fontSize: 20 }}>
-        <span style={{display:"inline-flex",alignItems:"center",gap:7}}>
+        <span
+          onClick={() => setEditingChantier(chantier)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              setEditingChantier(chantier);
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          title="Modifier le chantier"
+          style={{display:"inline-flex",alignItems:"center",gap:7,cursor:"pointer"}}
+        >
           {chantier.couleur && <span title="Couleur personnalisée" style={{width:10,height:10,borderRadius:"50%",background:chantier.couleur,border:"1px solid rgba(0,0,0,.18)",display:"inline-block"}}/>}
           {chantier.nom}
           {isHomonym(chantier) && <span title="Repère d’homonyme" style={{fontSize:9,fontWeight:700,color:"#6b7280",background:"#f3f4f6",border:"1px solid #d1d5db",borderRadius:4,padding:"1px 4px"}}>#{shortChantierId(chantier.id)}</span>}
