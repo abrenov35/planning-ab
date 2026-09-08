@@ -17,10 +17,12 @@ function adaptVisibleRowHeights() {
   if (!el) return;
 
   const mobile = window.matchMedia('(max-width: 1100px) and (pointer: coarse)').matches;
-  const compactSlot = mobile ? 17 : 18;
-  const expandedSlot = mobile ? 22 : 24;
-  const minRowHeight = mobile ? 19 : 20;
-  const compactBarHeight = mobile ? 13 : 14;
+  const compactSlot = mobile ? 21 : 22;
+  const expandedSlot = mobile ? 30 : 32;
+  const minRowHeight = mobile ? 23 : 24;
+  const laneGap = 2;
+  const compactBarHeight = mobile ? 15 : 16;
+  const secondaryHeight = mobile ? 8 : 9;
 
   el.querySelectorAll('[data-worker-id]').forEach(row => {
     const workerLine = row.firstElementChild;
@@ -55,30 +57,60 @@ function adaptVisibleRowHeights() {
     const orderedLanes = [...laneMap.entries()].sort((a, b) => a[1].originalTop - b[1].originalTop);
     const laneLayout = new Map();
     let offset = 0;
+
     orderedLanes.forEach(([laneKey, lane]) => {
       const height = lane.needsSecondLine ? expandedSlot : compactSlot;
       laneLayout.set(laneKey, { top: offset + 1, height, needsSecondLine: lane.needsSecondLine });
-      offset += height;
+      offset += height + laneGap;
     });
 
     visibleWrappers.forEach(({ wrapper, laneKey, needsSecondLine }) => {
       const layout = laneLayout.get(laneKey);
       if (!layout) return;
+
       wrapper.style.top = `${layout.top}px`;
       wrapper.dataset.abAppliedTop = String(layout.top);
+      wrapper.style.height = `${Math.max(16, layout.height - 2)}px`;
+      wrapper.style.boxSizing = 'border-box';
+      wrapper.style.display = 'flex';
+      wrapper.style.flexDirection = 'column';
+      wrapper.style.justifyContent = 'flex-start';
+      wrapper.style.overflow = 'hidden';
+
       const bar = wrapper.firstElementChild;
       if (bar instanceof HTMLElement) {
         bar.style.height = `${compactBarHeight}px`;
+        bar.style.minHeight = `${compactBarHeight}px`;
+        bar.style.flex = `0 0 ${compactBarHeight}px`;
+        bar.style.boxSizing = 'border-box';
       }
+
       const secondary = wrapper.children?.[1];
-      if (secondary instanceof HTMLElement && needsSecondLine) {
-        secondary.style.display = 'block';
+      if (secondary instanceof HTMLElement) {
+        if (needsSecondLine) {
+          secondary.style.display = 'block';
+          secondary.style.height = `${secondaryHeight}px`;
+          secondary.style.minHeight = `${secondaryHeight}px`;
+          secondary.style.lineHeight = `${secondaryHeight}px`;
+          secondary.style.marginTop = '1px';
+          secondary.style.flex = `0 0 ${secondaryHeight}px`;
+          secondary.style.overflow = 'hidden';
+          secondary.style.whiteSpace = 'nowrap';
+          secondary.style.textOverflow = 'ellipsis';
+        } else {
+          secondary.style.display = 'none';
+        }
       }
     });
 
-    const rowHeight = Math.max(minRowHeight, offset + 2);
+    const contentHeight = orderedLanes.length ? Math.max(0, offset - laneGap) : compactSlot;
+    const rowHeight = Math.max(minRowHeight, contentHeight + 2);
     workerLine.style.height = `${rowHeight}px`;
+    workerLine.style.minHeight = `${rowHeight}px`;
     timeline.style.height = `${rowHeight}px`;
+    timeline.style.minHeight = `${rowHeight}px`;
+    workerCell.style.height = `${rowHeight}px`;
+    workerCell.style.minHeight = `${rowHeight}px`;
   });
 }
 
