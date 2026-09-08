@@ -83,6 +83,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     const match = String(aff?.tache ?? "").match(/(\d{1,2})\s*[h:]\s*(\d{2})/i);
     return match ? `${String(match[1]).padStart(2,"0")}h${match[2]}` : "";
   };
+  const getSecondaryLabel = aff => isRdvTask(aff) ? getRdvTimeLabel(aff) : getLabel(aff);
   const fitTextSize = text => {
     const length = String(text || "").length;
     if (dayWidth < 27) return length > 8 ? 4.5 : length > 5 ? 5 : 6;
@@ -356,8 +357,9 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     const groups = new Map();
     list.forEach((aff,index) => {
       const key = getAffectationKey(aff);
-      if (!groups.has(key)) groups.set(key,{ key, firstIndex:index, days:new Set() });
+      if (!groups.has(key)) groups.set(key,{ key, firstIndex:index, days:new Set(), needsSecondLine:false });
       const group = groups.get(key);
+      if (getSecondaryLabel(aff)) group.needsSecondLine = true;
       allDates.forEach((date,dayIndex) => {
         if (isVisibleOnDay(aff,date)) group.days.add(dayIndex);
       });
@@ -369,14 +371,16 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     });
     const laneDays = [];
     const laneByKey = new Map();
+    const laneNeedsSecondLine = [];
     ordered.forEach(group => {
       let lane = 0;
       while (laneDays[lane] && [...group.days].some(dayIndex => laneDays[lane].has(dayIndex))) lane += 1;
       if (!laneDays[lane]) laneDays[lane] = new Set();
       group.days.forEach(dayIndex => laneDays[lane].add(dayIndex));
+      if (group.needsSecondLine) laneNeedsSecondLine[lane] = true;
       laneByKey.set(group.key,lane);
     });
-    return { laneByKey, laneCount:Math.max(1,laneDays.length) };
+    return { laneByKey, laneNeedsSecondLine, laneCount:Math.max(1,laneDays.length) };
   };
   const canShowHorsGanttName = date => {
     const seuil = new Date(2026,7,3); seuil.setHours(0,0,0,0);
@@ -388,8 +392,9 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const headerHeight = isMobile ? 42 : 52;
   const monthHeaderHeight = isMobile ? 15 : 19;
   const dayHeaderHeight = headerHeight - monthHeaderHeight;
-  const affectationSlotHeight = isMobile ? 22 : 24;
-  const minRowHeight = isMobile ? 24 : 26;
+  const compactAffectationSlotHeight = isMobile ? 17 : 18;
+  const expandedAffectationSlotHeight = isMobile ? 22 : 24;
+  const minRowHeight = isMobile ? 19 : 20;
   const gridTemplate = `repeat(${allDates.length}, ${dayWidth}px)`;
   const separateursApres = new Set(getWorkerSeparators());
   const separationStyle = { height:"3px", background:"#94a3b8", width:"100%" };
@@ -428,7 +433,12 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
           const affectsByOuvrier = affectations.filter(a => Number(a.ouvrierID) === Number(ouvrier.id) && isAffectationInRange(a));
           const rowBackground = idx%2 === 0 ? "white" : "#f3f4f6";
           const lanePlan = getLanePlan(affectsByOuvrier);
-          const rowHeight = Math.max(minRowHeight, lanePlan.laneCount*affectationSlotHeight+2);
+          const laneHeights = Array.from({length:lanePlan.laneCount},(_,lane) => lanePlan.laneNeedsSecondLine?.[lane] ? expandedAffectationSlotHeight : compactAffectationSlotHeight);
+          const laneOffsets = laneHeights.reduce((offsets,height,lane) => {
+            offsets[lane] = lane === 0 ? 0 : offsets[lane-1] + laneHeights[lane-1];
+            return offsets;
+          },[]);
+          const rowHeight = Math.max(minRowHeight, laneHeights.reduce((total,height) => total+height,0)+2);
           const separation = separateursApres.has(normalizeWorkerName(ouvrier.nom));
           return (
             <div key={ouvrier.id} data-worker-id={ouvrier.id} style={rowWidthStyle}>
@@ -444,17 +454,18 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
                         const horsGantt = isHorsGantt(aff,chantier);
                         const rdv = isRdvTask(aff);
                         const lettres = getLetters(aff,chantier);
-                        const label = rdv ? getRdvTimeLabel(aff) : getLabel(aff);
+                        const label = getSecondaryLabel(aff);
                         const nomHorsGantt = horsGantt ? getHorsGanttName(aff,date) : "";
                         const rdvName = String(nomHorsGantt || chantier?.nom || "RDV").trim();
                         const rank = lanePlan.laneByKey.get(getAffectationKey(aff)) ?? 0;
-                        const topOffset = rank*affectationSlotHeight+1;
+                        const topOffset = (laneOffsets[rank] || 0)+1;
+                        const currentSlotHeight = laneHeights[rank] || compactAffectationSlotHeight;
                         const planning = isPlanning(aff);
                         const barBackground = rdv ? rdvColor : planning ? planningColor : horsGantt ? "#D1D5DB" : getChantierColor(chantier?.id);
                         const barColor = rdv || planning ? "white" : horsGantt ? "#374151" : "white";
                         const barBorder = rdv ? "1px solid #6d28d9" : planning ? "1px solid #115e59" : horsGantt ? "1px solid #9CA3AF" : "1px solid rgba(0,0,0,0.16)";
                         const barText = rdv ? rdvName : horsGantt ? nomHorsGantt : lettres;
-                        const barHeight = Math.max(13, affectationSlotHeight - 10);
+                        const barHeight = label ? Math.max(13, expandedAffectationSlotHeight - 10) : Math.max(13, currentSlotHeight - 4);
                         return <div key={aff.id} onDoubleClick={e=>handleAffectationDoubleClick(e,aff)} onTouchStart={e=>handleAffectationTouchStart(e,`affectation:${aff.id}`)} onTouchEnd={e=>handleAffectationTouchEnd(e,aff,`affectation:${aff.id}`)} style={{position:"absolute",left:1,right:1,top:topOffset,cursor:"pointer",zIndex:2}}>
                           <div className={highlightedAffectationId===aff.id ? "gantt-search-hit" : ""} title={rdv ? `${rdvName} — ${label}` : horsGantt ? aff.nomExterne || "Événement Google" : `${chantier?.nom || ""} — double-cliquer pour modifier`} style={{width:"100%",height:barHeight,backgroundColor:barBackground,border:barBorder,borderRadius:isMobile ? 3 : 2,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center",padding:(horsGantt || rdv) ? "0 2px" : 0,color:barColor,fontWeight:800,fontSize:fitTextSize(barText),overflow:"hidden",minWidth:0}}><span style={{display:"block",maxWidth:"100%",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center"}}>{barText}</span></div>
                           {label && <div title={label} style={{marginTop:1,height:7,fontSize:dayWidth < 27 ? 5 : 6,fontWeight:rdv ? 800 : 600,color:rdv ? "#6d28d9" : "#374151",textAlign:"center",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:"7px"}}>{label}</div>}
