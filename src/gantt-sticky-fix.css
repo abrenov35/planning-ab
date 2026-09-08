@@ -3,41 +3,53 @@
   --gantt-scroll-left: 0px;
 }
 
-/* Chaque ligne garde sa propre hiérarchie d'affichage. */
+/* Chaque ligne reste positionnée, sans créer de contexte d'empilement qui
+   pourrait faire repasser la timeline devant la colonne des ouvriers. */
 .gantt-scroll > [data-worker-id] > div:first-child {
   position: relative !important;
-  isolation: isolate !important;
+  isolation: auto !important;
 }
 
-/* Colonne ouvrier : sticky et toujours au-dessus de sa timeline. */
+/* Colonne ouvrier : calque opaque prioritaire. */
 .gantt-scroll > [data-worker-id] > div:first-child > div:first-child {
   position: sticky !important;
   left: 0 !important;
-  z-index: 10 !important;
+  z-index: 1000 !important;
   opacity: 1 !important;
+  background-color: inherit !important;
   background-clip: border-box !important;
-  box-shadow: 3px 0 5px rgba(15,23,42,0.12);
+  overflow: hidden !important;
+  transform: translateZ(0);
+  box-shadow: 3px 0 5px rgba(15,23,42,0.14);
+}
+
+/* Le contenu du nom reste lui aussi au-dessus du masque. */
+.gantt-scroll > [data-worker-id] > div:first-child > div:first-child > * {
+  position: relative;
+  z-index: 2;
 }
 
 /* En-tête Aujourd'hui au premier plan. */
 .gantt-scroll > div:first-child > div:first-child {
   position: sticky !important;
   left: 0 !important;
-  z-index: 20 !important;
+  z-index: 2000 !important;
   opacity: 1 !important;
   background-color: #e5e7eb !important;
   background-clip: border-box !important;
+  overflow: hidden !important;
+  transform: translateZ(0);
 }
 
-/*
-  Correction forte : on ne se contente plus du z-index.
-  La partie de timeline passée sous la colonne des ouvriers est physiquement
-  découpée au fur et à mesure du scroll horizontal. Elle ne peut donc plus
-  se peindre sur les noms, quelle que soit leur couleur de fond.
-*/
+/* Timeline toujours sous la colonne fixe. */
 .gantt-scroll > [data-worker-id] > div:first-child > div:nth-child(2),
 .gantt-scroll > div:first-child > div:nth-child(2) {
   position: relative !important;
-  z-index: 1 !important;
-  clip-path: inset(0 0 0 var(--gantt-scroll-left));
+  z-index: 0 !important;
+  clip-path: inset(0 0 0 calc(var(--gantt-scroll-left) + 1px));
+}
+
+/* Les blocs d'affectation ne doivent jamais créer un niveau supérieur au masque. */
+.gantt-scroll > [data-worker-id] > div:first-child > div:nth-child(2) [style*="position: absolute"] {
+  z-index: 2 !important;
 }
