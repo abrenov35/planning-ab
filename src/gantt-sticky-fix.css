@@ -10,13 +10,14 @@
   isolation: auto !important;
 }
 
-/* Colonne ouvrier : calque opaque prioritaire. */
+/* Colonne ouvrier : calque opaque prioritaire.
+   La couleur personnalisée appliquée en inline doit pouvoir rester visible. */
 .gantt-scroll > [data-worker-id] > div:first-child > div:first-child {
   position: sticky !important;
   left: 0 !important;
   z-index: 1000 !important;
   opacity: 1 !important;
-  background-color: inherit !important;
+  background-color: inherit;
   background-clip: border-box !important;
   overflow: hidden !important;
   transform: translateZ(0);
