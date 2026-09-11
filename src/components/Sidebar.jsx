@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useRef, useState } from "react";
 import { VERSION } from "../version.js";
 import { AppContext } from "../context/AppContext";
 
@@ -41,6 +41,7 @@ const nomAffectation = a => String(a?.nomExterne || a?.affectationNom || a?.nomA
 
 export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
   const [chantierSearch, setChantierSearch] = useState("");
+  const automaticSearchTimer = useRef(null);
   const { loadData, loading, affectations } = useContext(AppContext);
   const handleReload = async () => { await loadData(true); };
 
@@ -50,8 +51,6 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
   };
   const navStyle = active => ({...baseButtonStyle,background:active?"rgba(255,255,255,0.18)":"transparent",borderBottom:active?"2px solid #f59e0b":"1px solid rgba(255,255,255,0.42)"});
   const separator=<div style={{width:1,height:24,background:"rgba(255,255,255,0.25)",flexShrink:0}}/>;
-  const canSearch=currentPage==="gantt"&&Boolean(ganttControls)&&Boolean(chantierSearch.trim());
-
   const registeredSearchOptions=(ganttControls?.searchChantiers||[]).map(c=>({
     key:`chantier:${c.id}`,
     label:String(c.nom||"").trim(),
@@ -158,6 +157,21 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
     },0);
   };
 
+  const handleChantierSearchChange = value => {
+    setChantierSearch(value);
+    window.clearTimeout(automaticSearchTimer.current);
+
+    const searched=normalizeSearch(value);
+    if(!searched || !ganttControls) return;
+
+    const exactMatch=allSearchOptions.find(option=>normalizeSearch(option.label)===searched);
+    const prefixMatches=allSearchOptions.filter(option=>normalizeSearch(option.label).startsWith(searched));
+    const target=exactMatch || (prefixMatches.length===1 ? prefixMatches[0] : null);
+    if(!target) return;
+
+    automaticSearchTimer.current=window.setTimeout(()=>runChantierSearch(target.label),300);
+  };
+
   return <div style={{background:"#1e3a8a",color:"white",display:"flex",alignItems:"center",justifyContent:"flex-start",padding:"7px 12px",borderBottom:"1px solid rgba(255,255,255,0.12)",gap:8,whiteSpace:"nowrap",position:"sticky",top:0,zIndex:100,overflowX:"auto"}}>
     <div style={{fontSize:13,fontWeight:800,flexShrink:0,marginRight:4}}>AB PLANNING</div>{separator}
     <button onClick={()=>setCurrentPage("gantt")} style={navStyle(currentPage==="gantt")}>📅 Gantt</button>
@@ -171,19 +185,12 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
         type="search"
         list="gantt-chantier-search"
         value={chantierSearch}
-        onChange={e=>setChantierSearch(e.target.value)}
+        onChange={e=>handleChantierSearchChange(e.target.value)}
         onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();runChantierSearch();}}}
         placeholder="Chercher affectation"
         title="Trouver l'affectation la plus proche d'aujourd'hui"
         style={{width:145,height:28,padding:"0 8px",border:"1px solid rgba(255,255,255,0.55)",borderRadius:5,background:"white",color:"#172554",fontSize:10,fontWeight:700,boxSizing:"border-box",outline:"none"}}
       />
-      <button
-        type="button"
-        onClick={()=>runChantierSearch()}
-        disabled={!canSearch}
-        title="Aller à l'affectation la plus proche d'aujourd'hui"
-        style={{...baseButtonStyle,width:88,background:canSearch?"#f59e0b":"rgba(255,255,255,0.08)",opacity:canSearch?1:0.45,cursor:canSearch?"pointer":"default"}}
-      >🔎 Rechercher</button>
       <a
         href="https://abrenov35.github.io/yaya-ab/"
         target="_blank"
