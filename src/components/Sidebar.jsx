@@ -42,8 +42,7 @@ const nomAffectation = a => String(a?.nomExterne || a?.affectationNom || a?.nomA
 export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
   const [chantierSearch, setChantierSearch] = useState("");
   const automaticSearchTimer = useRef(null);
-  const { loadData, loading, affectations } = useContext(AppContext);
-  const handleReload = async () => { await loadData(true); };
+  const { affectations } = useContext(AppContext);
 
   const baseButtonStyle = {
     width:92,height:28,padding:"0 8px",display:"inline-flex",alignItems:"center",justifyContent:"center",boxSizing:"border-box",
@@ -81,20 +80,23 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
     }
 
     const searched=normalizeSearch(query);
-    const target=allSearchOptions.find(option=>normalizeSearch(option.label)===searched)
-      || allSearchOptions.find(option=>normalizeSearch(option.label).includes(searched));
-    if(!target){
+    const matchingTargets=allSearchOptions.filter(option=>{
+      const normalizedLabel=normalizeSearch(option.label);
+      return normalizedLabel===searched || normalizedLabel.includes(searched);
+    });
+    if(matchingTargets.length===0){
       alert("Affectation introuvable.");
       return;
     }
 
     const today=new Date();
     today.setHours(0,0,0,0);
-    const candidates=(affectations||[])
-      .filter(aff=>target.type==="chantier"
-        ? Number(aff.chantierId)===Number(target.chantierId)
-        : !Number(aff.chantierId) && normalizeSearch(nomAffectation(aff))===normalizeSearch(target.label))
-      .map(aff=>{
+    const candidates=matchingTargets
+      .flatMap(target=>(affectations||[])
+        .filter(aff=>target.type==="chantier"
+          ? Number(aff.chantierId)===Number(target.chantierId)
+          : !Number(aff.chantierId) && normalizeSearch(nomAffectation(aff))===normalizeSearch(target.label))
+        .map(aff=>{
         let start=parsePlanningDate(aff.dateDebut);
         let end=parsePlanningDate(aff.dateFin);
         if(!start || !end)return null;
@@ -115,8 +117,8 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
           distance=0;
           direction=0;
         }
-        return {aff,start,end,targetDate,distance,direction};
-      })
+        return {aff,target,start,end,targetDate,distance,direction};
+      }))
       .filter(Boolean)
       .sort((a,b)=>{
         const priority=entry=>entry.direction===0 ? 0 : entry.direction===1 ? 1 : 2;
@@ -125,9 +127,10 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
 
     const found=candidates[0];
     if(!found){
-      alert(`Aucune affectation trouvée pour ${target.label}.`);
+      alert(`Aucune affectation trouvée pour ${query}.`);
       return;
     }
+    const target=found.target;
 
     const currentMonday=mondayOf(today);
     const targetMonday=mondayOf(found.targetDate);
@@ -183,7 +186,6 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
       <button onClick={ganttControls.onPast} style={{...baseButtonStyle,background:"rgba(255,255,255,0.12)"}}>← Passé</button>
     </div>}
     {separator}
-    <button onClick={handleReload} disabled={loading} title="Recharger immédiatement les données du planning" style={{...baseButtonStyle,background:loading?"rgba(255,255,255,0.10)":"rgba(255,255,255,0.16)",cursor:loading?"default":"pointer"}}>{loading?"↻ ...":"↻ Recharger"}</button>
     {currentPage==="gantt"&&ganttControls&&<div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
       <input
         type="search"
@@ -202,6 +204,13 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
         title="Ouvrir Yaya dans un nouvel onglet"
         style={{...baseButtonStyle,width:72,background:"rgba(255,255,255,0.16)",textDecoration:"none"}}
       >Yaya ↗</a>
+      <a
+        href="https://abrenov35.github.io/ab-commandes/"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Ouvrir le suivi des commandes dans un nouvel onglet"
+        style={{...baseButtonStyle,width:82,background:"rgba(255,255,255,0.16)",textDecoration:"none"}}
+      >Commande ↗</a>
       <datalist id="gantt-chantier-search">{allSearchOptions.map(option=><option key={option.key} value={option.label}/>)}</datalist>
     </div>}
     <button onClick={()=>setCurrentPage("chantiers")} style={navStyle(currentPage==="chantiers")}>🏗️ Chantiers</button>
