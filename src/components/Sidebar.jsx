@@ -204,13 +204,6 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
         title="Ouvrir Yaya dans un nouvel onglet"
         style={{...baseButtonStyle,width:72,background:"rgba(255,255,255,0.16)",textDecoration:"none"}}
       >Yaya ↗</a>
-      <a
-        href="https://abrenov35.github.io/ab-commandes/"
-        target="_blank"
-        rel="noopener noreferrer"
-        title="Ouvrir le suivi des commandes dans un nouvel onglet"
-        style={{...baseButtonStyle,width:82,background:"rgba(255,255,255,0.16)",textDecoration:"none"}}
-      >Commande ↗</a>
       <datalist id="gantt-chantier-search">{allSearchOptions.map(option=><option key={option.key} value={option.label}/>)}</datalist>
     </div>}
     <button onClick={()=>setCurrentPage("chantiers")} style={navStyle(currentPage==="chantiers")}>🏗️ Chantiers</button>
