@@ -141,6 +141,7 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
         detail:{
           targetDate:toIsoDate(found.targetDate),
           workerId:found.aff.ouvrierID,
+          affectationId:found.aff.id,
           chantierId:target.chantierId||"",
           chantierName:target.label,
           pastWeeks:weeksBack

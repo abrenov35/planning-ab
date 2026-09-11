@@ -185,20 +185,25 @@ function businessDayIndex(startMonday, targetDate) {
   return index;
 }
 
-function highlightSearchHit(row, dayIndex, chantierName) {
+function highlightSearchHit(row, dayIndex, chantierName, affectationId) {
   const workerLine = row?.firstElementChild;
   const timeline = workerLine?.children?.[1];
   const cell = timeline?.children?.[dayIndex];
   if (!cell) return;
   const titled = Array.from(cell.querySelectorAll('[title]'));
   const searched = String(chantierName || '').trim().toUpperCase();
-  const hit = titled.find(node => String(node.getAttribute('title') || '').trim().toUpperCase().startsWith(searched)) || titled[0];
+  const searchedId = String(affectationId ?? '');
+  const hitById = Array.from(cell.querySelectorAll('[data-affectation-id]'))
+    .find(node => String(node.dataset.affectationId || '') === searchedId);
+  const hit = hitById || titled.find(node => String(node.getAttribute('title') || '').trim().toUpperCase().startsWith(searched)) || titled[0];
   if (!hit || typeof hit.animate !== 'function') return;
   hit.animate([
-    { boxShadow: '0 0 0 0 rgba(245,158,11,0)', filter: 'brightness(1)' },
-    { boxShadow: '0 0 0 5px rgba(245,158,11,.95)', filter: 'brightness(1.2)' },
-    { boxShadow: '0 0 0 0 rgba(245,158,11,0)', filter: 'brightness(1)' }
-  ], { duration: 2400, easing: 'ease-in-out' });
+    { boxShadow: '0 0 0 0 rgba(251,191,36,0)', filter: 'brightness(1)', transform: 'scale(1)' },
+    { boxShadow: '0 0 0 5px rgba(251,191,36,1)', filter: 'brightness(1.45)', transform: 'scale(1.06)' },
+    { boxShadow: '0 0 0 1px rgba(251,191,36,.2)', filter: 'brightness(1.05)', transform: 'scale(1)' },
+    { boxShadow: '0 0 0 5px rgba(251,191,36,1)', filter: 'brightness(1.45)', transform: 'scale(1.06)' },
+    { boxShadow: '0 0 0 0 rgba(251,191,36,0)', filter: 'brightness(1)', transform: 'scale(1)' }
+  ], { duration: 3000, easing: 'ease-in-out' });
 }
 
 function scrollToNearestAssignment(event) {
@@ -218,10 +223,11 @@ function scrollToNearestAssignment(event) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const currentMonday = mondayOf(today);
-    const rangeMonday = new Date(currentMonday);
-    rangeMonday.setDate(rangeMonday.getDate() - Math.max(0, Number(detail.pastWeeks || 0)) * 7);
+    const pastWeeks = Math.max(0, Number(detail.pastWeeks || 0));
+    const rangeStart = new Date(pastWeeks > 0 ? currentMonday : today);
+    if (pastWeeks > 0) rangeStart.setDate(rangeStart.getDate() - pastWeeks * 7);
 
-    const dayIndex = businessDayIndex(rangeMonday, targetDate);
+    const dayIndex = businessDayIndex(rangeStart, targetDate);
     const dayWidth = firstDay.getBoundingClientRect().width || firstDay.offsetWidth || 1;
     const row = el.querySelector(`[data-worker-id="${String(detail.workerId)}"]`);
     const left = Math.max(0, dayIndex * dayWidth - dayWidth * 2);
@@ -229,7 +235,7 @@ function scrollToNearestAssignment(event) {
     el.scrollTo({ left, top, behavior: 'smooth' });
     window.setTimeout(() => {
       scheduleAdaptiveRows();
-      highlightSearchHit(row, dayIndex, detail.chantierName);
+      highlightSearchHit(row, dayIndex, detail.chantierName, detail.affectationId);
     }, 280);
     return true;
   };
