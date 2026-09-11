@@ -184,6 +184,13 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
         title="Aller à l'affectation la plus proche d'aujourd'hui"
         style={{...baseButtonStyle,width:88,background:canSearch?"#f59e0b":"rgba(255,255,255,0.08)",opacity:canSearch?1:0.45,cursor:canSearch?"pointer":"default"}}
       >🔎 Rechercher</button>
+      <a
+        href="https://abrenov35.github.io/yaya-ab/"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Ouvrir Yaya dans un nouvel onglet"
+        style={{...baseButtonStyle,width:72,background:"rgba(255,255,255,0.16)",textDecoration:"none"}}
+      >Yaya ↗</a>
       <datalist id="gantt-chantier-search">{allSearchOptions.map(option=><option key={option.key} value={option.label}/>)}</datalist>
     </div>}
     <button onClick={()=>setCurrentPage("chantiers")} style={navStyle(currentPage==="chantiers")}>🏗️ Chantiers</button>
