@@ -142,7 +142,10 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const rangeStart = allDates[0];
   const rangeEnd = new Date(allDates[allDates.length-1]);
   rangeEnd.setHours(23,59,59,999);
-  const todayScrollLeft = pastWeeks * 5 * dayWidth;
+  // Place le jour courant dans la première colonne visible de la timeline.
+  // La plage commence toujours un lundi et n'affiche que les jours ouvrés.
+  const todayBusinessDayOffset = Math.min(Math.max(todayDow === 0 ? 4 : todayDow - 1, 0), 4);
+  const todayScrollLeft = (pastWeeks * 5 + todayBusinessDayOffset) * dayWidth;
 
   const scrollToToday = behavior => {
     const el = scrollRef.current;
@@ -155,7 +158,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   };
   const goToday = () => {
     setPastWeeks(0);
-    window.setTimeout(() => scrollRef.current?.scrollTo({ left:0, behavior:"smooth" }), 0);
+    window.setTimeout(() => scrollRef.current?.scrollTo({ left:todayBusinessDayOffset * dayWidth, behavior:"smooth" }), 0);
   };
 
   const findFirstChantierAffectation = query => {
