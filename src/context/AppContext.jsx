@@ -59,6 +59,21 @@ const cleAffectation = a => {
 };
 
 const LS_DELETED = "abPlanningDeletedAssignmentsV2";
+const LS_DATA_CACHE = "abPlanningDataCacheV1";
+
+const lireCacheDonnees = () => {
+  try {
+    const cache = JSON.parse(localStorage.getItem(LS_DATA_CACHE) || "null");
+    if (!cache || Date.now() - Number(cache.savedAt || 0) > 7 * 24 * 60 * 60 * 1000) return null;
+    return {
+      ouvriers: Array.isArray(cache.ouvriers) ? cache.ouvriers : [],
+      chantiers: Array.isArray(cache.chantiers) ? cache.chantiers : [],
+      affectations: Array.isArray(cache.affectations) ? cache.affectations : []
+    };
+  } catch (_) {
+    return null;
+  }
+};
 
 const lireSuppressionsPersistantes = () => {
   try {
@@ -70,10 +85,11 @@ const lireSuppressionsPersistantes = () => {
 };
 
 export const AppProvider = ({ children }) => {
-  const [ouvriers, setOuvriers] = useState([]);
-  const [chantiers, setChantiers] = useState([]);
-  const [affectations, setAffectations] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const initialCacheRef = useRef(lireCacheDonnees());
+  const [ouvriers, setOuvriers] = useState(() => initialCacheRef.current?.ouvriers || []);
+  const [chantiers, setChantiers] = useState(() => initialCacheRef.current?.chantiers || []);
+  const [affectations, setAffectations] = useState(() => initialCacheRef.current?.affectations || []);
+  const [loading, setLoading] = useState(() => !initialCacheRef.current);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
 
@@ -205,11 +221,21 @@ export const AppProvider = ({ children }) => {
       setOuvriers(ouvriersAvecCouleurs);
       setChantiers(Array.isArray(data?.chantiers) ? data.chantiers : []);
       setAffectations([...serveur, ...temporaires]);
+      try {
+        localStorage.setItem(LS_DATA_CACHE, JSON.stringify({
+          savedAt: Date.now(),
+          ouvriers: ouvriersAvecCouleurs,
+          chantiers: Array.isArray(data?.chantiers) ? data.chantiers : [],
+          affectations: serveur
+        }));
+      } catch (_) {}
       setError(null);
       setLastUpdated(new Date());
+      return true;
     } catch (err) {
       console.error("Error loading data:", err);
       setError(err.message);
+      return false;
     } finally {
       if (showLoader) setLoading(false);
     }
@@ -217,14 +243,25 @@ export const AppProvider = ({ children }) => {
 
   useEffect(() => {
     let actif = true;
+    let retryTimer = null;
+    const attendre = delay => new Promise(resolve => {
+      retryTimer = window.setTimeout(resolve, delay);
+    });
     (async () => {
-      if (actif) await loadData(true);
+      if (!actif) return;
+      let charge = await loadData(!initialCacheRef.current);
+      for (const attente of [1500, 5000]) {
+        if (charge || !actif) break;
+        await attendre(attente);
+        if (actif) charge = await loadData(false);
+      }
     })();
     const interval = setInterval(() => {
       if (actif) loadData(false);
     }, 30000);
     return () => {
       actif = false;
+      if (retryTimer) window.clearTimeout(retryTimer);
       clearInterval(interval);
     };
   }, [loadData]);
