@@ -127,25 +127,23 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const todayDow = today.getDay();
   const currentMonday = new Date(today);
   currentMonday.setDate(today.getDate() - (todayDow === 0 ? 6 : todayDow - 1));
-  const rangeMonday = new Date(currentMonday);
-  rangeMonday.setDate(currentMonday.getDate() - pastWeeks * 7);
+  const rangeStartDate = new Date(pastWeeks > 0 ? currentMonday : today);
+  if (pastWeeks > 0) rangeStartDate.setDate(currentMonday.getDate() - pastWeeks * 7);
 
   const allDates = [];
-  for (let week=0; week<pastWeeks+futureWeeks; week++) {
-    for (let day=0; day<5; day++) {
-      const date = new Date(rangeMonday);
-      date.setDate(rangeMonday.getDate() + week*7 + day);
-      allDates.push(date);
-    }
+  const cursorDate = new Date(rangeStartDate);
+  const totalBusinessDays = (pastWeeks + futureWeeks) * 5;
+  while (allDates.length < totalBusinessDays) {
+    const dayOfWeek = cursorDate.getDay();
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) allDates.push(new Date(cursorDate));
+    cursorDate.setDate(cursorDate.getDate() + 1);
   }
 
   const rangeStart = allDates[0];
   const rangeEnd = new Date(allDates[allDates.length-1]);
   rangeEnd.setHours(23,59,59,999);
-  // Place le jour courant dans la première colonne visible de la timeline.
-  // La plage commence toujours un lundi et n'affiche que les jours ouvrés.
-  const todayBusinessDayOffset = Math.min(Math.max(todayDow === 0 ? 4 : todayDow - 1, 0), 4);
-  const todayScrollLeft = (pastWeeks * 5 + todayBusinessDayOffset) * dayWidth;
+  const todayIndex = allDates.findIndex(date => date.getTime() === today.getTime());
+  const todayScrollLeft = Math.max(0, todayIndex) * dayWidth;
 
   const scrollToToday = behavior => {
     const el = scrollRef.current;
@@ -158,7 +156,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   };
   const goToday = () => {
     setPastWeeks(0);
-    window.setTimeout(() => scrollRef.current?.scrollTo({ left:todayBusinessDayOffset * dayWidth, behavior:"smooth" }), 0);
+    window.setTimeout(() => scrollRef.current?.scrollTo({ left:0, behavior:"smooth" }), 0);
   };
 
   const findFirstChantierAffectation = query => {
@@ -341,7 +339,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     else groups.push({ key, start:index, count:1, label:monthNames[date.getMonth()] });
     return groups;
   }, []);
-  const getDayRightBorder = idx => (idx+1)%5 === 0 && idx < allDates.length-1 ? "3px solid #1e3a8a" : idx < allDates.length-1 ? "1px solid #d1d5db" : "none";
+  const getDayRightBorder = idx => allDates[idx]?.getDay() === 5 && idx < allDates.length-1 ? "3px solid #1e3a8a" : idx < allDates.length-1 ? "1px solid #d1d5db" : "none";
   const isAffectationInRange = aff => {
     const s = parseDate(aff.dateDebut), e = parseDate(aff.dateFin);
     if (!s || !e) return false;
