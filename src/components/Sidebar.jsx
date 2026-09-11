@@ -51,6 +51,7 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
   };
   const navStyle = active => ({...baseButtonStyle,background:active?"rgba(255,255,255,0.18)":"transparent",borderBottom:active?"2px solid #f59e0b":"1px solid rgba(255,255,255,0.42)"});
   const separator=<div style={{width:1,height:24,background:"rgba(255,255,255,0.25)",flexShrink:0}}/>;
+  const canSearch=currentPage==="gantt"&&Boolean(ganttControls)&&Boolean(chantierSearch.trim());
   const registeredSearchOptions=(ganttControls?.searchChantiers||[]).map(c=>({
     key:`chantier:${c.id}`,
     label:String(c.nom||"").trim(),
@@ -118,7 +119,10 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
         return {aff,start,end,targetDate,distance,direction};
       })
       .filter(Boolean)
-      .sort((a,b)=>a.distance-b.distance || b.direction-a.direction || a.start-b.start);
+      .sort((a,b)=>{
+        const priority=entry=>entry.direction===0 ? 0 : entry.direction===1 ? 1 : 2;
+        return priority(a)-priority(b) || a.distance-b.distance || b.start-a.start;
+      });
 
     const found=candidates[0];
     if(!found){
@@ -192,6 +196,13 @@ export const Sidebar = ({ currentPage, setCurrentPage, ganttControls }) => {
         title="Trouver l'affectation la plus proche d'aujourd'hui"
         style={{width:145,height:28,padding:"0 8px",border:"1px solid rgba(255,255,255,0.55)",borderRadius:5,background:"white",color:"#172554",fontSize:10,fontWeight:700,boxSizing:"border-box",outline:"none"}}
       />
+      <button
+        type="button"
+        onClick={()=>runChantierSearch()}
+        disabled={!canSearch}
+        title="Rechercher l'affectation sélectionnée"
+        style={{...baseButtonStyle,width:88,background:canSearch?"#f59e0b":"rgba(255,255,255,0.08)",opacity:canSearch?1:0.45,cursor:canSearch?"pointer":"default"}}
+      >🔎 Rechercher</button>
       <a
         href="https://abrenov35.github.io/yaya-ab/"
         target="_blank"
