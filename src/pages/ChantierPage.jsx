@@ -8,6 +8,7 @@ export const ChantierPage = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingChantier, setEditingChantier] = useState(null);
   const [isArchivedExpanded, setIsArchivedExpanded] = useState(false);
+  const [chantierListSearch, setChantierListSearch] = useState("");
 
   const handleAddChantier = async (formData) => {
     setShowAddModal(false);
@@ -68,9 +69,13 @@ export const ChantierPage = () => {
   };
 
   const triAlpha = (a, b) => String(a.nom || "").localeCompare(String(b.nom || ""), "fr", { sensitivity: "base", numeric: true });
-  const actifs = chantiers.filter(c => c.statut === "Actif").sort(triAlpha);
-  const archived = chantiers.filter(c => c.statut === "Archivé").sort(triAlpha);
   const normalizeChantierName = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
+  const actifs = chantiers.filter(c => c.statut === "Actif").sort(triAlpha);
+  const normalizedListSearch = normalizeChantierName(chantierListSearch);
+  const filteredActifs = normalizedListSearch
+    ? actifs.filter(chantier => normalizeChantierName(chantier.nom).includes(normalizedListSearch))
+    : actifs;
+  const archived = chantiers.filter(c => c.statut === "Archivé").sort(triAlpha);
   const shortChantierId = id => String(id ?? "").replace(/\s+/g, "").slice(-4).toUpperCase() || "?";
   const homonymCounts = new Map();
   chantiers.forEach(c => {
@@ -116,10 +121,18 @@ export const ChantierPage = () => {
     <div style={{ padding: "0.35rem", flex: "none", minHeight: "100%", overflowY: "visible", background: "#f3f4f6" }}>
       <div style={{ width: "100%" }}>
         <div style={{ background: "white", borderRadius: 6, border: "1px solid #e5e7eb", marginBottom: "0.75rem", overflow: "hidden" }}>
-          <div style={{ background: "#1e3a8a", color: "white", padding: "0.75rem 1rem", fontWeight: 600, fontSize: 13, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span>🏗️ Chantiers actifs ({actifs.length})</span>
+          <div style={{ background: "#1e3a8a", color: "white", padding: "0.55rem 1rem", fontWeight: 600, fontSize: 13, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <span>🏗️ Chantiers actifs ({normalizedListSearch ? `${filteredActifs.length}/${actifs.length}` : actifs.length})</span>
+            <input
+              type="search"
+              value={chantierListSearch}
+              onChange={event => setChantierListSearch(event.target.value)}
+              placeholder="Rechercher un chantier"
+              aria-label="Rechercher un chantier dans la liste"
+              style={{height:32,width:230,maxWidth:"100%",padding:"0 10px",border:"1px solid rgba(255,255,255,.7)",borderRadius:5,background:"white",color:"#172554",fontSize:13,fontWeight:600,boxSizing:"border-box",outline:"none"}}
+            />
           </div>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}><tbody>{actifs.length === 0 ? <tr><td style={{ padding: 8, textAlign: "center", color: "#9ca3af" }}>Aucun chantier</td></tr> : rows(actifs)}</tbody></table>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}><tbody>{filteredActifs.length === 0 ? <tr><td style={{ padding: 14, textAlign: "center", color: "#6b7280" }}>{normalizedListSearch ? "Aucun chantier correspondant" : "Aucun chantier"}</td></tr> : rows(filteredActifs)}</tbody></table>
         </div>
 
         {archived.length > 0 && <div style={{ background: "white", borderRadius: 6, border: "1px solid #e5e7eb", overflow: "hidden" }}>
