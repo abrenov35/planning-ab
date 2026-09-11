@@ -6,6 +6,26 @@ const formatRdvTask = value => {
   return `RDV • ${String(h || "").padStart(2, "0")}h${String(m || "00").padStart(2, "0")}`;
 };
 
+const emptyDays = () => ({ lundi:false, mardi:false, mercredi:false, jeudi:false, vendredi:false });
+
+const daysFromSelectedDate = selectedDate => {
+  const result = emptyDays();
+  if (!selectedDate) return result;
+  const date = new Date(selectedDate);
+  if (Number.isNaN(date.getTime())) return result;
+  const keyByDow = { 1:"lundi", 2:"mardi", 3:"mercredi", 4:"jeudi", 5:"vendredi" };
+  const key = keyByDow[date.getDay()];
+  if (key) result[key] = true;
+  return result;
+};
+
+const selectedDateLabel = selectedDate => {
+  if (!selectedDate) return "";
+  const date = new Date(selectedDate);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("fr-FR", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
+};
+
 export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, selectedDate = null }) => {
   const chantiersActifs = chantiers
     .filter(c => c.statut === "Actif")
@@ -24,7 +44,7 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notice, setNotice] = useState(null);
   const [mode, setMode] = useState("chantier");
-  const [days, setDays] = useState({ lundi:false, mardi:false, mercredi:false, jeudi:false, vendredi:false });
+  const [days, setDays] = useState(() => daysFromSelectedDate(selectedDate));
   const [formData, setFormData] = useState({ chantierId:"", nomLibre:"", tache:"", rdvHeure:"" });
   const [tacheHistory, setTacheHistory] = useState([]);
   const compactLandscape = typeof window !== "undefined" && window.matchMedia("(max-width: 1100px) and (orientation: landscape)").matches;
@@ -47,6 +67,10 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
       catch (e) { console.error(e); }
     }
   }, []);
+
+  useEffect(() => {
+    setDays(daysFromSelectedDate(selectedDate));
+  }, [selectedDate]);
 
   const getDateRange = () => {
     const order = ["lundi","mardi","mercredi","jeudi","vendredi"];
@@ -210,6 +234,11 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
 
         <div>
           <label style={label}>Jours de la semaine *</label>
+          {selectedDateLabel(selectedDate) && (
+            <div style={{marginBottom:6,fontSize:10,fontWeight:800,color:"#1e3a8a",background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:6,padding:"5px 7px"}}>
+              Jour cliqué : {selectedDateLabel(selectedDate)} — présélectionné automatiquement
+            </div>
+          )}
           <div style={{display:"flex",gap:6}}>
             {dayList.map(day=>(
               <button
