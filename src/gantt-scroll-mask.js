@@ -23,6 +23,7 @@ function adaptVisibleRowHeights() {
   const laneGap = 2;
   const compactBarHeight = mobile ? 15 : 16;
   const secondaryHeight = mobile ? 8 : 9;
+  const rowLayouts = [];
 
   el.querySelectorAll('[data-worker-id]').forEach(row => {
     const workerLine = row.firstElementChild;
@@ -105,12 +106,28 @@ function adaptVisibleRowHeights() {
 
     const contentHeight = orderedLanes.length ? Math.max(0, offset - laneGap) : compactSlot;
     const rowHeight = Math.max(minRowHeight, contentHeight + 2);
-    workerLine.style.height = `${rowHeight}px`;
-    workerLine.style.minHeight = `${rowHeight}px`;
-    timeline.style.height = `${rowHeight}px`;
-    timeline.style.minHeight = `${rowHeight}px`;
-    workerCell.style.height = `${rowHeight}px`;
-    workerCell.style.minHeight = `${rowHeight}px`;
+    rowLayouts.push({ row, workerLine, workerCell, timeline, naturalHeight: rowHeight });
+  });
+
+  if (!rowLayouts.length) return;
+
+  const header = el.firstElementChild;
+  const firstSeparator = header?.nextElementSibling;
+  const fixedHeight = (header?.offsetHeight || 0)
+    + (firstSeparator?.offsetHeight || 0)
+    + rowLayouts.reduce((total, layout) => total + (layout.row.lastElementChild?.offsetHeight || 0), 0);
+  const naturalRowsHeight = rowLayouts.reduce((total, layout) => total + layout.naturalHeight, 0);
+  const remainingHeight = Math.max(0, el.clientHeight - fixedHeight - naturalRowsHeight);
+  const extraHeightPerRow = remainingHeight / rowLayouts.length;
+
+  rowLayouts.forEach(({ workerLine, workerCell, timeline, naturalHeight }) => {
+    const adjustedHeight = naturalHeight + extraHeightPerRow;
+    workerLine.style.height = `${adjustedHeight}px`;
+    workerLine.style.minHeight = `${adjustedHeight}px`;
+    timeline.style.height = `${adjustedHeight}px`;
+    timeline.style.minHeight = `${adjustedHeight}px`;
+    workerCell.style.height = `${adjustedHeight}px`;
+    workerCell.style.minHeight = `${adjustedHeight}px`;
   });
 }
 
