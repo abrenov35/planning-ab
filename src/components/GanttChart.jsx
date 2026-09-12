@@ -406,6 +406,18 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const stickyWorkerStyle = { position:"sticky", left:0, zIndex:8, boxShadow:"3px 0 5px rgba(15,23,42,0.08)" };
   const stickyHeaderStyle = { position:"sticky", left:0, zIndex:20, boxShadow:"3px 0 5px rgba(15,23,42,0.10)" };
 
+  const workerLayouts = ouvriersActifs.map(ouvrier => {
+    const affectsByOuvrier = affectations.filter(a => Number(a.ouvrierID) === Number(ouvrier.id) && isAffectationInRange(a));
+    const lanePlan = getLanePlan(affectsByOuvrier);
+    const laneHeights = Array.from({length:lanePlan.laneCount},(_,lane) => lanePlan.laneNeedsSecondLine?.[lane] ? expandedAffectationSlotHeight : compactAffectationSlotHeight);
+    const naturalHeight = Math.max(minRowHeight, laneHeights.reduce((total,height) => total+height,0)+2);
+    return { affectsByOuvrier, lanePlan, laneHeights, naturalHeight };
+  });
+  const separatorsHeight = ouvriersActifs.reduce((total,ouvrier) => total + (separateursApres.has(normalizeWorkerName(ouvrier.nom)) ? 3 : 1),0);
+  const naturalRowsHeight = workerLayouts.reduce((total,layout) => total+layout.naturalHeight,0);
+  const heightToFill = Math.max(0,(viewport.height || 0)-headerHeight-3-separatorsHeight-naturalRowsHeight);
+  const extraHeightPerRow = ouvriersActifs.length ? heightToFill/ouvriersActifs.length : 0;
+
   return (
     <div style={{padding:isMobile ? "0.12rem" : "0.45rem",flex:1,display:"flex",flexDirection:"column",minWidth:0,minHeight:0}}>
       <style>{`.gantt-scroll::-webkit-scrollbar,.gantt-legend::-webkit-scrollbar{display:none;width:0;height:0}.gantt-scroll,.gantt-legend{scrollbar-width:none;-ms-overflow-style:none}.gantt-scroll.dragging,.gantt-scroll.dragging *{cursor:grabbing!important;user-select:none!important}@keyframes ganttSearchPulse{0%,100%{filter:brightness(1);box-shadow:0 0 0 0 rgba(245,158,11,0)}25%,75%{filter:brightness(1.18);box-shadow:0 0 0 4px rgba(245,158,11,.9)}}.gantt-search-hit{animation:ganttSearchPulse 2.4s ease-in-out}`}</style>
@@ -431,15 +443,13 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
         </div>
         <div style={{...separationStyle,width:totalWidth,flexShrink:0}} />
         {ouvriersActifs.map((ouvrier,idx) => {
-          const affectsByOuvrier = affectations.filter(a => Number(a.ouvrierID) === Number(ouvrier.id) && isAffectationInRange(a));
+          const { affectsByOuvrier, lanePlan, laneHeights, naturalHeight } = workerLayouts[idx];
           const rowBackground = idx%2 === 0 ? "white" : "#f3f4f6";
-          const lanePlan = getLanePlan(affectsByOuvrier);
-          const laneHeights = Array.from({length:lanePlan.laneCount},(_,lane) => lanePlan.laneNeedsSecondLine?.[lane] ? expandedAffectationSlotHeight : compactAffectationSlotHeight);
           const laneOffsets = laneHeights.reduce((offsets,height,lane) => {
             offsets[lane] = lane === 0 ? 0 : offsets[lane-1] + laneHeights[lane-1];
             return offsets;
           },[]);
-          const rowHeight = Math.max(minRowHeight, laneHeights.reduce((total,height) => total+height,0)+2);
+          const rowHeight = naturalHeight+extraHeightPerRow;
           const separation = separateursApres.has(normalizeWorkerName(ouvrier.nom));
           return (
             <div key={ouvrier.id} data-worker-id={ouvrier.id} style={rowWidthStyle}>
