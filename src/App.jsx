@@ -15,11 +15,6 @@ const prepareLocalPlanningState = () => {
   try {
     const savedPage = localStorage.getItem("currentPage");
     if (!VALID_PAGES.has(savedPage)) localStorage.setItem("currentPage", "gantt");
-
-    // Ces anciennes données locales ne doivent plus intervenir dans les affectations.
-    localStorage.removeItem("abPlanningDeleteQueueV1");
-    localStorage.removeItem("abPlanningDeletedAssignmentsV2");
-    localStorage.removeItem("abPlanningDataCacheV1");
   } catch (_) {}
 };
 
