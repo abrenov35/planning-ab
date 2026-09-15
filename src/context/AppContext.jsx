@@ -30,72 +30,20 @@ const memeAffectation = (a, b) =>
   tacheAffectation(a) === tacheAffectation(b) &&
   nomAffectation(a) === nomAffectation(b);
 
-const memeAffectationSouple = (a, b) =>
-  String(a?.ouvrierID || "") === String(b?.ouvrierID || "") &&
-  String(a?.chantierId || "") === String(b?.chantierId || "") &&
-  normaliserDate(a?.dateDebut) === normaliserDate(b?.dateDebut) &&
-  normaliserDate(a?.dateFin) === normaliserDate(b?.dateFin) &&
-  tacheAffectation(a) === tacheAffectation(b);
-
-// Pour une affectation chantier, le nom peut varier temporairement côté serveur.
-// On l'ignore pour reconnaître une suppression. Pour une affectation libre,
-// le nom reste nécessaire afin de ne pas masquer une autre affectation distincte.
-const memeAffectationSuppression = (a, b) => {
-  if (!memeAffectationSouple(a, b)) return false;
-  const chantierId = String(a?.chantierId || b?.chantierId || "");
-  return chantierId ? true : nomAffectation(a) === nomAffectation(b);
-};
-
-const cleAffectation = a => {
-  const chantierId = String(a?.chantierId || "");
-  return [
-    String(a?.ouvrierID || ""),
-    chantierId,
-    normaliserDate(a?.dateDebut),
-    normaliserDate(a?.dateFin),
-    tacheAffectation(a),
-    chantierId ? "" : nomAffectation(a)
-  ].join("¦");
-};
-
-const LS_DELETED = "abPlanningDeletedAssignmentsV2";
-const LS_DATA_CACHE = "abPlanningDataCacheV1";
-
-const lireCacheDonnees = () => {
-  try {
-    const cache = JSON.parse(localStorage.getItem(LS_DATA_CACHE) || "null");
-    if (!cache || Date.now() - Number(cache.savedAt || 0) > 7 * 24 * 60 * 60 * 1000) return null;
-    return {
-      ouvriers: Array.isArray(cache.ouvriers) ? cache.ouvriers : [],
-      chantiers: Array.isArray(cache.chantiers) ? cache.chantiers : [],
-      affectations: Array.isArray(cache.affectations) ? cache.affectations : []
-    };
-  } catch (_) {
-    return null;
-  }
-};
-
-const lireSuppressionsPersistantes = () => {
-  try {
-    const raw = JSON.parse(localStorage.getItem(LS_DELETED) || "[]");
-    return Array.isArray(raw) ? raw.filter(x => x && x.key) : [];
-  } catch (_) {
-    return [];
-  }
-};
+const attendre = ms => new Promise(resolve => window.setTimeout(resolve, ms));
 
 export const AppProvider = ({ children }) => {
-  const initialCacheRef = useRef(lireCacheDonnees());
-  const [ouvriers, setOuvriers] = useState(() => initialCacheRef.current?.ouvriers || []);
-  const [chantiers, setChantiers] = useState(() => initialCacheRef.current?.chantiers || []);
-  const [affectations, setAffectations] = useState(() => initialCacheRef.current?.affectations || []);
-  const [loading, setLoading] = useState(() => !initialCacheRef.current);
+  // Les affectations ne sont plus initialisées depuis localStorage : au démarrage,
+  // la base serveur est toujours la source de vérité.
+  const [ouvriers, setOuvriers] = useState([]);
+  const [chantiers, setChantiers] = useState([]);
+  const [affectations, setAffectations] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
 
   const pendingAffectationsRef = useRef(new Map());
-  const pendingDeletionsRef = useRef(new Map());
-  const deletedKeysRef = useRef(new Map(lireSuppressionsPersistantes().map(x => [x.key, x])));
+  const deletingIdsRef = useRef(new Set());
   const workerColorCacheRef = useRef((() => {
     try {
       return JSON.parse(localStorage.getItem("abPlanningWorkerColors") || "{}") || {};
@@ -104,42 +52,20 @@ export const AppProvider = ({ children }) => {
     }
   })());
 
+  useEffect(() => {
+    // Nettoyage définitif des anciens mécanismes susceptibles de masquer/rejouer
+    // une suppression. Aucun de ces éléments n'est utilisé par cette version.
+    try {
+      localStorage.removeItem("abPlanningDeleteQueueV1");
+      localStorage.removeItem("abPlanningDeletedAssignmentsV2");
+      localStorage.removeItem("abPlanningDataCacheV1");
+    } catch (_) {}
+  }, []);
+
   const saveWorkerColorCache = () => {
     try {
       localStorage.setItem("abPlanningWorkerColors", JSON.stringify(workerColorCacheRef.current));
     } catch (_) {}
-  };
-
-  const saveDeletedKeys = () => {
-    try {
-      localStorage.setItem(LS_DELETED, JSON.stringify(Array.from(deletedKeysRef.current.values())));
-    } catch (_) {}
-  };
-
-  const rememberDeleted = affectation => {
-    if (!affectation) return;
-    const key = cleAffectation(affectation);
-    deletedKeysRef.current.set(key, {
-      key,
-      deletedAt: Date.now(),
-      affectation: { ...affectation }
-    });
-    saveDeletedKeys();
-  };
-
-  const forgetDeleted = affectation => {
-    if (!affectation) return;
-    let changed = false;
-    const key = cleAffectation(affectation);
-    if (deletedKeysRef.current.delete(key)) changed = true;
-
-    for (const [savedKey, saved] of deletedKeysRef.current.entries()) {
-      if (saved?.affectation && memeAffectationSuppression(saved.affectation, affectation)) {
-        deletedKeysRef.current.delete(savedKey);
-        changed = true;
-      }
-    }
-    if (changed) saveDeletedKeys();
   };
 
   useEffect(() => {
@@ -155,54 +81,29 @@ export const AppProvider = ({ children }) => {
     return () => window.clearTimeout(timer);
   }, [ouvriers, affectations]);
 
-  const doitMasquerSuppression = affectation => {
-    const id = String(affectation?.id || "");
-
-    for (const [pendingId, pending] of pendingDeletionsRef.current.entries()) {
-      if (id && id === String(pendingId)) return true;
-      if (pending?.affectation && memeAffectationSuppression(affectation, pending.affectation)) return true;
-    }
-
-    if (deletedKeysRef.current.has(cleAffectation(affectation))) return true;
-
-    for (const saved of deletedKeysRef.current.values()) {
-      if (saved?.affectation && memeAffectationSuppression(affectation, saved.affectation)) return true;
-    }
-    return false;
-  };
-
   const loadData = useCallback(async (showLoader = false) => {
     if (showLoader) setLoading(true);
     try {
       const data = await api.getAll();
       if (data?.error) throw new Error(data.error);
 
-      const serveurBrut = Array.isArray(data?.affectations) ? data.affectations : [];
+      const serveur = Array.isArray(data?.affectations) ? data.affectations : [];
       const maintenant = Date.now();
-
-      pendingDeletionsRef.current.forEach((pending, id) => {
-        if (pending?.releaseAt && maintenant >= pending.releaseAt) {
-          pendingDeletionsRef.current.delete(id);
-        } else if (maintenant - Number(pending?.createdAt || maintenant) > 600000) {
-          pendingDeletionsRef.current.delete(id);
-        }
-      });
-
-      const serveur = serveurBrut.filter(a => !doitMasquerSuppression(a));
-
       const temporaires = [];
-      pendingAffectationsRef.current.forEach((pending, tempId) => {
-        if (pending?.affectation && doitMasquerSuppression(pending.affectation)) {
-          pendingAffectationsRef.current.delete(tempId);
-          return;
-        }
+
+      // Une création en cours peut rester affichée pendant la confirmation serveur,
+      // mais elle n'est jamais persistée localement et ne peut déclencher aucune suppression.
+      for (const [tempId, pending] of pendingAffectationsRef.current.entries()) {
         if (serveur.some(a => memeAffectation(a, pending.affectation))) {
           pendingAffectationsRef.current.delete(tempId);
-          return;
+          continue;
         }
-        if (maintenant - pending.createdAt < 60000) temporaires.push(pending.affectation);
-        else pendingAffectationsRef.current.delete(tempId);
-      });
+        if (maintenant - Number(pending.createdAt || 0) <= 5 * 60 * 1000) {
+          temporaires.push(pending.affectation);
+        } else {
+          pendingAffectationsRef.current.delete(tempId);
+        }
+      }
 
       const ouvriersServeur = Array.isArray(data?.ouvriers) ? data.ouvriers : [];
       const ouvriersAvecCouleurs = ouvriersServeur.map(o => {
@@ -221,20 +122,12 @@ export const AppProvider = ({ children }) => {
       setOuvriers(ouvriersAvecCouleurs);
       setChantiers(Array.isArray(data?.chantiers) ? data.chantiers : []);
       setAffectations([...serveur, ...temporaires]);
-      try {
-        localStorage.setItem(LS_DATA_CACHE, JSON.stringify({
-          savedAt: Date.now(),
-          ouvriers: ouvriersAvecCouleurs,
-          chantiers: Array.isArray(data?.chantiers) ? data.chantiers : [],
-          affectations: serveur
-        }));
-      } catch (_) {}
       setError(null);
       setLastUpdated(new Date());
       return true;
     } catch (err) {
       console.error("Error loading data:", err);
-      setError(err.message);
+      setError(err?.message || "Impossible de charger le planning");
       return false;
     } finally {
       if (showLoader) setLoading(false);
@@ -244,75 +137,78 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     let actif = true;
     let retryTimer = null;
-    const attendre = delay => new Promise(resolve => {
+
+    const pause = delay => new Promise(resolve => {
       retryTimer = window.setTimeout(resolve, delay);
     });
+
     (async () => {
       if (!actif) return;
-      let charge = await loadData(!initialCacheRef.current);
-      for (const attente of [1500, 5000]) {
+      let charge = await loadData(true);
+      for (const attenteMs of [1500, 5000]) {
         if (charge || !actif) break;
-        await attendre(attente);
+        await pause(attenteMs);
         if (actif) charge = await loadData(false);
       }
     })();
-    const interval = setInterval(() => {
+
+    const interval = window.setInterval(() => {
       if (actif) loadData(false);
     }, 30000);
+
     return () => {
       actif = false;
       if (retryTimer) window.clearTimeout(retryTimer);
-      clearInterval(interval);
+      window.clearInterval(interval);
     };
   }, [loadData]);
 
-  const refreshLater = (delay = 1200) => setTimeout(() => loadData(false), delay);
+  const refreshLater = (delay = 1200) => window.setTimeout(() => loadData(false), delay);
 
-  const verifierCreationAffectation = async (tempId, optimistic, messageErreur) => {
-    for (const attente of [1000, 3000, 6000]) {
-      await new Promise(resolve => setTimeout(resolve, attente));
+  const verifierCreationAffectation = async (optimistic, reponseCreation) => {
+    const idServeur = String(reponseCreation?.id || reponseCreation?.affectationId || "").trim();
+
+    for (const attenteMs of [0, 500, 1500, 3000]) {
+      if (attenteMs) await attendre(attenteMs);
       try {
         const serveur = await api.getAffectationsStrict();
-        if (serveur.some(a => memeAffectation(a, optimistic))) {
-          pendingAffectationsRef.current.delete(tempId);
-          await loadData(false);
-          setError(null);
-          return true;
-        }
+        const trouvee = idServeur
+          ? serveur.find(a => String(a?.id || "") === idServeur)
+          : serveur.find(a => memeAffectation(a, optimistic));
+        if (trouvee) return trouvee;
       } catch (err) {
-        console.error("Vérification affectation:", err);
+        console.error("Vérification création affectation:", err);
       }
     }
-    pendingAffectationsRef.current.delete(tempId);
-    setAffectations(prev => prev.filter(a => String(a.id) !== String(tempId)));
-    setError(messageErreur || "Impossible de créer l'affectation");
-    return false;
+    return null;
   };
 
-  const verifierSuppressionAffectation = async (id, removed) => {
+  const verifierMiseAJourAffectation = async (id, attendu) => {
+    const key = String(id);
+    for (const attenteMs of [0, 500, 1500, 3000]) {
+      if (attenteMs) await attendre(attenteMs);
+      try {
+        const serveur = await api.getAffectationsStrict();
+        const ligne = serveur.find(a => String(a?.id || "") === key);
+        if (ligne && memeAffectation(ligne, attendu)) return ligne;
+      } catch (err) {
+        console.error("Vérification modification affectation:", err);
+      }
+    }
+    return null;
+  };
+
+  const verifierSuppressionAffectation = async id => {
     const key = String(id);
     let absencesConsecutives = 0;
 
-    for (const attente of [500, 1000, 1800, 3000]) {
-      await new Promise(resolve => setTimeout(resolve, attente));
+    for (const attenteMs of [300, 800, 1500, 3000]) {
+      await attendre(attenteMs);
       try {
         const serveur = await api.getAffectationsStrict();
-        const existe = serveur.some(a =>
-          String(a.id) === key ||
-          (removed && memeAffectationSuppression(a, removed))
-        );
-
+        const existe = serveur.some(a => String(a?.id || "") === key);
         absencesConsecutives = existe ? 0 : absencesConsecutives + 1;
-        if (absencesConsecutives >= 2) {
-          const pending = pendingDeletionsRef.current.get(key);
-          if (pending) {
-            pending.confirmedAt = Date.now();
-            pending.releaseAt = Date.now() + 300000;
-            pendingDeletionsRef.current.set(key, pending);
-          }
-          setError(null);
-          return true;
-        }
+        if (absencesConsecutives >= 2) return true;
       } catch (err) {
         console.error("Vérification suppression affectation:", err);
       }
@@ -322,7 +218,7 @@ export const AppProvider = ({ children }) => {
 
   const addOuvrier = async (nom, type, metier, refresh = true) => {
     const r = await api.createOuvrier(nom, type, metier);
-    if (r.success && refresh) refreshLater();
+    if (r?.success && refresh) refreshLater();
     return r;
   };
 
@@ -361,33 +257,34 @@ export const AppProvider = ({ children }) => {
         saveWorkerColorCache();
         setOuvriers(prev => prev.map(o => String(o.id) === key ? previous : o));
       }
-      setError(err?.message || "Impossible de modifier l'ouvrier");
-      return { success: false, error: err?.message || "Impossible de modifier l'ouvrier" };
+      const message = err?.message || "Impossible de modifier l'ouvrier";
+      setError(message);
+      return { success: false, error: message };
     }
   };
 
   const addChantier = async (nom, dateDebut, dateFin, description, couleur = "", dateSignature = "", typeChantier = "Rénovation") => {
     const r = await api.createChantier(nom, dateDebut, dateFin, description, couleur, dateSignature, typeChantier);
-    if (r.success) refreshLater();
+    if (r?.success) refreshLater();
     return r;
   };
 
   const updateChantier = async (id, nom, dateDebut, dateFin, description, statut, couleur = "", dateSignature = "", typeChantier = "Rénovation") => {
     const r = await api.updateChantier(id, nom, dateDebut, dateFin, description, statut, couleur, dateSignature, typeChantier);
-    if (r.success) refreshLater();
+    if (r?.success) refreshLater();
     return r;
   };
 
   const deleteChantier = async id => {
     const r = await api.deleteChantier(id);
-    if (r.success) {
+    if (r?.success) {
       setChantiers(prev => prev.filter(c => String(c.id) !== String(id)));
       refreshLater(250);
     }
     return r;
   };
 
-  const addAffectation = (ouvrierID, chantierId, dateDebut, dateFin, tache, nomLibre = "", typeAffectation = "CHANTIER") => {
+  const addAffectation = async (ouvrierID, chantierId, dateDebut, dateFin, tache, nomLibre = "", typeAffectation = "CHANTIER") => {
     let cid = chantierId || "";
     let nom = nomLibre || "";
     let type = typeAffectation || "CHANTIER";
@@ -413,120 +310,130 @@ export const AppProvider = ({ children }) => {
       statut: "Actif"
     };
 
-    forgetDeleted(optimistic);
     pendingAffectationsRef.current.set(tempId, { affectation: optimistic, createdAt: Date.now() });
-    setAffectations(prev => [...prev, optimistic]);
+    setAffectations(prev => [...prev.filter(a => String(a.id) !== tempId), optimistic]);
 
-    api.createAffectation(ouvrierID, cid, dateDebut, dateFin, tache, nom, type)
-      .then(r => {
-        if (!r?.success) {
-          verifierCreationAffectation(tempId, optimistic, r?.error);
-          return;
-        }
-        setError(null);
-      })
-      .catch(err => verifierCreationAffectation(tempId, optimistic, err?.message));
+    try {
+      const r = await api.createAffectation(ouvrierID, cid, dateDebut, dateFin, tache, nom, type);
+      if (!r?.success) {
+        pendingAffectationsRef.current.delete(tempId);
+        setAffectations(prev => prev.filter(a => String(a.id) !== tempId));
+        const message = r?.error || "Impossible de créer l'affectation";
+        setError(message);
+        return { success: false, error: message };
+      }
 
-    return { success: true, pending: true, id: tempId };
+      const confirmee = await verifierCreationAffectation(optimistic, r);
+      if (!confirmee) {
+        const message = "Création reçue mais non confirmée dans la base. L'ancienne affectation est conservée et aucune suppression ne sera lancée.";
+        setError(message);
+        refreshLater(3000);
+        return { success: false, uncertain: true, error: message };
+      }
+
+      pendingAffectationsRef.current.delete(tempId);
+      setError(null);
+      await loadData(false);
+      return { success: true, confirmed: true, id: confirmee.id };
+    } catch (err) {
+      pendingAffectationsRef.current.delete(tempId);
+      setAffectations(prev => prev.filter(a => String(a.id) !== tempId));
+      const message = err?.message || "Impossible de créer l'affectation";
+      setError(message);
+      return { success: false, error: message };
+    }
   };
 
-  const updateAffectation = (id, dateDebut, dateFin, tache, statut, nomLibre = "", chantierId = "") => {
-    let previous = null;
+  const updateAffectation = async (id, dateDebut, dateFin, tache, statut, nomLibre = "", chantierId = "") => {
+    const key = String(id);
+    const current = affectations.find(a => String(a.id) === key);
+    if (!current || key.startsWith("tmp-")) {
+      const message = "Modification refusée : l'affectation n'est pas encore confirmée par le serveur.";
+      setError(message);
+      return { success: false, error: message };
+    }
 
-    setAffectations(prev => prev.map(a => {
-      if (String(a.id) !== String(id)) return a;
-      previous = { ...a };
-      const next = {
-        ...a,
-        dateDebut: dateDebut || a.dateDebut,
-        dateFin: dateFin || a.dateFin,
-        tache: tache || "",
-        statut: statut || a.statut
-      };
-      if (chantierId !== "") next.chantierId = chantierId;
-      if (nomLibre !== "") {
-        next.nomAffectation = nomLibre;
-        next.affectationNom = nomLibre;
-        next.nomExterne = nomLibre;
+    const attendu = {
+      ...current,
+      dateDebut: dateDebut || current.dateDebut,
+      dateFin: dateFin || current.dateFin,
+      tache: tache || "",
+      statut: statut || current.statut
+    };
+    if (chantierId !== "") attendu.chantierId = chantierId;
+    if (nomLibre !== "") {
+      attendu.nomAffectation = nomLibre;
+      attendu.affectationNom = nomLibre;
+      attendu.nomExterne = nomLibre;
+    }
+
+    try {
+      const r = await api.updateAffectation(id, dateDebut, dateFin, tache, statut, nomLibre, chantierId);
+      if (!r?.success) {
+        const message = r?.error || "Impossible de modifier l'affectation";
+        setError(message);
+        return { success: false, error: message };
       }
-      return next;
-    }));
 
-    api.updateAffectation(id, dateDebut, dateFin, tache, statut, nomLibre, chantierId)
-      .then(r => {
-        if (!r?.success) {
-          if (previous) {
-            setAffectations(prev => prev.map(a => String(a.id) === String(id) ? previous : a));
-          }
-          setError(r?.error || "Impossible de modifier l'affectation");
-          return;
-        }
-        setError(null);
-        refreshLater(250);
-      })
-      .catch(err => {
-        if (previous) {
-          setAffectations(prev => prev.map(a => String(a.id) === String(id) ? previous : a));
-        }
-        setError(err?.message || "Impossible de modifier l'affectation");
-      });
+      const confirmee = await verifierMiseAJourAffectation(id, attendu);
+      if (!confirmee) {
+        const message = "Modification reçue mais non confirmée dans la base. Aucune autre donnée n'a été supprimée.";
+        setError(message);
+        refreshLater(3000);
+        return { success: false, uncertain: true, error: message };
+      }
 
-    return { success: true, pending: true };
+      setError(null);
+      await loadData(false);
+      return { success: true, confirmed: true };
+    } catch (err) {
+      const message = err?.message || "Impossible de modifier l'affectation";
+      setError(message);
+      return { success: false, error: message };
+    }
   };
 
   const deleteAffectation = id => {
-    const key = String(id);
-    const pendingCreation = pendingAffectationsRef.current.get(key);
-    const removed =
-      affectations.find(a => String(a.id) === key) ||
-      pendingCreation?.affectation ||
-      null;
-
-    // L'ancienne fonction "Annuler la dernière saisie" est totalement désactivée.
-    // Une suppression confirmée est unidirectionnelle : aucune branche ne recrée
-    // automatiquement l'affectation ensuite.
-    for (const [tempId, pending] of pendingAffectationsRef.current.entries()) {
-      if (
-        String(tempId) === key ||
-        (removed && pending?.affectation && memeAffectationSuppression(pending.affectation, removed))
-      ) {
-        pendingAffectationsRef.current.delete(tempId);
-      }
+    const key = String(id || "").trim();
+    if (!key || key.startsWith("tmp-")) {
+      return { success: false, error: "Suppression impossible tant que l'enregistrement n'est pas confirmé." };
+    }
+    if (deletingIdsRef.current.has(key)) {
+      return { success: true, pending: true };
     }
 
-    if (removed) {
-      pendingDeletionsRef.current.set(key, {
-        affectation: { ...removed },
-        createdAt: Date.now(),
-        confirmedAt: null,
-        releaseAt: null
-      });
-      rememberDeleted(removed);
+    const existe = affectations.some(a => String(a.id) === key);
+    if (!existe) {
+      return { success: false, error: "Affectation introuvable : aucune suppression envoyée." };
     }
 
-    // Supprime immédiatement aussi les éventuels doublons de la même affectation.
-    // Cela empêche qu'une deuxième ligne serveur identique apparaisse juste après
-    // la disparition du bloc visible.
-    setAffectations(prev => prev.filter(a => {
-      if (String(a.id) === key) return false;
-      if (removed && memeAffectationSuppression(a, removed)) return false;
-      return true;
-    }));
+    deletingIdsRef.current.add(key);
 
-    api.deleteAffectation(id)
-      .then(r => {
+    void (async () => {
+      try {
+        const r = await api.deleteAffectation(key);
         if (!r?.success) {
-          setError(r?.error || "Suppression en attente de synchronisation serveur");
+          setError(r?.error || "La suppression n'a pas été enregistrée. L'affectation est conservée.");
           return;
         }
+
+        const confirmee = await verifierSuppressionAffectation(key);
+        if (!confirmee) {
+          setError("Suppression non confirmée par la base. L'affectation reste affichée et aucune nouvelle tentative automatique ne sera faite.");
+          await loadData(false);
+          return;
+        }
+
+        // Retrait uniquement de l'ID explicitement demandé, après confirmation serveur.
+        setAffectations(prev => prev.filter(a => String(a.id) !== key));
         setError(null);
-        verifierSuppressionAffectation(id, removed);
-      })
-      .catch(err => {
-        // Ne jamais restaurer automatiquement une affectation supprimée.
-        // La file de suppression persistante côté API continue les tentatives.
-        setError(err?.message || "Suppression en attente de synchronisation serveur");
-      });
+        await loadData(false);
+      } catch (err) {
+        setError(err?.message || "La suppression a échoué. L'affectation est conservée.");
+      } finally {
+        deletingIdsRef.current.delete(key);
+      }
+    })();
 
     return { success: true, pending: true };
   };
