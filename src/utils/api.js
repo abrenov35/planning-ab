@@ -1,13 +1,5 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbxOE2bAsnGKn1TvOlxBK1qJpe2nblhC4l8YWmAxTUe3VM383YaNrPmH3i1U2g-Sp7LJxA/exec";
 
-// IMPORTANT : aucune suppression n'est mémorisée ni rejouée côté navigateur.
-// Une suppression d'affectation ne peut partir qu'à la suite d'un appel explicite
-// avec l'identifiant serveur exact de l'affectation concernée.
-try {
-  localStorage.removeItem("abPlanningDeleteQueueV1");
-  localStorage.removeItem("abPlanningDeletedAssignmentsV2");
-} catch (_) {}
-
 const jsonp = (params = {}) => new Promise((resolve, reject) => {
   const callbackName = `abPlanningJsonp_${Date.now()}_${Math.random().toString(36).slice(2)}`;
   const query = new URLSearchParams({ ...params, callback: callbackName, _ts: String(Date.now()) });
@@ -208,7 +200,7 @@ export const deleteAffectation = async id => {
     return { success: false, error: "Suppression refusée : identifiant serveur invalide" };
   }
 
-  // UN SEUL appel, sur l'ID exact. Aucun retry automatique, aucune recherche
+  // Un seul appel, sur l'ID exact. Aucun retry automatique, aucune recherche
   // par signature, aucune file persistante, aucune suppression différée.
   return appeler(
     { action: "deleteAffectation", id: idString },
