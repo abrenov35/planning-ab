@@ -56,6 +56,31 @@ const appeler = async (params, fallback = { error: "Erreur API" }) => {
   }
 };
 
+const normaliserDate = value => {
+  const str = String(value || "").trim();
+  if (!str) return "";
+  const brut = str.split("T")[0];
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(brut)) {
+    const [d, m, y] = brut.split("/");
+    return `${y}-${m}-${d}`;
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(brut)) return brut;
+  return brut;
+};
+
+const nomAffectation = a => String(a?.nomExterne || a?.affectationNom || a?.nomAffectation || "").trim();
+const signatureKey = a => [
+  String(a?.ouvrierID || ""),
+  String(a?.chantierId || ""),
+  normaliserDate(a?.dateDebut),
+  normaliserDate(a?.dateFin),
+  String(a?.tache || "").trim(),
+  String(a?.chantierId || "") ? "" : nomAffectation(a),
+  String(a?.typeAffectation || "CHANTIER").toUpperCase()
+].join("¦");
+
+const creationEnCours = new Map();
+
 export const getAll = async () => appeler({ action: "getAll" });
 export const getOuvriers = async () => {
   const r = await appeler({ action: "getOuvriers" }, { error: "Erreur ouvriers" });
@@ -119,9 +144,8 @@ export const updateChantier = async (id, nom, dateDebut, dateFin, description, s
 
 export const deleteChantier = async id => appeler({ action: "deleteChantier", id });
 
-export const createAffectation = async (ouvrierID, chantierId, dateDebut, dateFin, tache, nomAffectation = "", typeAffectation = "CHANTIER") =>
-  appeler({
-    action: "createAffectation",
+export const createAffectation = async (ouvrierID, chantierId, dateDebut, dateFin, tache, nomAffectation = "", typeAffectation = "CHANTIER") => {
+  const payload = {
     ouvrierID,
     chantierId: chantierId || "",
     dateDebut,
@@ -130,7 +154,41 @@ export const createAffectation = async (ouvrierID, chantierId, dateDebut, dateFi
     nomAffectation: nomAffectation || "",
     nomExterne: nomAffectation || "",
     typeAffectation: typeAffectation || "CHANTIER"
-  }, { success: false, error: "Erreur création affectation" });
+  };
+  const signature = signatureKey(payload);
+
+  // Deux clics rapides dans le même navigateur partagent la même promesse :
+  // un seul enregistrement peut être envoyé au serveur.
+  if (creationEnCours.has(signature)) return creationEnCours.get(signature);
+
+  const operation = (async () => {
+    try {
+      // Pré-contrôle serveur : une affectation strictement identique déjà présente
+      // est considérée comme l'enregistrement demandé, on n'en crée pas une seconde.
+      const existantes = await getAffectationsStrict();
+      const dejaLa = existantes.find(a => signatureKey(a) === signature);
+      if (dejaLa) {
+        return {
+          success: true,
+          id: dejaLa.id,
+          confirmed: true,
+          duplicatePrevented: true,
+          existing: true
+        };
+      }
+
+      return await appeler(
+        { action: "createAffectation", ...payload },
+        { success: false, error: "Erreur création affectation" }
+      );
+    } finally {
+      creationEnCours.delete(signature);
+    }
+  })();
+
+  creationEnCours.set(signature, operation);
+  return operation;
+};
 
 export const updateAffectation = async (id, dateDebut, dateFin, tache, statut, nomAffectation = "", chantierId = "") =>
   appeler({
