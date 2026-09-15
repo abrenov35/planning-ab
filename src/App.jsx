@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { AppProvider } from "./context/AppContext";
+import React, { useContext, useState } from "react";
+import { AppContext, AppProvider } from "./context/AppContext";
 import { Sidebar } from "./components/Sidebar";
 import { GanttPage } from "./pages/GanttPage";
 import { OuvriersPage } from "./pages/OuvriersPage";
@@ -9,55 +9,48 @@ import "./gantt-scroll-mask";
 import "./gantt-legend-drag";
 
 const VALID_PAGES = new Set(["gantt", "ouvriers", "chantiers"]);
-const DATA_CACHE_MAX_AGE_MS = 5 * 60 * 1000;
-const DELETION_TOMBSTONE_MAX_AGE_MS = 10 * 60 * 1000;
 
 const prepareLocalPlanningState = () => {
   if (typeof window === "undefined") return;
-  const now = Date.now();
-
   try {
     const savedPage = localStorage.getItem("currentPage");
     if (!VALID_PAGES.has(savedPage)) localStorage.setItem("currentPage", "gantt");
+
+    // Ces anciennes données locales ne doivent plus intervenir dans les affectations.
+    localStorage.removeItem("abPlanningDeleteQueueV1");
+    localStorage.removeItem("abPlanningDeletedAssignmentsV2");
+    localStorage.removeItem("abPlanningDataCacheV1");
   } catch (_) {}
-
-  // Le cache sert uniquement à accélérer un rechargement très récent.
-  // Au-delà de quelques minutes, le serveur redevient la source de vérité.
-  try {
-    const rawCache = localStorage.getItem("abPlanningDataCacheV1");
-    if (rawCache) {
-      const cache = JSON.parse(rawCache);
-      const savedAt = Number(cache?.savedAt || 0);
-      if (!savedAt || now - savedAt > DATA_CACHE_MAX_AGE_MS) {
-        localStorage.removeItem("abPlanningDataCacheV1");
-      }
-    }
-  } catch (_) {
-    try { localStorage.removeItem("abPlanningDataCacheV1"); } catch (_) {}
-  }
-
-  // Une suppression locale ne doit jamais masquer indéfiniment une affectation
-  // recréée depuis un autre navigateur. On conserve seulement le garde-fou récent.
-  try {
-    const rawDeleted = JSON.parse(localStorage.getItem("abPlanningDeletedAssignmentsV2") || "[]");
-    const freshDeleted = Array.isArray(rawDeleted)
-      ? rawDeleted.filter(item => {
-          const deletedAt = Number(item?.deletedAt || 0);
-          return item?.key && deletedAt && now - deletedAt <= DELETION_TOMBSTONE_MAX_AGE_MS;
-        })
-      : [];
-
-    if (freshDeleted.length) {
-      localStorage.setItem("abPlanningDeletedAssignmentsV2", JSON.stringify(freshDeleted));
-    } else {
-      localStorage.removeItem("abPlanningDeletedAssignmentsV2");
-    }
-  } catch (_) {
-    try { localStorage.removeItem("abPlanningDeletedAssignmentsV2"); } catch (_) {}
-  }
 };
 
 prepareLocalPlanningState();
+
+const PlanningSafetyAlert = () => {
+  const { error } = useContext(AppContext);
+  if (!error) return null;
+  return (
+    <div
+      role="alert"
+      style={{
+        position:"fixed",
+        top:48,
+        right:10,
+        zIndex:10000,
+        maxWidth:"min(520px, calc(100vw - 20px))",
+        padding:"10px 12px",
+        border:"2px solid #b91c1c",
+        borderRadius:7,
+        background:"#fef2f2",
+        color:"#7f1d1d",
+        fontSize:12,
+        fontWeight:800,
+        boxShadow:"0 4px 14px rgba(0,0,0,.18)"
+      }}
+    >
+      ALERTE PLANNING — {error}
+    </div>
+  );
+};
 
 function App() {
   const [currentPage, setCurrentPage] = useState(() => {
@@ -88,6 +81,7 @@ function App() {
 
   return (
     <AppProvider>
+      <PlanningSafetyAlert />
       <div style={{display:"flex",flexDirection:"column",height:"100vh",overflow:"hidden"}}>
         <Sidebar currentPage={currentPage} setCurrentPage={handleSetCurrentPage} ganttControls={ganttControls} />
         <div style={{flex:1,overflow:isGantt?"hidden":"auto",background:"#f9fafb",display:"flex",justifyContent:"center",padding:isGantt?0:"0 1rem",minHeight:0}}>
