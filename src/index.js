@@ -2,11 +2,13 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './free-affectation-colors.css';
 
-// Neutralise l'ancienne file locale de suppressions AVANT de charger App/api.js.
-// Une file conservée dans un navigateur pouvait rejouer une suppression ancienne
-// et effacer une affectation recréée depuis un autre poste.
+// Nettoyage de compatibilité effectué une seule fois avant le chargement de l'app.
+// Ces anciennes clés ne sont plus utilisées et ne doivent jamais influencer
+// l'affichage ou la suppression d'une affectation.
 try {
   localStorage.removeItem('abPlanningDeleteQueueV1');
+  localStorage.removeItem('abPlanningDeletedAssignmentsV2');
+  localStorage.removeItem('abPlanningDataCacheV1');
 } catch (_) {}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
