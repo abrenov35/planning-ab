@@ -239,7 +239,11 @@ export const GanttPage = ({ onGanttControlsReady }) => {
   };
 
   const editHorsGantt = editAffectation ? isHorsGantt(editAffectation) : false;
+  const chantierCourant = editAffectation ? getChantier(editAffectation) : null;
   const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
+  const chantiersEditables = chantierCourant && !chantiersActifs.some(c => String(c.id) === String(chantierCourant.id))
+    ? [chantierCourant, ...chantiersActifs]
+    : chantiersActifs;
   const ouvriersActifs = ouvriers.filter(o => o.statut === "Actif");
 
   if (loading) return <div style={{ padding: "1rem" }}>Chargement...</div>;
@@ -343,8 +347,10 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                       disabled={savingEdit || deleteStep}
                       style={{ ...inputStyle, border: "2px solid #2563eb", background: "white" }}
                     >
-                      {chantiersActifs.map(chantier => (
-                        <option key={chantier.id} value={chantier.id}>{chantier.nom}</option>
+                      {chantiersEditables.map(chantier => (
+                        <option key={chantier.id} value={chantier.id}>
+                          {chantier.nom}{chantier.statut === "Actif" ? "" : " (archivé)"}
+                        </option>
                       ))}
                     </select>
                     <div style={{ marginTop: 3, fontSize: 9, color: "#2563eb" }}>
