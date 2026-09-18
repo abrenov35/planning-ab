@@ -1,0 +1,17 @@
+{
+  "files": {
+    "main.css": "/planning-ab/static/css/main.12593e77.css",
+    "main.js": "/planning-ab/static/js/main.f6bc7394.js",
+    "static/css/654.66e66573.chunk.css": "/planning-ab/static/css/654.66e66573.chunk.css",
+    "static/js/654.8ce95e12.chunk.js": "/planning-ab/static/js/654.8ce95e12.chunk.js",
+    "index.html": "/planning-ab/index.html",
+    "main.12593e77.css.map": "/planning-ab/static/css/main.12593e77.css.map",
+    "main.f6bc7394.js.map": "/planning-ab/static/js/main.f6bc7394.js.map",
+    "654.66e66573.chunk.css.map": "/planning-ab/static/css/654.66e66573.chunk.css.map",
+    "654.8ce95e12.chunk.js.map": "/planning-ab/static/js/654.8ce95e12.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.12593e77.css",
+    "static/js/main.f6bc7394.js"
+  ]
+}
