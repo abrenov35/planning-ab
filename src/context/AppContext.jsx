@@ -22,13 +22,23 @@ const normaliserDate = value => {
 const nomAffectation = a => String(a?.nomExterne || a?.affectationNom || a?.nomAffectation || "").trim();
 const tacheAffectation = a => String(a?.tache || "").trim();
 
-const memeAffectation = (a, b) =>
-  String(a?.ouvrierID || "") === String(b?.ouvrierID || "") &&
-  String(a?.chantierId || "") === String(b?.chantierId || "") &&
-  normaliserDate(a?.dateDebut) === normaliserDate(b?.dateDebut) &&
-  normaliserDate(a?.dateFin) === normaliserDate(b?.dateFin) &&
-  tacheAffectation(a) === tacheAffectation(b) &&
-  nomAffectation(a) === nomAffectation(b);
+const memeAffectation = (a, b) => {
+  const memeBase =
+    String(a?.ouvrierID || "") === String(b?.ouvrierID || "") &&
+    String(a?.chantierId || "") === String(b?.chantierId || "") &&
+    normaliserDate(a?.dateDebut) === normaliserDate(b?.dateDebut) &&
+    normaliserDate(a?.dateFin) === normaliserDate(b?.dateFin) &&
+    tacheAffectation(a) === tacheAffectation(b);
+
+  if (!memeBase) return false;
+
+  // Pour une affectation chantier, le nom visible est dérivé du chantier et
+  // n'est pas une donnée persistée de la ligne "affectations". Le comparer
+  // provoquait de fausses alertes après une modification pourtant bien écrite.
+  // Pour une affectation libre/RDV (sans chantierId), le nom reste un champ métier.
+  if (String(a?.chantierId || "") || String(b?.chantierId || "")) return true;
+  return nomAffectation(a) === nomAffectation(b);
+};
 
 const attendre = ms => new Promise(resolve => window.setTimeout(resolve, ms));
 
