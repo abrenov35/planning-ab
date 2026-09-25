@@ -472,13 +472,17 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
                         const topOffset = (laneOffsets[rank] || 0)+1;
                         const currentSlotHeight = laneHeights[rank] || compactAffectationSlotHeight;
                         const planning = isPlanning(aff);
+                        const pendingSync = Boolean(aff?.pendingSync) || String(aff?.id || "").startsWith("tmp-");
                         const barBackground = rdv ? rdvColor : planning ? planningColor : horsGantt ? "#D1D5DB" : getChantierColor(chantier?.id);
                         const barColor = rdv || planning ? "white" : horsGantt ? "#374151" : "white";
-                        const barBorder = rdv ? "1px solid #6d28d9" : planning ? "1px solid #115e59" : horsGantt ? "1px solid #9CA3AF" : "1px solid rgba(0,0,0,0.16)";
-                        const barText = rdv ? rdvName : horsGantt ? nomHorsGantt : lettres;
+                        const barBorder = pendingSync
+                          ? "2px dashed #f59e0b"
+                          : rdv ? "1px solid #6d28d9" : planning ? "1px solid #115e59" : horsGantt ? "1px solid #9CA3AF" : "1px solid rgba(0,0,0,0.16)";
+                        const barTextBase = rdv ? rdvName : horsGantt ? nomHorsGantt : lettres;
+                        const barText = pendingSync ? `⏳ ${barTextBase}` : barTextBase;
                         const barHeight = label ? Math.max(13, expandedAffectationSlotHeight - 10) : Math.max(13, currentSlotHeight - 4);
                         return <div key={aff.id} onDoubleClick={e=>handleAffectationDoubleClick(e,aff)} onTouchStart={e=>handleAffectationTouchStart(e,`affectation:${aff.id}`)} onTouchEnd={e=>handleAffectationTouchEnd(e,aff,`affectation:${aff.id}`)} style={{position:"absolute",left:1,right:1,top:topOffset,cursor:"pointer",zIndex:2}}>
-                          <div data-affectation-id={aff.id} className={highlightedAffectationId===aff.id ? "gantt-search-hit" : ""} title={rdv ? `${rdvName} — ${label}` : horsGantt ? aff.nomExterne || "Événement Google" : `${chantier?.nom || ""} — double-cliquer pour modifier`} style={{width:"100%",height:barHeight,backgroundColor:barBackground,border:barBorder,borderRadius:isMobile ? 3 : 2,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center",padding:(horsGantt || rdv) ? "0 2px" : 0,color:barColor,fontWeight:800,fontSize:fitTextSize(barText),overflow:"hidden",minWidth:0}}><span style={{display:"block",maxWidth:"100%",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center"}}>{barText}</span></div>
+                          <div data-affectation-id={aff.id} className={highlightedAffectationId===aff.id ? "gantt-search-hit" : ""} title={pendingSync ? "EN ATTENTE DE CONFIRMATION — conservée localement" : rdv ? `${rdvName} — ${label}` : horsGantt ? aff.nomExterne || "Événement Google" : `${chantier?.nom || ""} — double-cliquer pour modifier`} style={{width:"100%",height:barHeight,backgroundColor:barBackground,border:barBorder,borderRadius:isMobile ? 3 : 2,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center",padding:(horsGantt || rdv || pendingSync) ? "0 2px" : 0,color:barColor,fontWeight:800,fontSize:fitTextSize(barText),overflow:"hidden",minWidth:0,boxShadow:pendingSync ? "0 0 0 1px rgba(245,158,11,.18)" : "none"}}><span style={{display:"block",maxWidth:"100%",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center"}}>{barText}</span></div>
                           {label && <div title={label} style={{marginTop:1,height:7,fontSize:dayWidth < 27 ? 5 : 6,fontWeight:rdv ? 800 : 600,color:rdv ? "#6d28d9" : "#374151",textAlign:"center",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:"7px"}}>{label}</div>}
                         </div>;
                       })}
