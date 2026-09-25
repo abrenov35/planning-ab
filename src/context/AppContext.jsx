@@ -42,6 +42,51 @@ const memeAffectation = (a, b) => {
 
 const attendre = ms => new Promise(resolve => window.setTimeout(resolve, ms));
 
+const PENDING_CREATIONS_KEY = "abPlanningPendingCreationsV1";
+const CREATION_JOURNAL_KEY = "abPlanningCreationJournalV1";
+
+const loadPendingCreations = () => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PENDING_CREATIONS_KEY) || "[]");
+    const entries = Array.isArray(raw) ? raw : [];
+    return new Map(
+      entries
+        .filter(item => item && item.tempId && item.affectation)
+        .map(item => [String(item.tempId), {
+          affectation: { ...item.affectation, pendingSync: true },
+          createdAt: Number(item.createdAt || Date.now())
+        }])
+    );
+  } catch (_) {
+    return new Map();
+  }
+};
+
+const savePendingCreations = map => {
+  try {
+    const payload = Array.from(map.entries()).map(([tempId, item]) => ({
+      tempId,
+      createdAt: Number(item?.createdAt || Date.now()),
+      affectation: { ...(item?.affectation || {}), pendingSync: true }
+    }));
+    localStorage.setItem(PENDING_CREATIONS_KEY, JSON.stringify(payload));
+  } catch (_) {}
+};
+
+const journalCreation = (status, affectation, details = {}) => {
+  try {
+    const current = JSON.parse(localStorage.getItem(CREATION_JOURNAL_KEY) || "[]");
+    const list = Array.isArray(current) ? current : [];
+    list.unshift({
+      at: new Date().toISOString(),
+      status,
+      affectation: affectation ? { ...affectation } : null,
+      ...details
+    });
+    localStorage.setItem(CREATION_JOURNAL_KEY, JSON.stringify(list.slice(0, 100)));
+  } catch (_) {}
+};
+
 export const AppProvider = ({ children }) => {
   // Les affectations ne sont plus initialisées depuis localStorage : au démarrage,
   // la base serveur est toujours la source de vérité.
@@ -52,7 +97,7 @@ export const AppProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  const pendingAffectationsRef = useRef(new Map());
+  const pendingAffectationsRef = useRef(loadPendingCreations());
   const deletingIdsRef = useRef(new Set());
   const workerColorCacheRef = useRef((() => {
     try {
@@ -98,22 +143,23 @@ export const AppProvider = ({ children }) => {
       if (data?.error) throw new Error(data.error);
 
       const serveur = Array.isArray(data?.affectations) ? data.affectations : [];
-      const maintenant = Date.now();
       const temporaires = [];
+      let pendingChanged = false;
 
-      // Une création en cours peut rester affichée pendant la confirmation serveur,
-      // mais elle n'est jamais persistée localement et ne peut déclencher aucune suppression.
+      // Une création non confirmée ne doit JAMAIS disparaître silencieusement.
+      // Elle reste conservée localement et visible jusqu'à ce que la même
+      // affectation soit retrouvée dans la base serveur.
       for (const [tempId, pending] of pendingAffectationsRef.current.entries()) {
-        if (serveur.some(a => memeAffectation(a, pending.affectation))) {
+        const confirmee = serveur.find(a => memeAffectation(a, pending.affectation));
+        if (confirmee) {
           pendingAffectationsRef.current.delete(tempId);
+          pendingChanged = true;
+          journalCreation("confirmed_on_refresh", pending.affectation, { serverId: confirmee.id || "" });
           continue;
         }
-        if (maintenant - Number(pending.createdAt || 0) <= 5 * 60 * 1000) {
-          temporaires.push(pending.affectation);
-        } else {
-          pendingAffectationsRef.current.delete(tempId);
-        }
+        temporaires.push({ ...pending.affectation, pendingSync: true });
       }
+      if (pendingChanged) savePendingCreations(pendingAffectationsRef.current);
 
       const ouvriersServeur = Array.isArray(data?.ouvriers) ? data.ouvriers : [];
       const ouvriersAvecCouleurs = ouvriersServeur.map(o => {
@@ -317,40 +363,47 @@ export const AppProvider = ({ children }) => {
       affectationNom: nom,
       nomExterne: nom,
       typeAffectation: type,
-      statut: "Actif"
+      statut: "Actif",
+      pendingSync: true
     };
 
     pendingAffectationsRef.current.set(tempId, { affectation: optimistic, createdAt: Date.now() });
+    savePendingCreations(pendingAffectationsRef.current);
+    journalCreation("started", optimistic);
     setAffectations(prev => [...prev.filter(a => String(a.id) !== tempId), optimistic]);
 
     try {
       const r = await api.createAffectation(ouvrierID, cid, dateDebut, dateFin, tache, nom, type);
       if (!r?.success) {
-        pendingAffectationsRef.current.delete(tempId);
-        setAffectations(prev => prev.filter(a => String(a.id) !== tempId));
         const message = r?.error || "Impossible de créer l'affectation";
-        setError(message);
-        return { success: false, error: message };
+        journalCreation("api_error_pending_kept", optimistic, { error: message });
+        savePendingCreations(pendingAffectationsRef.current);
+        setError("Création non confirmée : l'affectation reste conservée en attente au lieu de disparaître. " + message);
+        return { success: false, uncertain: true, error: message };
       }
 
       const confirmee = await verifierCreationAffectation(optimistic, r);
       if (!confirmee) {
-        const message = "Création reçue mais non confirmée dans la base. L'ancienne affectation est conservée et aucune suppression ne sera lancée.";
+        const message = "Création reçue mais non confirmée dans la base. L'affectation reste visible et conservée localement jusqu'à confirmation ; elle ne sera plus supprimée au bout de quelques minutes.";
+        journalCreation("unconfirmed_pending_kept", optimistic, { serverId: r?.id || r?.affectationId || "" });
+        savePendingCreations(pendingAffectationsRef.current);
         setError(message);
         refreshLater(3000);
         return { success: false, uncertain: true, error: message };
       }
 
       pendingAffectationsRef.current.delete(tempId);
+      savePendingCreations(pendingAffectationsRef.current);
+      journalCreation("confirmed", optimistic, { serverId: confirmee.id || "" });
       setError(null);
       await loadData(false);
       return { success: true, confirmed: true, id: confirmee.id };
     } catch (err) {
-      pendingAffectationsRef.current.delete(tempId);
-      setAffectations(prev => prev.filter(a => String(a.id) !== tempId));
       const message = err?.message || "Impossible de créer l'affectation";
-      setError(message);
-      return { success: false, error: message };
+      journalCreation("exception_pending_kept", optimistic, { error: message });
+      savePendingCreations(pendingAffectationsRef.current);
+      setError("Création incertaine : l'affectation reste conservée en attente et ne disparaîtra pas. " + message);
+      return { success: false, uncertain: true, error: message };
     }
   };
 
