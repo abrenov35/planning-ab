@@ -72,6 +72,58 @@ const signatureKey = a => [
 ].join("¦");
 
 const creationEnCours = new Map();
+let fileCreations = Promise.resolve();
+
+const attendre = ms => new Promise(resolve => window.setTimeout(resolve, ms));
+
+const empreinteAffectations = liste => {
+  const rows = Array.isArray(liste) ? liste : [];
+  const ids = rows
+    .map(a => String(a?.id || "").trim())
+    .filter(Boolean)
+    .sort((a, b) => {
+      const na = Number(a);
+      const nb = Number(b);
+      if (Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
+      return a.localeCompare(b);
+    });
+  return `${rows.length}|${ids.slice(-20).join(",")}`;
+};
+
+const attendreCreneauCreationStable = async () => {
+  let precedent = await getAffectationsStrict();
+
+  // Verrou coopératif multi-PC : on n'écrit que si la base est restée stable
+  // pendant plusieurs contrôles. Ce n'est pas un LockService serveur, mais cela
+  // évite que deux postes qui saisissent au même moment partent ensemble.
+  for (let tentative = 0; tentative < 8; tentative += 1) {
+    await attendre(500 + Math.floor(Math.random() * 700));
+    const courant = await getAffectationsStrict();
+
+    if (empreinteAffectations(courant) === empreinteAffectations(precedent)) {
+      // Dernier délai aléatoire : si un autre PC écrit pendant ce créneau,
+      // le contrôle final le détecte et on recommence.
+      await attendre(350 + Math.floor(Math.random() * 850));
+      const final = await getAffectationsStrict();
+      if (empreinteAffectations(final) === empreinteAffectations(courant)) {
+        return final;
+      }
+      precedent = final;
+      continue;
+    }
+
+    precedent = courant;
+  }
+
+  throw new Error("Planning très actif : création mise en attente pour éviter un conflit entre plusieurs postes.");
+};
+
+const serialiserCreation = operation => {
+  const precedente = fileCreations.catch(() => undefined);
+  const courante = precedente.then(operation);
+  fileCreations = courante.catch(() => undefined);
+  return courante;
+};
 
 export const getAll = async () => appeler({ action: "getAll" });
 export const getOuvriers = async () => {
@@ -145,19 +197,19 @@ export const createAffectation = async (ouvrierID, chantierId, dateDebut, dateFi
     tache: tache || "",
     nomAffectation: nomAffectation || "",
     nomExterne: nomAffectation || "",
-    typeAffectation: typeAffectation || "CHANTIER"
+    typeAffectation: typeAffectation || "CHANTIER",
+    clientMutationId: (window.crypto?.randomUUID?.() || `mut-${Date.now()}-${Math.random().toString(36).slice(2)}`)
   };
   const signature = signatureKey(payload);
 
-  // Deux clics rapides dans le même navigateur partagent la même promesse :
-  // un seul enregistrement peut être envoyé au serveur.
+  // Deux clics rapides strictement identiques partagent la même promesse.
   if (creationEnCours.has(signature)) return creationEnCours.get(signature);
 
-  const operation = (async () => {
+  // Toutes les créations du même navigateur sont sérialisées, même si elles
+  // concernent des ouvriers/chantiers différents.
+  const operation = serialiserCreation(async () => {
     try {
-      // Pré-contrôle serveur : une affectation strictement identique déjà présente
-      // est considérée comme l'enregistrement demandé, on n'en crée pas une seconde.
-      const existantes = await getAffectationsStrict();
+      const existantes = await attendreCreneauCreationStable();
       const dejaLa = existantes.find(a => signatureKey(a) === signature);
       if (dejaLa) {
         return {
@@ -176,7 +228,7 @@ export const createAffectation = async (ouvrierID, chantierId, dateDebut, dateFi
     } finally {
       creationEnCours.delete(signature);
     }
-  })();
+  });
 
   creationEnCours.set(signature, operation);
   return operation;
