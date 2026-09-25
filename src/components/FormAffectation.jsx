@@ -47,7 +47,6 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
   const [days, setDays] = useState(() => daysFromSelectedDate(selectedDate));
   const [preciseDate, setPreciseDate] = useState("");
   const [formData, setFormData] = useState({ chantierId:"", nomLibre:"", tache:"", rdvHeure:"" });
-  const [tacheHistory, setTacheHistory] = useState([]);
   const compactLandscape = typeof window !== "undefined" && window.matchMedia("(max-width: 1100px) and (orientation: landscape)").matches;
   const affectationsLibres = [
     "Congé",
@@ -60,14 +59,6 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
     "Absence autorisée",
     "Absent"
   ];
-
-  useEffect(() => {
-    const saved = localStorage.getItem("tacheHistory");
-    if (saved) {
-      try { setTacheHistory(JSON.parse(saved)); }
-      catch (e) { console.error(e); }
-    }
-  }, []);
 
   useEffect(() => {
     setDays(daysFromSelectedDate(selectedDate));
@@ -167,12 +158,6 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
 
     setIsSubmitting(true);
     const tache = mode === "rdv" ? formatRdvTask(formData.rdvHeure) : formData.tache.trim();
-
-    if (mode !== "rdv" && tache) {
-      const h = [tache, ...tacheHistory.filter(t => t !== tache)].slice(0,10);
-      setTacheHistory(h);
-      localStorage.setItem("tacheHistory", JSON.stringify(h));
-    }
 
     await onSubmit({
       chantierId: mode === "chantier" ? formData.chantierId : `__LIBRE__:${formData.nomLibre.trim()}`,
@@ -369,18 +354,7 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
           </div>
         )}
 
-        {mode !== "rdv" && tacheHistory.length > 0 && (
-          <div style={{background:"#f9fafb",padding:compactLandscape ? 5 : 8,borderRadius:6,border:"1px solid #e5e7eb"}}>
-            <div style={{fontSize:10,fontWeight:700,color:"#6b7280",marginBottom:compactLandscape ? 4 : 6}}>Tâches récentes :</div>
-            <div style={{display:"flex",gap:5,flexWrap:compactLandscape ? "nowrap" : "wrap",overflowX:compactLandscape ? "auto" : "visible"}}>
-              {tacheHistory.map((t,i)=>(
-                <button key={i} type="button" onClick={()=>setFormData({...formData,tache:t})} style={{background:"white",border:"1px solid #d1d5db",borderRadius:4,padding:compactLandscape ? "3px 6px" : "4px 7px",fontSize:10,cursor:"pointer",whiteSpace:"nowrap"}}>
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+
 
         <div style={{display:"flex",gap:8,marginTop:compactLandscape ? 0 : 4}}>
           <button type="submit" disabled={isSubmitting} style={{flex:1,padding:compactLandscape ? 8 : 10,background:isSubmitting ? "#9ca3af" : "#1e3a8a",color:"white",border:0,borderRadius:7,fontWeight:700,cursor:"pointer"}}>
