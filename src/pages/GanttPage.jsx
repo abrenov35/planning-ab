@@ -31,6 +31,8 @@ export const GanttPage = ({ onGanttControlsReady }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedOuvrier, setSelectedOuvrier] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [actionAffectation, setActionAffectation] = useState(null);
+  const [actionDate, setActionDate] = useState(null);
   const [editAffectation, setEditAffectation] = useState(null);
   const [editForm, setEditForm] = useState({
     ouvrierId: "",
@@ -114,7 +116,7 @@ export const GanttPage = ({ onGanttControlsReady }) => {
     return String(affectation.typeAffectation || "").toUpperCase() === "HORS_GANTT" || !chantier;
   };
 
-  const handleAffectationClick = affectation => {
+  const prepareEditAffectation = affectation => {
     if (!affectation) return;
     if (Boolean(affectation?.pendingSync) || String(affectation?.id || "").startsWith("tmp-")) {
       alert("Cette affectation est en attente de confirmation dans la base. Elle reste conservée et ne peut pas être modifiée ou supprimée tant que la synchronisation n'est pas confirmée.");
@@ -136,6 +138,35 @@ export const GanttPage = ({ onGanttControlsReady }) => {
       rdvHeure: rdv ? extractRdvTime(affectation.tache) : ""
     });
     setDeleteStep(false);
+  };
+
+  const handleAffectationClick = (affectation, clickedDate) => {
+    if (!affectation) return;
+    setActionAffectation(affectation);
+    setActionDate(clickedDate ? new Date(clickedDate) : parseDate(affectation.dateDebut));
+  };
+
+  const closeActionModal = () => {
+    setActionAffectation(null);
+    setActionDate(null);
+  };
+
+  const handleChooseEdit = () => {
+    const affectation = actionAffectation;
+    if (!affectation) return;
+    closeActionModal();
+    prepareEditAffectation(affectation);
+  };
+
+  const handleChooseAdd = () => {
+    const affectation = actionAffectation;
+    if (!affectation) return;
+    const ouvrier = ouvriers.find(o => Number(o.id) === Number(affectation.ouvrierID)) || null;
+    const date = actionDate || parseDate(affectation.dateDebut);
+    closeActionModal();
+    setSelectedOuvrier(ouvrier);
+    setSelectedDate(date);
+    setShowCreateModal(true);
   };
 
   const closeEditModal = () => {
@@ -273,6 +304,60 @@ export const GanttPage = ({ onGanttControlsReady }) => {
         onAffectationClick={handleAffectationClick}
         onControlsReady={onGanttControlsReady}
       />
+
+      <Modal
+        isOpen={Boolean(actionAffectation)}
+        title="Que souhaitez-vous faire ?"
+        onClose={closeActionModal}
+      >
+        {actionAffectation && (
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <div style={{fontSize:12,color:"#475569",background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:8,padding:"9px 10px"}}>
+              <strong>{ouvriers.find(o => Number(o.id) === Number(actionAffectation.ouvrierID))?.nom || "Ouvrier"}</strong>
+              {" — "}
+              {formatDateLongue(actionDate || actionAffectation.dateDebut)}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleChooseAdd}
+              style={{
+                width:"100%",
+                padding:"13px 12px",
+                borderRadius:8,
+                border:"2px solid #1e3a8a",
+                background:"#1e3a8a",
+                color:"white",
+                fontWeight:800,
+                fontSize:13,
+                cursor:"pointer"
+              }}
+            >
+              ＋ Ajouter une autre affectation ce jour
+            </button>
+
+            <button
+              type="button"
+              onClick={handleChooseEdit}
+              disabled={Boolean(actionAffectation?.pendingSync) || String(actionAffectation?.id || "").startsWith("tmp-")}
+              style={{
+                width:"100%",
+                padding:"11px 12px",
+                borderRadius:8,
+                border:"1px solid #cbd5e1",
+                background:"white",
+                color:"#334155",
+                fontWeight:700,
+                fontSize:12,
+                cursor:(Boolean(actionAffectation?.pendingSync) || String(actionAffectation?.id || "").startsWith("tmp-")) ? "not-allowed" : "pointer",
+                opacity:(Boolean(actionAffectation?.pendingSync) || String(actionAffectation?.id || "").startsWith("tmp-")) ? 0.5 : 1
+              }}
+            >
+              Modifier cette affectation
+            </button>
+          </div>
+        )}
+      </Modal>
 
       <Modal
         isOpen={showCreateModal}

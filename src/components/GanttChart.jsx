@@ -272,10 +272,10 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
       lastTapRef.current = { key, time:now };
     }
   };
-  const handleAffectationDoubleClick = (e,affectation) => {
+  const handleAffectationDoubleClick = (e,affectation,date) => {
     e.stopPropagation();
     if (isMobile || suppressClickRef.current) return;
-    onAffectationClick(affectation);
+    onAffectationClick(affectation,date);
   };
   const handleAffectationTouchStart = (e,key) => {
     e.stopPropagation();
@@ -286,7 +286,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     const touch = e.touches[0];
     touchStartRef.current = { x:touch.clientX, y:touch.clientY, key };
   };
-  const handleAffectationTouchEnd = (e,affectation,key) => {
+  const handleAffectationTouchEnd = (e,affectation,date,key) => {
     e.stopPropagation();
     if (!isMobile) return;
     const start = touchStartRef.current;
@@ -299,7 +299,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     if (last.key === key && now-last.time <= 350) {
       lastTapRef.current = { key:"", time:0 };
       e.preventDefault();
-      onAffectationClick(affectation);
+      onAffectationClick(affectation,date);
     } else {
       lastTapRef.current = { key, time:now };
     }
@@ -536,8 +536,8 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
                         const barTextBase = rdv ? rdvName : horsGantt ? nomHorsGantt : lettres;
                         const barText = pendingSync ? `⏳ ${barTextBase}` : barTextBase;
                         const barHeight = label ? Math.max(13, expandedAffectationSlotHeight - 10) : Math.max(13, currentSlotHeight - 4);
-                        return <div key={aff.id} onDoubleClick={e=>handleAffectationDoubleClick(e,aff)} onTouchStart={e=>handleAffectationTouchStart(e,`affectation:${aff.id}`)} onTouchEnd={e=>handleAffectationTouchEnd(e,aff,`affectation:${aff.id}`)} style={{position:"absolute",left:1,right:1,top:topOffset,cursor:"pointer",zIndex:2}}>
-                          <div data-affectation-id={aff.id} className={highlightedAffectationId===aff.id ? "gantt-search-hit" : ""} title={pendingSync ? "EN ATTENTE DE CONFIRMATION — conservée localement" : rdv ? `${rdvName} — ${label}` : horsGantt ? aff.nomExterne || "Événement Google" : `${chantier?.nom || ""} — double-cliquer pour modifier`} style={{width:"100%",height:barHeight,backgroundColor:barBackground,border:barBorder,borderRadius:isMobile ? 3 : 2,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center",padding:(horsGantt || rdv || pendingSync) ? "0 2px" : 0,color:barColor,fontWeight:800,fontSize:fitTextSize(barText),overflow:"hidden",minWidth:0,boxShadow:pendingSync ? "0 0 0 1px rgba(245,158,11,.18)" : "none"}}><span style={{display:"block",maxWidth:"100%",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center"}}>{barText}</span></div>
+                        return <div key={aff.id} onDoubleClick={e=>handleAffectationDoubleClick(e,aff,date)} onTouchStart={e=>handleAffectationTouchStart(e,`affectation:${aff.id}`)} onTouchEnd={e=>handleAffectationTouchEnd(e,aff,date,`affectation:${aff.id}`)} style={{position:"absolute",left:1,right:1,top:topOffset,cursor:"pointer",zIndex:2}}>
+                          <div data-affectation-id={aff.id} className={highlightedAffectationId===aff.id ? "gantt-search-hit" : ""} title={pendingSync ? "EN ATTENTE DE CONFIRMATION — conservée localement" : rdv ? `${rdvName} — ${label}` : horsGantt ? aff.nomExterne || "Événement Google" : `${chantier?.nom || ""} — double-cliquer pour modifier ou ajouter`} style={{width:"100%",height:barHeight,backgroundColor:barBackground,border:barBorder,borderRadius:isMobile ? 3 : 2,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center",padding:(horsGantt || rdv || pendingSync) ? "0 2px" : 0,color:barColor,fontWeight:800,fontSize:fitTextSize(barText),overflow:"hidden",minWidth:0,boxShadow:pendingSync ? "0 0 0 1px rgba(245,158,11,.18)" : "none"}}><span style={{display:"block",maxWidth:"100%",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center"}}>{barText}</span></div>
                           {label && <div title={label} style={{marginTop:1,height:7,fontSize:dayWidth < 27 ? 5 : 6,fontWeight:rdv ? 800 : 600,color:rdv ? "#6d28d9" : "#374151",textAlign:"center",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:"7px"}}>{label}</div>}
                         </div>;
                       })}
