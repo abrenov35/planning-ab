@@ -116,6 +116,10 @@ export const GanttPage = ({ onGanttControlsReady }) => {
 
   const handleAffectationClick = affectation => {
     if (!affectation) return;
+    if (Boolean(affectation?.pendingSync) || String(affectation?.id || "").startsWith("tmp-")) {
+      alert("Cette affectation est en attente de confirmation dans la base. Elle reste conservée et ne peut pas être modifiée ou supprimée tant que la synchronisation n'est pas confirmée.");
+      return;
+    }
     const chantier = getChantier(affectation);
     const horsGantt = isHorsGantt(affectation);
     const rdv = isRdvTask(affectation.tache);
