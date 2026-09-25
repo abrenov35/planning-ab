@@ -382,9 +382,36 @@ export const AppProvider = ({ children }) => {
         return { success: false, uncertain: true, error: message };
       }
 
-      const confirmee = await verifierCreationAffectation(optimistic, r);
+      let confirmee = await verifierCreationAffectation(optimistic, r);
+
+      // Si le serveur a répondu "succès" mais que la ligne n'est pas retrouvée,
+      // on attend puis on fait UNE seule tentative de récupération. createAffectation
+      // refait d'abord un contrôle strict : si la première écriture est finalement
+      // apparue, aucune seconde ligne n'est créée.
       if (!confirmee) {
-        const message = "Création reçue mais non confirmée dans la base. L'affectation reste visible et conservée localement jusqu'à confirmation ; elle ne sera plus supprimée au bout de quelques minutes.";
+        journalCreation("recovery_wait", optimistic, { serverId: r?.id || r?.affectationId || "" });
+        await attendre(4000);
+
+        const recuperation = await api.createAffectation(
+          ouvrierID,
+          cid,
+          dateDebut,
+          dateFin,
+          tache,
+          nom,
+          type
+        );
+
+        if (recuperation?.success) {
+          confirmee = await verifierCreationAffectation(optimistic, recuperation);
+          if (confirmee) {
+            journalCreation("recovered_after_conflict", optimistic, { serverId: confirmee.id || "" });
+          }
+        }
+      }
+
+      if (!confirmee) {
+        const message = "Création non confirmée après récupération. L'affectation reste visible et conservée localement ; aucune suppression automatique n'est effectuée.";
         journalCreation("unconfirmed_pending_kept", optimistic, { serverId: r?.id || r?.affectationId || "" });
         savePendingCreations(pendingAffectationsRef.current);
         setError(message);
