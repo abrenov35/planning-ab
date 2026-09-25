@@ -355,34 +355,62 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   };
   const getAffectationKey = aff => Number(aff?.chantierId) ? `CHANTIER:${Number(aff.chantierId)}` : `LIBRE:${normalize(aff?.nomExterne || aff?.affectationNom || "")}`;
   const getLanePlan = list => {
-    const groups = new Map();
-    list.forEach((aff,index) => {
-      const key = getAffectationKey(aff);
-      if (!groups.has(key)) groups.set(key,{ key, firstIndex:index, days:new Set(), needsSecondLine:false });
-      const group = groups.get(key);
-      if (getSecondaryLabel(aff)) group.needsSecondLine = true;
+    const items = list.map((aff,index) => {
+      const days = new Set();
       allDates.forEach((date,dayIndex) => {
-        if (isVisibleOnDay(aff,date)) group.days.add(dayIndex);
+        if (isVisibleOnDay(aff,date)) days.add(dayIndex);
       });
+      return {
+        aff,
+        key:getAffectationKey(aff),
+        firstIndex:index,
+        days,
+        needsSecondLine:Boolean(getSecondaryLabel(aff))
+      };
     });
-    const ordered = [...groups.values()].sort((a,b) => {
+
+    items.sort((a,b) => {
       const aFirst = a.days.size ? Math.min(...a.days) : Number.MAX_SAFE_INTEGER;
       const bFirst = b.days.size ? Math.min(...b.days) : Number.MAX_SAFE_INTEGER;
       return aFirst-bFirst || a.firstIndex-b.firstIndex || a.key.localeCompare(b.key,"fr",{sensitivity:"base"});
     });
+
     const laneDays = [];
-    const laneByKey = new Map();
+    const laneKeys = [];
     const laneNeedsSecondLine = [];
-    ordered.forEach(group => {
-      let lane = 0;
-      while (laneDays[lane] && [...group.days].some(dayIndex => laneDays[lane].has(dayIndex))) lane += 1;
-      if (!laneDays[lane]) laneDays[lane] = new Set();
-      group.days.forEach(dayIndex => laneDays[lane].add(dayIndex));
-      if (group.needsSecondLine) laneNeedsSecondLine[lane] = true;
-      laneByKey.set(group.key,lane);
+    const laneByAffectation = new Map();
+
+    items.forEach(item => {
+      const preferred = [];
+      const fallback = [];
+      for (let lane = 0; lane < laneDays.length; lane += 1) {
+        if (laneKeys[lane]?.has(item.key)) preferred.push(lane);
+        else fallback.push(lane);
+      }
+
+      let lane = [...preferred, ...fallback].find(candidate =>
+        ![...item.days].some(dayIndex => laneDays[candidate].has(dayIndex))
+      );
+
+      if (lane === undefined) {
+        lane = laneDays.length;
+        laneDays[lane] = new Set();
+        laneKeys[lane] = new Set();
+      }
+
+      item.days.forEach(dayIndex => laneDays[lane].add(dayIndex));
+      laneKeys[lane].add(item.key);
+      if (item.needsSecondLine) laneNeedsSecondLine[lane] = true;
+      laneByAffectation.set(item.aff,lane);
     });
-    return { laneByKey, laneNeedsSecondLine, laneCount:Math.max(1,laneDays.length) };
+
+    return {
+      laneByAffectation,
+      laneNeedsSecondLine,
+      laneCount:Math.max(1,laneDays.length)
+    };
   };
+
   const canShowHorsGanttName = date => {
     const seuil = new Date(2026,7,3); seuil.setHours(0,0,0,0);
     const jour = new Date(date); jour.setHours(0,0,0,0);
@@ -468,7 +496,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
                         const label = getSecondaryLabel(aff);
                         const nomHorsGantt = horsGantt ? getHorsGanttName(aff,date) : "";
                         const rdvName = String(nomHorsGantt || chantier?.nom || "RDV").trim();
-                        const rank = lanePlan.laneByKey.get(getAffectationKey(aff)) ?? 0;
+                        const rank = lanePlan.laneByAffectation.get(aff) ?? 0;
                         const topOffset = (laneOffsets[rank] || 0)+1;
                         const currentSlotHeight = laneHeights[rank] || compactAffectationSlotHeight;
                         const planning = isPlanning(aff);

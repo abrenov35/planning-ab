@@ -45,6 +45,7 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
   const [notice, setNotice] = useState(null);
   const [mode, setMode] = useState("chantier");
   const [days, setDays] = useState(() => daysFromSelectedDate(selectedDate));
+  const [preciseDate, setPreciseDate] = useState("");
   const [formData, setFormData] = useState({ chantierId:"", nomLibre:"", tache:"", rdvHeure:"" });
   const [tacheHistory, setTacheHistory] = useState([]);
   const compactLandscape = typeof window !== "undefined" && window.matchMedia("(max-width: 1100px) and (orientation: landscape)").matches;
@@ -70,13 +71,50 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
 
   useEffect(() => {
     setDays(daysFromSelectedDate(selectedDate));
+    setPreciseDate("");
   }, [selectedDate]);
 
-  const getDateRange = () => {
+  const parsePreciseDate = value => {
+    if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+    const [year, month, day] = value.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    if (
+      Number.isNaN(date.getTime()) ||
+      date.getFullYear() !== year ||
+      date.getMonth() !== month - 1 ||
+      date.getDate() !== day
+    ) return null;
+    date.setHours(0,0,0,0);
+    return date;
+  };
+
+  const formatApiDate = date =>
+    `${String(date.getDate()).padStart(2,"0")}/${String(date.getMonth()+1).padStart(2,"0")}/${date.getFullYear()}`;
+
+  const getDateRange = ({ showNotice = true } = {}) => {
+    if (preciseDate) {
+      const exactDate = parsePreciseDate(preciseDate);
+      if (!exactDate) {
+        if (showNotice) setNotice({ title:"Date invalide", message:"Choisissez une date précise valide." });
+        return null;
+      }
+      const dow = exactDate.getDay();
+      if (dow === 0 || dow === 6) {
+        if (showNotice) setNotice({ title:"Jour non affiché", message:"AB Planning affiche les affectations du lundi au vendredi. Choisissez un jour ouvré." });
+        return null;
+      }
+      const formatted = formatApiDate(exactDate);
+      return {
+        dateDebut: formatted,
+        dateFin: formatted,
+        preview: `Date retenue : ${selectedDateLabel(exactDate)}`
+      };
+    }
+
     const order = ["lundi","mardi","mercredi","jeudi","vendredi"];
     const checked = order.filter(d => days[d]);
     if (!checked.length) {
-      setNotice({ title:"Jour manquant", message:"Sélectionnez au moins un jour dans la semaine." });
+      if (showNotice) setNotice({ title:"Jour manquant", message:"Sélectionnez au moins un jour dans la semaine ou choisissez une date précise." });
       return null;
     }
     const clicked = selectedDate ? new Date(selectedDate) : new Date();
@@ -89,9 +127,19 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
     const fin = new Date(monday);
     debut.setDate(debut.getDate() + Math.min(...indexes));
     fin.setDate(fin.getDate() + Math.max(...indexes));
-    const fmt = d => `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
-    return { dateDebut:fmt(debut), dateFin:fmt(fin) };
+    const dateDebut = formatApiDate(debut);
+    const dateFin = formatApiDate(fin);
+    return {
+      dateDebut,
+      dateFin,
+      preview: debut.getTime() === fin.getTime()
+        ? `Date retenue : ${selectedDateLabel(debut)}`
+        : `Période retenue : ${selectedDateLabel(debut)} → ${selectedDateLabel(fin)}`
+    };
   };
+
+  const selectedRangePreview = getDateRange({ showNotice:false });
+
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -245,6 +293,7 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
                 key={day.key}
                 type="button"
                 onClick={()=>setDays(p=>({...p,[day.key]:!p[day.key]}))}
+                disabled={Boolean(preciseDate)}
                 style={{
                   flex:1,
                   padding:compactLandscape ? "6px 3px" : "9px 4px",
@@ -254,13 +303,44 @@ export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, select
                   color:days[day.key] ? "white" : "#374151",
                   fontSize:11,
                   fontWeight:700,
-                  cursor:"pointer"
+                  cursor:preciseDate ? "not-allowed" : "pointer",
+                  opacity:preciseDate ? 0.5 : 1
                 }}
               >
                 {day.label}
               </button>
             ))}
           </div>
+
+          <div style={{marginTop:compactLandscape ? 7 : 10,padding:compactLandscape ? 7 : 9,border:"1px solid #bfdbfe",borderRadius:7,background:"#f8fbff"}}>
+            <label style={{...label,color:"#1e3a8a"}}>Date précise (facultatif)</label>
+            <div style={{display:"flex",gap:6,alignItems:"center"}}>
+              <input
+                type="date"
+                value={preciseDate}
+                onChange={e=>setPreciseDate(e.target.value)}
+                style={{...input,flex:1,fontSize:16,minHeight:40,border:"2px solid #93c5fd",background:"white"}}
+              />
+              {preciseDate && (
+                <button
+                  type="button"
+                  onClick={()=>setPreciseDate("")}
+                  style={{minHeight:40,padding:"0 10px",border:"1px solid #cbd5e1",borderRadius:6,background:"white",fontSize:11,fontWeight:700,color:"#475569",cursor:"pointer"}}
+                >
+                  Effacer
+                </button>
+              )}
+            </div>
+            <div style={{fontSize:10,color:"#64748b",marginTop:5,lineHeight:1.3}}>
+              Si une date est renseignée ici, elle est prioritaire sur les boutons Lun–Ven et crée une affectation uniquement ce jour-là.
+            </div>
+          </div>
+
+          {selectedRangePreview && (
+            <div style={{marginTop:7,fontSize:11,fontWeight:800,color:"#065f46",background:"#ecfdf5",border:"1px solid #a7f3d0",borderRadius:6,padding:"6px 8px"}}>
+              {selectedRangePreview.preview}
+            </div>
+          )}
         </div>
 
         {mode === "rdv" ? (
