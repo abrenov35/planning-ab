@@ -8,6 +8,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const [isMouseDragging, setIsMouseDragging] = useState(false);
   const [highlightedAffectationId, setHighlightedAffectationId] = useState(null);
+  const [visibleDayStart, setVisibleDayStart] = useState(0);
   const scrollRef = useRef(null);
   const touchStartRef = useRef(null);
   const lastTapRef = useRef({ key:"", time:0 });
@@ -196,6 +197,15 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
     setHighlightedAffectationId(found.id);
     window.setTimeout(()=>setHighlightedAffectationId(current => current===found.id ? null : current),2600);
     return {success:true,affectation:found};
+  };
+
+  const handlePlanningScroll = e => {
+    const el = e.currentTarget;
+    const nextStart = Math.max(
+      0,
+      Math.min(allDates.length - 1, Math.floor((el.scrollLeft || 0) / dayWidth))
+    );
+    setVisibleDayStart(current => current === nextStart ? current : nextStart);
   };
 
   const handleMouseDown = e => {
@@ -434,9 +444,26 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
   const stickyWorkerStyle = { position:"sticky", left:0, zIndex:8, boxShadow:"3px 0 5px rgba(15,23,42,0.08)" };
   const stickyHeaderStyle = { position:"sticky", left:0, zIndex:20, boxShadow:"3px 0 5px rgba(15,23,42,0.10)" };
 
+  const visibleTimelineWidth = Math.max(1, (viewport.width || 0) - workerColumnWidth);
+  const visibleDayCount = Math.max(1, Math.ceil(visibleTimelineWidth / dayWidth) + 1);
+  const layoutDayStart = Math.max(0, visibleDayStart - 1);
+  const layoutDayEnd = Math.min(allDates.length - 1, visibleDayStart + visibleDayCount);
+  const layoutStartDate = allDates[layoutDayStart] || rangeStart;
+  const layoutEndDate = allDates[layoutDayEnd] || rangeEnd;
+  const isAffectationInLayoutWindow = aff => {
+    const s = parseDate(aff.dateDebut), e = parseDate(aff.dateFin);
+    if (!s || !e) return false;
+    s.setHours(0,0,0,0);
+    e.setHours(23,59,59,999);
+    const start = new Date(layoutStartDate); start.setHours(0,0,0,0);
+    const end = new Date(layoutEndDate); end.setHours(23,59,59,999);
+    return s <= end && e >= start;
+  };
+
   const workerLayouts = ouvriersActifs.map(ouvrier => {
     const affectsByOuvrier = affectations.filter(a => Number(a.ouvrierID) === Number(ouvrier.id) && isAffectationInRange(a));
-    const lanePlan = getLanePlan(affectsByOuvrier);
+    const affectsForLayout = affectsByOuvrier.filter(isAffectationInLayoutWindow);
+    const lanePlan = getLanePlan(affectsForLayout);
     const laneHeights = Array.from({length:lanePlan.laneCount},(_,lane) => lanePlan.laneNeedsSecondLine?.[lane] ? expandedAffectationSlotHeight : compactAffectationSlotHeight);
     const naturalHeight = Math.max(minRowHeight, laneHeights.reduce((total,height) => total+height,0)+2);
     return { affectsByOuvrier, lanePlan, laneHeights, naturalHeight };
@@ -461,7 +488,7 @@ export const GanttChart = ({ ouvriers, chantiers, affectations, onAffectationCli
         <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}><div style={{width:8,height:8,backgroundColor:planningColor,borderRadius:2,flexShrink:0}} /><span style={{color:planningColor,fontWeight:800}}>PLANNING</span></div>
       </div>
 
-      <div ref={scrollRef} className={`gantt-scroll${isMouseDragging ? " dragging" : ""}`} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={endMouseDrag} onMouseLeave={endMouseDrag} style={{background:"white",borderRadius:6,border:"1px solid #e5e7eb",display:"flex",flexDirection:"column",flex:1,overflowY:"auto",overflowX:"auto",WebkitOverflowScrolling:"touch",touchAction:"pan-x pan-y pinch-zoom",overscrollBehaviorX:"none",minWidth:0,minHeight:0,cursor:isMobile ? "default" : isMouseDragging ? "grabbing" : "grab"}}>
+      <div ref={scrollRef} className={`gantt-scroll${isMouseDragging ? " dragging" : ""}`} onScroll={handlePlanningScroll} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={endMouseDrag} onMouseLeave={endMouseDrag} style={{background:"white",borderRadius:6,border:"1px solid #e5e7eb",display:"flex",flexDirection:"column",flex:1,overflowY:"auto",overflowX:"auto",WebkitOverflowScrolling:"touch",touchAction:"pan-x pan-y pinch-zoom",overscrollBehaviorX:"none",minWidth:0,minHeight:0,cursor:isMobile ? "default" : isMouseDragging ? "grabbing" : "grab"}}>
         <div style={{display:"flex",height:headerHeight,flexShrink:0,position:"sticky",top:0,zIndex:25,background:"#e5e7eb",boxShadow:"0 2px 4px rgba(15,23,42,0.14)",...rowWidthStyle}}>
           <div style={{width:workerColumnWidth,background:"#e5e7eb",borderRight:"1px solid #9ca3af",flexShrink:0,...stickyHeaderStyle,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 8px",boxSizing:"border-box"}}><button type="button" onClick={e=>{e.stopPropagation();goToday();}} style={{width:"100%",height:28,border:"1px solid rgba(255,255,255,0.42)",borderRadius:5,background:"#10b981",color:"white",fontSize:10,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>Aujourd'hui</button></div>
           <div style={{height:headerHeight,background:"#e5e7eb",borderRight:"1px solid #9ca3af",...timelineFlexStyle}}>
