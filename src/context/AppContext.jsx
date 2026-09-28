@@ -382,49 +382,24 @@ export const AppProvider = ({ children }) => {
         return { success: false, uncertain: true, error: message };
       }
 
-      let confirmee = await verifierCreationAffectation(optimistic, r);
-
-      // Si le serveur a répondu "succès" mais que la ligne n'est pas retrouvée,
-      // on attend puis on fait UNE seule tentative de récupération. createAffectation
-      // refait d'abord un contrôle strict : si la première écriture est finalement
-      // apparue, aucune seconde ligne n'est créée.
-      if (!confirmee) {
-        journalCreation("recovery_wait", optimistic, { serverId: r?.id || r?.affectationId || "" });
-        await attendre(4000);
-
-        const recuperation = await api.createAffectation(
-          ouvrierID,
-          cid,
-          dateDebut,
-          dateFin,
-          tache,
-          nom,
-          type
-        );
-
-        if (recuperation?.success) {
-          confirmee = await verifierCreationAffectation(optimistic, recuperation);
-          if (confirmee) {
-            journalCreation("recovered_after_conflict", optimistic, { serverId: confirmee.id || "" });
-          }
-        }
-      }
-
-      if (!confirmee) {
-        const message = "Création non confirmée après récupération. L'affectation reste visible et conservée localement ; aucune suppression automatique n'est effectuée.";
-        journalCreation("unconfirmed_pending_kept", optimistic, { serverId: r?.id || r?.affectationId || "" });
-        savePendingCreations(pendingAffectationsRef.current);
+      const idServeur = String(r.id || r.affectationId || "").trim();
+      if (!idServeur) {
+        const message = "Réponse sans identifiant : vérification en cours. Ne créez pas une seconde affectation.";
+        journalCreation("unconfirmed_pending_kept", optimistic);
         setError(message);
-        refreshLater(3000);
+        refreshLater(1500);
         return { success: false, uncertain: true, error: message };
       }
 
       pendingAffectationsRef.current.delete(tempId);
       savePendingCreations(pendingAffectationsRef.current);
-      journalCreation("confirmed", optimistic, { serverId: confirmee.id || "" });
+      journalCreation("confirmed", optimistic, { serverId: idServeur });
+      setAffectations(prev => prev.map(a => String(a.id) === tempId
+        ? { ...a, id: idServeur, pendingSync: false }
+        : a));
       setError(null);
-      await loadData(false);
-      return { success: true, confirmed: true, id: confirmee.id };
+      refreshLater(800);
+      return { success: true, confirmed: true, id: idServeur };
     } catch (err) {
       const message = err?.message || "Impossible de créer l'affectation";
       journalCreation("exception_pending_kept", optimistic, { error: message });
@@ -461,20 +436,31 @@ export const AppProvider = ({ children }) => {
       const r = await api.updateAffectation(id, dateDebut, dateFin, tache, statut, nomLibre, chantierId);
       if (!r?.success) {
         const message = r?.error || "Impossible de modifier l'affectation";
+        if (/Délai API dépassé|Impossible de joindre Apps Script/.test(message)) {
+          setError("Réponse du serveur incertaine : vérification en arrière-plan. Ne cliquez pas une seconde fois.");
+          window.setTimeout(async () => {
+            try {
+              const rows = await api.getAffectationsStrict();
+              const ligne = rows.find(a => String(a.id) === key);
+              await loadData(false);
+              setError(ligne && memeAffectation(ligne, attendu)
+                ? null
+                : "La modification n'est pas retrouvée dans la base. Vérifiez la ligne avant un nouvel essai.");
+            } catch (_) {
+              setError("Vérification impossible pour le moment. Actualisez avant un nouvel essai.");
+            }
+          }, 1500);
+          return { success: false, uncertain: true, error: message };
+        }
         setError(message);
         return { success: false, error: message };
       }
 
-      const confirmee = await verifierMiseAJourAffectation(id, attendu);
-      if (!confirmee) {
-        const message = "Modification reçue mais non confirmée dans la base. Aucune autre donnée n'a été supprimée.";
-        setError(message);
-        refreshLater(3000);
-        return { success: false, uncertain: true, error: message };
-      }
-
+      // La réponse positive arrive après l'écriture et le flush du serveur.
+      // Une relecture supplémentaire ne doit pas transformer ce succès en erreur.
+      setAffectations(prev => prev.map(a => String(a.id) === key ? attendu : a));
       setError(null);
-      await loadData(false);
+      refreshLater(800);
       return { success: true, confirmed: true };
     } catch (err) {
       const message = err?.message || "Impossible de modifier l'affectation";
