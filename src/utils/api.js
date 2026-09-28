@@ -209,7 +209,7 @@ export const createAffectation = async (ouvrierID, chantierId, dateDebut, dateFi
   // concernent des ouvriers/chantiers différents.
   const operation = serialiserCreation(async () => {
     try {
-      const existantes = await getAffectationsStrict();
+      const existantes = await attendreCreneauCreationStable();
       const dejaLa = existantes.find(a => signatureKey(a) === signature);
       if (dejaLa) {
         return {
