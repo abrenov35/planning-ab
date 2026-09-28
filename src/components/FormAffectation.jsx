@@ -28,8 +28,8 @@ const selectedDateLabel = selectedDate => {
 
 export const FormAffectation = ({ ouvrier, chantiers, onSubmit, onCancel, selectedDate = null }) => {
   const chantiersActifs = chantiers
-    .filter(c => c.statut === "Actif")
-    .sort((a, b) => String(a.nom || "").localeCompare(String(b.nom || ""), "fr", { sensitivity: "base" }));
+    .filter(c => String(c.statut || "").trim().toLowerCase() === "actif" && /\[YAYA_ID:[^\]]+\]/i.test(String(c.description || "")))
+    .sort((a, b) => String(a.nom || "").localeCompare(String(b.nom || ""), "fr", { sensitivity: "base" }) || String(a.id).localeCompare(String(b.id), "fr", { numeric: true }));
   const normalizeChantierName = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
   const shortChantierId = id => String(id ?? "").replace(/\s+/g, "").slice(-4).toUpperCase() || "?";
   const homonymCounts = new Map();
