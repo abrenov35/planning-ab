@@ -280,7 +280,9 @@ export const GanttPage = ({ onGanttControlsReady }) => {
 
   const editHorsGantt = editAffectation ? isHorsGantt(editAffectation) : false;
   const chantierCourant = editAffectation ? getChantier(editAffectation) : null;
-  const chantiersActifs = chantiers.filter(c => c.statut === "Actif");
+  const chantiersActifs = chantiers
+    .filter(c => String(c.statut || "").trim().toLowerCase() === "actif" && /\[YAYA_ID:[^\]]+\]/i.test(String(c.description || "")))
+    .sort((a, b) => String(a.nom || "").localeCompare(String(b.nom || ""), "fr", { sensitivity: "base" }) || String(a.id).localeCompare(String(b.id), "fr", { numeric: true }));
   const chantiersEditables = chantierCourant && !chantiersActifs.some(c => String(c.id) === String(chantierCourant.id))
     ? [chantierCourant, ...chantiersActifs]
     : chantiersActifs;
@@ -442,8 +444,8 @@ export const GanttPage = ({ onGanttControlsReady }) => {
                       style={{ ...inputStyle, border: "2px solid #2563eb", background: "white" }}
                     >
                       {chantiersEditables.map(chantier => (
-                        <option key={chantier.id} value={chantier.id}>
-                          {chantier.nom}{chantier.statut === "Actif" ? "" : " (archivé)"}
+                        <option key={chantier.id} value={chantier.id} disabled={!chantiersActifs.some(c => String(c.id) === String(chantier.id))}>
+                          {chantier.nom}{chantiersActifs.some(c => String(c.id) === String(chantier.id)) ? "" : " (affectation actuelle, hors liste)"}
                         </option>
                       ))}
                     </select>
