@@ -239,13 +239,18 @@ export const GanttPage = ({ onGanttControlsReady }) => {
           nomLibre,
           chantierId
         );
-        if (result?.error) throw new Error(result.error);
+        if (result?.uncertain) {
+          setEditAffectation(null);
+          setDeleteStep(false);
+          return;
+        }
+        if (!result?.success) throw new Error(result?.error || "Modification non enregistrée");
       }
       setEditAffectation(null);
       setDeleteStep(false);
     } catch (error) {
       console.error("Erreur modification affectation:", error);
-      alert("La modification n'a pas pu être enregistrée.");
+      alert(error?.message || "La modification n'a pas pu être enregistrée.");
     } finally {
       setSavingEdit(false);
     }
